@@ -20,6 +20,13 @@ uint32_t vpad_punch_buttons = VPAD_BUTTON_Y | VPAD_BUTTON_X;
 uint32_t classic_punch_buttons = WPAD_CLASSIC_BUTTON_Y | WPAD_CLASSIC_BUTTON_X;
 uint32_t pro_punch_buttons = WPAD_PRO_BUTTON_Y | WPAD_PRO_BUTTON_X;
 
+#ifdef BETTERCAMERA
+int mouse_x = 0;
+int mouse_y = 0;
+
+extern u8 newcam_mouse;
+#endif
+
 struct WiiUKeymap {
     uint32_t n64Button;
     uint32_t vpadButton;
