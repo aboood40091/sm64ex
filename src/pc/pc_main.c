@@ -16,6 +16,7 @@
 #include "gfx/gfx_direct3d11.h"
 #include "gfx/gfx_direct3d12.h"
 #include "gfx/gfx_sdl.h"
+#include "gfx/gfx_whb.h"
 
 #include "audio/audio_api.h"
 #include "audio/audio_sdl.h"
@@ -115,16 +116,20 @@ void game_deinit(void) {
     discord_shutdown();
 #endif
     configfile_save(configfile_name());
+#ifndef TARGET_WII_U
     controller_shutdown();
     audio_shutdown();
     gfx_shutdown();
+#endif
     inited = false;
 }
 
 void game_exit(void) {
+#ifndef TARGET_WII_U
     game_deinit();
 #ifndef TARGET_WEB
     exit(0);
+#endif
 #endif
 }
 
@@ -163,8 +168,8 @@ static void on_anim_frame(double time) {
 #endif
 
 void main_func(void) {
-    static u64 pool[0x165000/8 / 4 * sizeof(void *)];
-    main_pool_init(pool, pool + sizeof(pool) / sizeof(pool[0]));
+    static u8 pool[DOUBLE_SIZE_ON_64_BIT(0x165000)] __attribute__ ((aligned(16)));
+    main_pool_init(pool, pool + sizeof(pool));
     gEffectsMemoryPool = mem_pool_init(0x4000, MEMORY_POOL_LEFT);
 
     const char *gamedir = gCLIOpts.GameDir[0] ? gCLIOpts.GameDir : FS_BASEDIR;
@@ -173,15 +178,21 @@ void main_func(void) {
 
     configfile_load(configfile_name());
 
+    #ifdef TARGET_WII_U
+    configfile_save(configfile_name()); // Mount SD write now
+    #else
     if (gCLIOpts.FullScreen == 1)
         configWindow.fullscreen = true;
     else if (gCLIOpts.FullScreen == 2)
         configWindow.fullscreen = false;
+    #endif
 
     #if defined(WAPI_SDL1) || defined(WAPI_SDL2)
     wm_api = &gfx_sdl;
     #elif defined(WAPI_DXGI)
     wm_api = &gfx_dxgi;
+    #elif defined(WAPI_WHB)
+    wm_api = &gfx_whb_window;
     #else
     #error No window API!
     #endif
@@ -199,6 +210,9 @@ void main_func(void) {
     # else
     #  define RAPI_NAME "OpenGL"
     # endif
+    #elif defined(RAPI_WHB)
+    rendering_api = &gfx_whb_api;
+    # define RAPI_NAME "WHB - GX2"
     #else
     #error No rendering API!
     #endif
@@ -211,9 +225,11 @@ void main_func(void) {
     ;
 
     gfx_init(wm_api, rendering_api, window_title);
+    #ifndef TARGET_WII_U
     wm_api->set_keyboard_callbacks(keyboard_on_key_down, keyboard_on_key_up, keyboard_on_all_keys_up);
+    #endif
 
-    if (audio_api == NULL && audio_sdl.init()) 
+    if (audio_api == NULL && audio_sdl.init())
         audio_api = &audio_sdl;
 
     if (audio_api == NULL) {
@@ -244,7 +260,11 @@ void main_func(void) {
     emscripten_set_main_loop(em_main_loop, 0, 0);
     request_anim_frame(on_anim_frame);
 #else
+    #ifdef TARGET_WII_U
+    while (whb_window_is_running()) {
+    #else
     while (true) {
+    #endif
         wm_api->main_loop(produce_one_frame);
 #ifdef DISCORDRPC
         discord_update_rich_presence();
@@ -253,8 +273,15 @@ void main_func(void) {
 #endif
 }
 
+#ifdef TARGET_WII_U
+int main(UNUSED int argc, UNUSED char *argv[]) {
+    main_func();
+    return 0;
+}
+#else
 int main(int argc, char *argv[]) {
     parse_cli_opts(argc, argv);
     main_func();
     return 0;
 }
+#endif

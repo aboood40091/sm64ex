@@ -38,11 +38,17 @@ static int audio_sdl_get_desired_buffered(void) {
 static void audio_sdl_play(const uint8_t *buf, size_t len) {
     if (audio_sdl_buffered() < 6000) {
         // Don't fill the audio buffer too much in case this happens
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+        uint16_t *buf_16 = (uint16_t *)buf;
+        for (uint32_t i = 0; i < (len / 2); i++) { // handle AUDIO_S16 format on big endian devices
+            buf_16[i] = buf[i*2] | ((uint16_t)(buf[i*2+1]) << 8);
+        }
+#endif
         SDL_QueueAudio(dev, buf, len);
     }
 }
 
-static void audio_sdl_shutdown(void) 
+static void audio_sdl_shutdown(void)
 {
     if (SDL_WasInit(SDL_INIT_AUDIO)) {
         if (dev != 0) {

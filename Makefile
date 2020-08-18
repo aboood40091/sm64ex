@@ -27,6 +27,9 @@ TARGET_RPI ?= 0
 # Build for Emscripten/WebGL
 TARGET_WEB ?= 0
 
+# Build for the Wii U
+TARGET_WII_U ?= 1
+
 # Makeflag to enable OSX fixes
 OSX_BUILD ?= 0
 
@@ -56,18 +59,28 @@ NO_LDIV ?= 0
 
 # Backend selection
 
-# Renderers: GL, GL_LEGACY, D3D11, D3D12
+# Renderers: GL, GL_LEGACY, D3D11, D3D12, WHB (forced if the target is Wii U)
 RENDER_API ?= GL
-# Window managers: SDL2, DXGI (forced if D3D11 or D3D12 in RENDER_API)
+# Window managers: SDL2, DXGI (forced if D3D11 or D3D12 in RENDER_API), WHB (forced if the target is Wii U)
 WINDOW_API ?= SDL2
 # Audio backends: SDL2
 AUDIO_API ?= SDL2
-# Controller backends (can have multiple, space separated): SDL2
+# Controller backends (can have multiple, space separated): SDL2, WII_U (forced if the target is Wii U)
 CONTROLLER_API ?= SDL2
+
+ifeq ($(TARGET_WII_U),1)
+  RENDER_API := WHB
+  WINDOW_API := WHB
+  CONTROLLER_API := WII_U
+endif
 
 # Misc settings for EXTERNAL_DATA
 
-BASEDIR ?= res
+ifeq ($(TARGET_WII_U),1)
+  BASEDIR ?= sm64ex_res
+else
+  BASEDIR ?= res
+endif
 BASEPACK ?= base.zip
 
 # Automatic settings for PC port(s)
@@ -89,8 +102,10 @@ else
 endif
 
 ifeq ($(TARGET_WEB),0)
-  ifeq ($(HOST_OS),Windows)
-    WINDOWS_BUILD := 1
+  ifeq ($(TARGET_WII_U),0)
+    ifeq ($(HOST_OS),Windows)
+      WINDOWS_BUILD := 1
+    endif
   endif
 endif
 
@@ -110,6 +125,34 @@ endif
 
 ifneq ($(TARGET_BITS),0)
   BITS := -m$(TARGET_BITS)
+endif
+
+# Set up WUT for Wii U
+
+ifeq ($(TARGET_WII_U),1)
+  ifeq ($(strip $(DEVKITPRO)),)
+  $(error "Please set DEVKITPRO in your environment. export DEVKITPRO=<path to>/devkitpro")
+  endif
+
+  ifeq ($(strip $(DEVKITPPC)),)
+  $(error "Please set DEVKITPPC in your environment. export DEVKITPPC=<path to>/devkitPro/devkitPPC")
+  endif
+
+  include $(DEVKITPPC)/base_tools
+
+  PORTLIBS	:=	$(PORTLIBS_PATH)/wiiu $(PORTLIBS_PATH)/ppc
+
+  export PATH := $(PORTLIBS_PATH)/wiiu/bin:$(PORTLIBS_PATH)/ppc/bin:$(PATH)
+
+  WUT_ROOT	?=	$(DEVKITPRO)/wut
+
+  RPXSPECS	:=	-specs=$(WUT_ROOT)/share/wut.specs
+
+  MACHDEP	= -DESPRESSO -mcpu=750 -meabi -mhard-float
+
+  LIBDIRS	    := $(PORTLIBS) $(WUT_ROOT)
+  INCLUDE	    := $(foreach dir,$(LIBDIRS),-I$(dir)/include)
+  LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 endif
 
 # Release (version) flag defs
@@ -212,6 +255,8 @@ COMPARE := 0
 
 ifeq ($(TARGET_WEB),1)
   VERSION_CFLAGS := $(VERSION_CFLAGS) -DTARGET_WEB -DUSE_GLES
+else ifeq ($(TARGET_WII_U),1)
+  VERSION_CFLAGS := $(VERSION_CFLAGS) -DTARGET_WII_U
 endif
 
 # Check backends
@@ -264,6 +309,8 @@ BUILD_DIR_BASE := build
 
 ifeq ($(TARGET_WEB),1)
   BUILD_DIR := $(BUILD_DIR_BASE)/$(VERSION)_web
+else ifeq ($(TARGET_WII_U),1)
+  BUILD_DIR := $(BUILD_DIR_BASE)/$(VERSION)_wiiu
 else
   BUILD_DIR := $(BUILD_DIR_BASE)/$(VERSION)_pc
 endif
@@ -271,18 +318,17 @@ endif
 LIBULTRA := $(BUILD_DIR)/libultra.a
 
 ifeq ($(TARGET_WEB),1)
-EXE := $(BUILD_DIR)/$(TARGET).html
-	else
-	ifeq ($(WINDOWS_BUILD),1)
-		EXE := $(BUILD_DIR)/$(TARGET).exe
-
-		else # Linux builds/binary namer
-		ifeq ($(TARGET_RPI),1)
-			EXE := $(BUILD_DIR)/$(TARGET).arm
-		else
-			EXE := $(BUILD_DIR)/$(TARGET)
-		endif
-	endif
+  EXE := $(BUILD_DIR)/$(TARGET).html
+else ifeq ($(TARGET_WII_U),1)
+  EXE := $(BUILD_DIR)/$(TARGET).rpx
+else ifeq ($(WINDOWS_BUILD),1)
+  EXE := $(BUILD_DIR)/$(TARGET).exe
+else # Linux builds/binary namer
+  ifeq ($(TARGET_RPI),1)
+    EXE := $(BUILD_DIR)/$(TARGET).arm
+  else
+    EXE := $(BUILD_DIR)/$(TARGET)
+  endif
 endif
 
 ELF := $(BUILD_DIR)/$(TARGET).elf
@@ -299,7 +345,9 @@ LEVEL_DIRS := $(patsubst levels/%,%,$(dir $(wildcard levels/*/header.h)))
 SRC_DIRS := src src/engine src/game src/audio src/menu src/buffers actors levels bin data assets src/pc src/pc/gfx src/pc/audio src/pc/controller src/pc/fs src/pc/fs/packtypes
 ASM_DIRS :=
 
-ifeq ($(DISCORDRPC),1)
+ifeq ($(TARGET_WII_U),1)
+  SRC_DIRS += src/pc/gfx/shaders_wiiu
+else ifeq ($(DISCORDRPC),1)
   SRC_DIRS += src/pc/discord
 endif
 
@@ -471,14 +519,16 @@ ULTRA_O_FILES := $(foreach file,$(ULTRA_S_FILES),$(BUILD_DIR)/$(file:.s=.o)) \
 GODDARD_O_FILES := $(foreach file,$(GODDARD_C_FILES),$(BUILD_DIR)/$(file:.c=.o))
 
 RPC_LIBS :=
-ifeq ($(DISCORDRPC),1)
-  ifeq ($(WINDOWS_BUILD),1)
-    RPC_LIBS := lib/discord/libdiscord-rpc.dll
-  else ifeq ($(OSX_BUILD),1) 
-    # needs testing
-    RPC_LIBS := lib/discord/libdiscord-rpc.dylib
-  else
-    RPC_LIBS := lib/discord/libdiscord-rpc.so
+ifeq ($(TARGET_WII_U),0)
+  ifeq ($(DISCORDRPC),1)
+    ifeq ($(WINDOWS_BUILD),1)
+      RPC_LIBS := lib/discord/libdiscord-rpc.dll
+    else ifeq ($(OSX_BUILD),1)
+      # needs testing
+      RPC_LIBS := lib/discord/libdiscord-rpc.dylib
+    else
+      RPC_LIBS := lib/discord/libdiscord-rpc.so
+    endif
   endif
 endif
 
@@ -493,6 +543,15 @@ INCLUDE_CFLAGS := -I include -I $(BUILD_DIR) -I $(BUILD_DIR)/include -I src -I .
 ENDIAN_BITWIDTH := $(BUILD_DIR)/endian-and-bitwidth
 
 # Huge deleted N64 section was here
+
+ifeq ($(TARGET_WII_U),1)
+
+LD := $(CXX)
+CPP := powerpc-eabi-cpp -P
+OBJDUMP := powerpc-eabi-objdump
+SDLCONFIG :=
+
+else
 
 AS := $(CROSS)as
 
@@ -535,9 +594,11 @@ else # Linux & other builds
   OBJCOPY := $(CROSS)objcopy
   OBJDUMP := $(CROSS)objdump
 endif
+SDLCONFIG := $(CROSS)sdl2-config
+
+endif
 
 PYTHON := python3
-SDLCONFIG := $(CROSS)sdl2-config
 
 # configure backend flags
 
@@ -547,7 +608,7 @@ BACKEND_CFLAGS += $(foreach capi,$(CONTROLLER_API),-DCAPI_$(capi)=1)
 BACKEND_LDFLAGS :=
 SDL2_USED := 0
 
-# for now, it's either SDL+GL or DXGI+DirectX, so choose based on WAPI
+# for now, it's either SDL+GL, DXGI+DirectX or WHB, so choose based on WAPI
 ifeq ($(WINDOW_API),DXGI)
   DXBITS := `cat $(ENDIAN_BITWIDTH) | tr ' ' '\n' | tail -1`
   ifeq ($(RENDER_API),D3D11)
@@ -569,6 +630,9 @@ else ifeq ($(WINDOW_API),SDL2)
     BACKEND_LDFLAGS += -lGL
   endif
   SDL_USED := 2
+else ifeq ($(WINDOW_API),WHB)
+  BACKEND_LDFLAGS += -lSDL2 -lwut
+  SDL_USED := 2
 endif
 
 ifeq ($(AUDIO_API),SDL2)
@@ -581,10 +645,12 @@ endif
 
 # SDL can be used by different systems, so we consolidate all of that shit into this
 ifeq ($(SDL_USED),2)
-  BACKEND_CFLAGS += -DHAVE_SDL2=1 `$(SDLCONFIG) --cflags`
+  BACKEND_CFLAGS += -DHAVE_SDL2=1
   ifeq ($(WINDOWS_BUILD),1)
+    BACKEND_CFLAGS += `$(SDLCONFIG) --cflags`
     BACKEND_LDFLAGS += `$(SDLCONFIG) --static-libs` -lsetupapi -luser32 -limm32 -lole32 -loleaut32 -lshell32 -lwinmm -lversion
-  else
+  else ifeq ($(TARGET_WII_U),0)
+    BACKEND_CFLAGS += `$(SDLCONFIG) --cflags`
     BACKEND_LDFLAGS += `$(SDLCONFIG) --libs`
   endif
 endif
@@ -602,6 +668,11 @@ else
   CC_CHECK := $(CC) -fsyntax-only -fsigned-char $(BACKEND_CFLAGS) $(INCLUDE_CFLAGS) -Wall -Wextra -Wno-format-security $(VERSION_CFLAGS) $(GRUCODE_CFLAGS)
   CFLAGS := $(OPT_FLAGS) $(INCLUDE_CFLAGS) $(BACKEND_CFLAGS) $(VERSION_CFLAGS) $(GRUCODE_CFLAGS) -fno-strict-aliasing -fwrapv
 
+endif
+
+ifeq ($(TARGET_WII_U),1)
+  CC_CHECK += -ffunction-sections $(MACHDEP) -ffast-math -D__WIIU__ -D__WUT__ $(INCLUDE)
+  CFLAGS += -ffunction-sections $(MACHDEP) -ffast-math -D__WIIU__ -D__WUT__ $(INCLUDE)
 endif
 
 # Check for enhancement options
@@ -625,9 +696,11 @@ ifeq ($(NODRAWINGDISTANCE),1)
 endif
 
 # Check for Discord Rich Presence option
-ifeq ($(DISCORDRPC),1)
-CC_CHECK += -DDISCORDRPC
-CFLAGS += -DDISCORDRPC
+ifeq ($(TARGET_WII_U),0)
+  ifeq ($(DISCORDRPC),1)
+  CC_CHECK += -DDISCORDRPC
+  CFLAGS += -DDISCORDRPC
+  endif
 endif
 
 # Check for texture fix option
@@ -673,6 +746,9 @@ ASFLAGS := -I include -I $(BUILD_DIR) $(VERSION_ASFLAGS)
 
 ifeq ($(TARGET_WEB),1)
 LDFLAGS := -lm -lGL -lSDL2 -no-pie -s TOTAL_MEMORY=20MB -g4 --source-map-base http://localhost:8080/ -s "EXTRA_EXPORTED_RUNTIME_METHODS=['callMain']"
+
+else ifeq ($(TARGET_WII_U),1)
+LDFLAGS := -lm -no-pie $(BACKEND_LDFLAGS) $(MACHDEP) $(RPXSPECS) $(LIBPATHS)
 
 else ifeq ($(WINDOWS_BUILD),1)
   LDFLAGS := $(BITS) -march=$(TARGET_ARCH) -Llib -lpthread $(BACKEND_LDFLAGS) -static
@@ -851,16 +927,20 @@ $(BUILD_DIR)/src/menu/star_select.o: $(BUILD_DIR)/include/text_strings.h $(BUILD
 $(BUILD_DIR)/src/game/ingame_menu.o: $(BUILD_DIR)/include/text_strings.h $(BUILD_DIR)/bin/eu/translation_en.o $(BUILD_DIR)/bin/eu/translation_de.o $(BUILD_DIR)/bin/eu/translation_fr.o
 $(BUILD_DIR)/src/game/options_menu.o: $(BUILD_DIR)/include/text_strings.h $(BUILD_DIR)/bin/eu/translation_en.o $(BUILD_DIR)/bin/eu/translation_de.o $(BUILD_DIR)/bin/eu/translation_fr.o
 O_FILES += $(BUILD_DIR)/bin/eu/translation_en.o $(BUILD_DIR)/bin/eu/translation_de.o $(BUILD_DIR)/bin/eu/translation_fr.o
-ifeq ($(DISCORDRPC),1)
-  $(BUILD_DIR)/src/pc/discord/discordrpc.o: $(BUILD_DIR)/include/text_strings.h $(BUILD_DIR)/bin/eu/translation_en.o $(BUILD_DIR)/bin/eu/translation_de.o $(BUILD_DIR)/bin/eu/translation_fr.o
+ifeq ($(TARGET_WII_U),0)
+  ifeq ($(DISCORDRPC),1)
+    $(BUILD_DIR)/src/pc/discord/discordrpc.o: $(BUILD_DIR)/include/text_strings.h $(BUILD_DIR)/bin/eu/translation_en.o $(BUILD_DIR)/bin/eu/translation_de.o $(BUILD_DIR)/bin/eu/translation_fr.o
+  endif
 endif
 else
 $(BUILD_DIR)/src/menu/file_select.o: $(BUILD_DIR)/include/text_strings.h
 $(BUILD_DIR)/src/menu/star_select.o: $(BUILD_DIR)/include/text_strings.h
 $(BUILD_DIR)/src/game/ingame_menu.o: $(BUILD_DIR)/include/text_strings.h
 $(BUILD_DIR)/src/game/options_menu.o: $(BUILD_DIR)/include/text_strings.h
-ifeq ($(DISCORDRPC),1)
-  $(BUILD_DIR)/src/pc/discord/discordrpc.o: $(BUILD_DIR)/include/text_strings.h
+ifeq ($(TARGET_WII_U),0)
+  ifeq ($(DISCORDRPC),1)
+    $(BUILD_DIR)/src/pc/discord/discordrpc.o: $(BUILD_DIR)/include/text_strings.h
+  endif
 endif
 endif
 
@@ -1015,7 +1095,7 @@ $(BUILD_DIR)/src/audio/synthesis.o: OPT_FLAGS := -O2 -sopt,-scalaroptimize=1 -Wp
 
 # Add a target for build/eu/src/audio/*.copt to make it easier to see debug
 $(BUILD_DIR)/src/audio/%.acpp: src/audio/%.c
-	$(QEMU_IRIX) -silent -L $(IRIX_ROOT) $(IRIX_ROOT)/usr/lib/acpp $(TARGET_CFLAGS) $(INCLUDE_CFLAGS) $(VERSION_CFLAGS) $(GRUCODE_CFLAGS) -D__sgi -+ $< > $@ 
+	$(QEMU_IRIX) -silent -L $(IRIX_ROOT) $(IRIX_ROOT)/usr/lib/acpp $(TARGET_CFLAGS) $(INCLUDE_CFLAGS) $(VERSION_CFLAGS) $(GRUCODE_CFLAGS) -D__sgi -+ $< > $@
 $(BUILD_DIR)/src/audio/%.copt: $(BUILD_DIR)/src/audio/%.acpp
 	$(QEMU_IRIX) -silent -L $(IRIX_ROOT) $(IRIX_ROOT)/usr/lib/copt -signed -I=$< -CMP=$@ -cp=i -scalaroptimize=1
 endif
@@ -1043,9 +1123,19 @@ $(BUILD_DIR)/%.o: %.s
 	$(AS) $(ASFLAGS) -MD $(BUILD_DIR)/$*.d -o $@ $<
 
 
-
+ifeq ($(TARGET_WII_U),1)
+$(ELF):  $(O_FILES) $(MIO0_FILES:.mio0=.o) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(BUILD_DIR)/$(RPC_LIBS)
+	$(LD) -L $(BUILD_DIR) -o $@ $(O_FILES) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(LDFLAGS)
+$(EXE): $(ELF)
+	@cp $< $*.strip.elf
+	$(SILENTCMD)$(STRIP) -g $*.strip.elf $(ERROR_FILTER)
+	$(SILENTCMD)elf2rpl $*.strip.elf $@ $(ERROR_FILTER)
+	@rm $*.strip.elf
+	@echo built ... $(notdir $@)
+else
 $(EXE): $(O_FILES) $(MIO0_FILES:.mio0=.o) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(BUILD_DIR)/$(RPC_LIBS)
 	$(LD) -L $(BUILD_DIR) -o $@ $(O_FILES) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(LDFLAGS)
+endif
 
 .PHONY: all clean distclean default diff test load libultra res
 .PRECIOUS: $(BUILD_DIR)/bin/%.elf $(SOUND_BIN_DIR)/%.ctl $(SOUND_BIN_DIR)/%.tbl $(SOUND_SAMPLE_TABLES) $(SOUND_BIN_DIR)/%.s $(BUILD_DIR)/%

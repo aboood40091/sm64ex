@@ -7,6 +7,7 @@
 #include "controller_recorded_tas.h"
 #include "controller_keyboard.h"
 #include "controller_sdl.h"
+#include "controller_wiiu.h"
 
 // Analog camera movement by Pathétique (github.com/vrmiguel), y0shin and Mors
 // Contribute or communicate bugs at github.com/vrmiguel/sm64-analog-camera
@@ -18,8 +19,12 @@ int c_righty;
 
 static struct ControllerAPI *controller_implementations[] = {
     &controller_recorded_tas,
+#ifdef TARGET_WII_U
+    &controller_wiiu,
+#else
     &controller_sdl,
     &controller_keyboard,
+#endif
 };
 
 s32 osContInit(UNUSED OSMesgQueue *mq, u8 *controllerBits, UNUSED OSContStatus *status) {

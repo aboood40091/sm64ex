@@ -85,7 +85,7 @@ static const u8 optsVideoStr[][32] = {
 };
 
 static const u8 optsAudioStr[][32] = {
-    { TEXT_OPT_MVOLUME },    
+    { TEXT_OPT_MVOLUME },
     { TEXT_OPT_MUSVOLUME },
     { TEXT_OPT_SFXVOLUME },
     { TEXT_OPT_ENVVOLUME },
@@ -121,7 +121,8 @@ static const u8 bindStr[][32] = {
     { TEXT_BIND_LEFT },
     { TEXT_BIND_RIGHT },
     { TEXT_OPT_DEADZONE },
-    { TEXT_OPT_RUMBLE }
+    { TEXT_OPT_RUMBLE },
+    { TEXT_OPT_N64FACE }
 };
 
 static const u8 *filterChoices[] = {
@@ -231,6 +232,9 @@ static struct Option optsCamera[] = {
 #endif
 
 static struct Option optsControls[] = {
+#ifdef TARGET_WII_U
+    DEF_OPT_TOGGLE( bindStr[18], &configN64FaceButtons ),
+#else
     DEF_OPT_BIND( bindStr[ 2], configKeyA ),
     DEF_OPT_BIND( bindStr[ 3], configKeyB ),
     DEF_OPT_BIND( bindStr[ 4], configKeyStart ),
@@ -249,11 +253,14 @@ static struct Option optsControls[] = {
     // way, the player can't accidentally lock themselves out of using the stick
     DEF_OPT_SCROLL( bindStr[16], &configStickDeadzone, 0, 100, 1 ),
     DEF_OPT_SCROLL( bindStr[17], &configRumbleStrength, 0, 100, 1)
+#endif
 };
 
 static struct Option optsVideo[] = {
+#ifndef TARGET_WII_U
     DEF_OPT_TOGGLE( optsVideoStr[0], &configWindow.fullscreen ),
     DEF_OPT_CHOICE( optsVideoStr[5], &configWindow.vsync, vsyncChoices ),
+#endif
     DEF_OPT_CHOICE( optsVideoStr[1], &configFiltering, filterChoices ),
     DEF_OPT_TOGGLE( optsVideoStr[7], &configHUD ),
     DEF_OPT_BUTTON( optsVideoStr[4], optvideo_reset_window ),
@@ -504,7 +511,7 @@ void optmenu_toggle(void) {
 
         currentMenu = &menuMain;
         optmenu_open = 1;
-        
+
         /* Resets l_counter to 0 every time the options menu is open */
         l_counter = 0;
     } else {
@@ -536,9 +543,9 @@ void optmenu_check_buttons(void) {
 
     if (gPlayer1Controller->buttonPressed & R_TRIG)
         optmenu_toggle();
-    
+
     /* Enables cheats if the user press the L trigger 3 times while in the options menu. Also plays a sound. */
-    
+
     if ((gPlayer1Controller->buttonPressed & L_TRIG) && !Cheats.EnableCheats) {
         if (l_counter == 2) {
                 Cheats.EnableCheats = true;
@@ -548,7 +555,7 @@ void optmenu_check_buttons(void) {
             l_counter++;
         }
     }
-    
+
     if (!optmenu_open) return;
 
     u8 allowInput = 0;
