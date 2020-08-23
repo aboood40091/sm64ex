@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
+#include <string.h>
 
 #include <ultra64.h>
 
@@ -12,13 +13,6 @@
 
 #include "controller_api.h"
 #include "../configfile.h"
-
-uint32_t vpad_jump_buttons = VPAD_BUTTON_B | VPAD_BUTTON_A;
-uint32_t classic_jump_buttons = WPAD_CLASSIC_BUTTON_B | WPAD_CLASSIC_BUTTON_A;
-uint32_t pro_jump_buttons = WPAD_PRO_BUTTON_B | WPAD_PRO_BUTTON_A;
-uint32_t vpad_punch_buttons = VPAD_BUTTON_Y | VPAD_BUTTON_X;
-uint32_t classic_punch_buttons = WPAD_CLASSIC_BUTTON_Y | WPAD_CLASSIC_BUTTON_X;
-uint32_t pro_punch_buttons = WPAD_PRO_BUTTON_Y | WPAD_PRO_BUTTON_X;
 
 #ifdef BETTERCAMERA
 int mouse_x = 0;
@@ -34,10 +28,6 @@ struct WiiUKeymap {
     uint32_t proButton;
 };
 
-typedef struct Vec2D {
-    float x, y;
-} Vec2D;
-
 // Button shortcuts
 #define VB(btn) VPAD_BUTTON_##btn
 #define CB(btn) WPAD_CLASSIC_BUTTON_##btn
@@ -52,13 +42,17 @@ struct WiiUKeymap map[] = {
     { A_BUTTON, VB(A) | VB(X), CB(A) | CB(X), PB(A) | PB(X) },
     { START_BUTTON, VB(PLUS), CB(PLUS), PB(PLUS) },
     { Z_TRIG, VB(L) | VB(ZL), CB(L) | CB(ZL), PT(L) | PT(ZL) },
+    { L_TRIG, VB(MINUS), CB(MINUS), PB(MINUS) },
     { R_TRIG, VB(R) | VB(ZR), CB(R) | CB(ZR), PT(R) | PT(ZR) },
     { U_CBUTTONS, SE(UP) },
     { D_CBUTTONS, SE(DOWN) },
     { L_CBUTTONS, SE(LEFT) },
     { R_CBUTTONS, SE(RIGHT) }
 };
+
 size_t num_buttons = sizeof(map) / sizeof(map[0]);
+KPADStatus last_kpad = {0};
+int kpad_timeout = 10;
 
 static void controller_wiiu_init(void) {
     VPADInit();
@@ -72,15 +66,16 @@ static void controller_wiiu_init(void) {
     }
 }
 
-static Vec2D read_vpad(OSContPad *pad) {
+static void read_vpad(OSContPad *pad) {
     VPADStatus status;
     VPADReadError err;
     uint32_t v;
 
     VPADRead(VPAD_CHAN_0, &status, 1, &err);
 
-    if (err != 0)
-        return (Vec2D) { 0, 0 };
+    if (err != 0) {
+        return;
+    }
 
     v = status.hold;
 
@@ -90,35 +85,55 @@ static Vec2D read_vpad(OSContPad *pad) {
         }
     }
 
-    if (v & VPAD_BUTTON_LEFT) pad->stick_x = -128;
-    if (v & VPAD_BUTTON_RIGHT) pad->stick_x = 127;
-    if (v & VPAD_BUTTON_DOWN) pad->stick_y = -128;
-    if (v & VPAD_BUTTON_UP) pad->stick_y = 127;
+    if (v & VPAD_BUTTON_LEFT) pad->stick_x = -80;
+    if (v & VPAD_BUTTON_RIGHT) pad->stick_x = 80;
+    if (v & VPAD_BUTTON_DOWN) pad->stick_y = -80;
+    if (v & VPAD_BUTTON_UP) pad->stick_y = 80;
 
-    return (Vec2D) { status.leftStick.x, status.leftStick.y };
+    if (status.leftStick.x != 0) {
+        pad->stick_x = (s8) round(status.leftStick.x * 80);
+    }
+    if (status.leftStick.y != 0) {
+        pad->stick_y = (s8) round(status.leftStick.y * 80);
+    }
 }
 
-static Vec2D read_wpad(OSContPad* pad) {
+static void read_wpad(OSContPad* pad) {
     // Disconnect any extra controllers
+    WPADExtensionType ext;
     for (int i = 1; i < 4; i++) {
-        WPADExtensionType ext;
         int res = WPADProbe(i, &ext);
         if (res == 0) {
             WPADDisconnect(i);
         }
     }
 
+    int res = WPADProbe(WPAD_CHAN_0, &ext);
+    if (res != 0) {
+        return;
+    }
+
     KPADStatus status;
     int err;
     int read = KPADReadEx(WPAD_CHAN_0, &status, 1, &err);
-    if (read == 0)
-        return (Vec2D) { 0, 0 };
+    if (read == 0) {
+        kpad_timeout--;
+
+        if (kpad_timeout == 0) {
+            WPADDisconnect(WPAD_CHAN_0);
+            memset(&last_kpad, 0, sizeof(KPADStatus));
+            return;
+        }
+        status = last_kpad;
+    } else {
+        kpad_timeout = 10;
+        last_kpad = status;
+    }
 
     uint32_t wm = status.hold;
     KPADVec2D stick;
-    bool disconnect = false;
-    if (status.hold & WPAD_BUTTON_MINUS)
-        disconnect = true;
+
+    bool gamepadStickNotSet = pad->stick_x == 0 && pad->stick_y == 0;
 
     if (status.extensionType == WPAD_EXT_NUNCHUK || status.extensionType == WPAD_EXT_MPLUS_NUNCHUK) {
         uint32_t ext = status.nunchuck.hold;
@@ -141,13 +156,10 @@ static Vec2D read_wpad(OSContPad* pad) {
                 pad->button |= map[i].n64Button;
             }
         }
-        if (ext & WPAD_CLASSIC_BUTTON_LEFT) pad->stick_x = -128;
-        if (ext & WPAD_CLASSIC_BUTTON_RIGHT) pad->stick_x = 127;
-        if (ext & WPAD_CLASSIC_BUTTON_DOWN) pad->stick_y = -128;
-        if (ext & WPAD_CLASSIC_BUTTON_UP) pad->stick_y = 127;
-        if (ext & WPAD_CLASSIC_BUTTON_MINUS) {
-            disconnect = true;
-        }
+        if (ext & WPAD_CLASSIC_BUTTON_LEFT) pad->stick_x = -80;
+        if (ext & WPAD_CLASSIC_BUTTON_RIGHT) pad->stick_x = 80;
+        if (ext & WPAD_CLASSIC_BUTTON_DOWN) pad->stick_y = -80;
+        if (ext & WPAD_CLASSIC_BUTTON_UP) pad->stick_y = 80;
     } else if (status.extensionType == WPAD_EXT_PRO_CONTROLLER) {
         uint32_t ext = status.pro.hold;
         stick = status.pro.leftStick;
@@ -156,42 +168,29 @@ static Vec2D read_wpad(OSContPad* pad) {
                 pad->button |= map[i].n64Button;
             }
         }
-        if (ext & WPAD_PRO_BUTTON_LEFT) pad->stick_x = -128;
-        if (ext & WPAD_PRO_BUTTON_RIGHT) pad->stick_x = 127;
-        if (ext & WPAD_PRO_BUTTON_DOWN) pad->stick_y = -128;
-        if (ext & WPAD_PRO_BUTTON_UP) pad->stick_y = 127;
-        if (ext & WPAD_PRO_BUTTON_MINUS) {
-            disconnect = true;
-        }
+        if (ext & WPAD_PRO_BUTTON_LEFT) pad->stick_x = -80;
+        if (ext & WPAD_PRO_BUTTON_RIGHT) pad->stick_x = 80;
+        if (ext & WPAD_PRO_BUTTON_DOWN) pad->stick_y = -80;
+        if (ext & WPAD_PRO_BUTTON_UP) pad->stick_y = 80;
     }
 
-    if (disconnect)
-        WPADDisconnect(WPAD_CHAN_0);
-
-    return (Vec2D) { stick.x, stick.y };
+    // If we didn't already get stick input from the gamepad
+    if (gamepadStickNotSet) {
+        if (stick.x != 0) {
+            pad->stick_x = (s8) round(stick.x * 80);
+        }
+        if (stick.y != 0) {
+            pad->stick_y = (s8) round(stick.y * 80);
+        }
+    }
 }
 
 static void controller_wiiu_read(OSContPad* pad) {
     pad->stick_x = 0;
     pad->stick_y = 0;
 
-    Vec2D vstick = read_vpad(pad);
-    Vec2D wstick = read_wpad(pad);
-
-    Vec2D stick = wstick;
-    if (vstick.x != 0 || vstick.y != 0) {
-        stick = vstick;
-    }
-
-    if (stick.x < 0)
-        pad->stick_x = (s8) (stick.x * 128);
-    else if (stick.x > 0)
-        pad->stick_x = (s8) (stick.x * 127);
-
-    if (stick.y < 0)
-        pad->stick_y = (s8) (stick.y * 128);
-    else if (stick.y > 0)
-        pad->stick_y = (s8) (stick.y * 127);
+    read_vpad(pad);
+    read_wpad(pad);
 }
 
 static u32 controller_wiiu_rawkey(void) {
