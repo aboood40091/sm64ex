@@ -13,6 +13,6 @@
 /*u32 __osProbeTLB(void *);
 u32 __osDisableInt(void);
 void __osRestoreInt(u32);*/
-OSThread *__osGetCurrFaultedThread(void);
+N64_OSThread *__osGetCurrFaultedThread(void);
 
 #endif

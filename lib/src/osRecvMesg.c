@@ -2,7 +2,7 @@
 
 s32 osRecvMesg(OSMesgQueue *mq, OSMesg *msg, s32 flag) {
     register u32 int_disabled;
-    register OSThread *thread;
+    register N64_OSThread *thread;
     int_disabled = __osDisableInt();
 
     while (!mq->validCount) {

@@ -89,7 +89,7 @@ void func_802F4B08() {
     OSEventMessageStruct_0 *sp2c;
     OSMesgQueue *sp28;
     u32 sp24;
-    register OSThread *s0;
+    register N64_OSThread *s0;
     //  addiu $sp, $sp, -0x30
     //  lui   $t6, %hi(D_80363830) # $t6, 0x8033
     //  addiu $t6, %lo(D_80363830) # addiu $t6, $t6, 0x36d0

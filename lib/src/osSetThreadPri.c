@@ -1,6 +1,6 @@
 #include "libultra_internal.h"
 
-void osSetThreadPri(OSThread *thread, OSPri pri) {
+void osSetThreadPri(N64_OSThread *thread, OSPri pri) {
     register u32 int_disabled = __osDisableInt();
     if (thread == NULL) {
         thread = D_803348A0;
