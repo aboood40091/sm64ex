@@ -15,7 +15,7 @@ s32 D_80334A38 = 0;
 
 extern u8 D_80365E40[0x1000];
 
-OSThread gInterruptedThread;
+N64_OSThread gInterruptedThread;
 
 void u32_to_string(u32 i, u8 *str) {
     str[0] = (i >> 0x18) & 0xff;

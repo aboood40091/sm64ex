@@ -56,9 +56,9 @@ typedef void *	OSMesg;
  * Structure for message queue
  */
 typedef struct OSMesgQueue_s {
-	OSThread	*mtqueue;	/* Queue to store threads blocked
+	N64_OSThread	*mtqueue;	/* Queue to store threads blocked
 					   on empty mailboxes (receive) */
-	OSThread	*fullqueue;	/* Queue to store threads blocked
+	N64_OSThread	*fullqueue;	/* Queue to store threads blocked
 					   on full mailboxes (send) */
 	s32		validCount;	/* Contains number of valid message */
 	s32		first;		/* Points to first valid message */

@@ -1,6 +1,11 @@
 #ifndef _ULTRA64_THREAD_H_
 #define _ULTRA64_THREAD_H_
 #include "ultratypes.h"
+
+#ifdef __WIIU__
+#include <coreinit/thread.h>
+#endif
+
 /* Recommended priorities for system threads */
 #define OS_PRIORITY_MAX      255
 #define OS_PRIORITY_VIMGR    254
@@ -47,29 +52,37 @@ typedef struct
     u64 time;
 } __OSThreadprofile_s;
 
-typedef struct OSThread_s
+typedef struct N64_OSThread_s
 {
-    /*0x00*/ struct OSThread_s *next;
+    /*0x00*/ struct N64_OSThread_s *next;
     /*0x04*/ OSPri priority;
-    /*0x08*/ struct OSThread_s **queue;
-    /*0x0C*/ struct OSThread_s *tlnext;
+    /*0x08*/ struct N64_OSThread_s **queue;
+    /*0x0C*/ struct N64_OSThread_s *tlnext;
+#ifndef __WIIU__
     /*0x10*/ u16 state;
     /*0x12*/ u16 flags;
     /*0x14*/ OSId id;
     /*0x18*/ int fp;
     /*0x1C*/ __OSThreadprofile_s *thprof;
     /*0x20*/ __OSThreadContext context;
-} OSThread;
-
+#else
+    /*0x10*/ OSThread wiiUThread; // Make sure to be 8 byte aligned
+    u8 *stack; // Make this right behind wiiUThread so it's alignment is good, too
+    void (*entry)(void *);
+    void *arg;
+    OSPri pri;
+#endif
+} N64_OSThread;
+WUT_CHECK_OFFSET(N64_OSThread, 0x10, wiiUThread); // Make really sure wiiUThread is 8 byte aligned
 
 /* Functions */
 
-void osCreateThread(OSThread *thread, OSId id, void (*entry)(void *),
+void osCreateThread(N64_OSThread *thread, OSId id, void (*entry)(void *),
     void *arg, void *sp, OSPri pri);
-OSId osGetThreadId(OSThread *thread);
-OSPri osGetThreadPri(OSThread *thread);
-void osSetThreadPri(OSThread *thread, OSPri pri);
-void osStartThread(OSThread *thread);
-void osStopThread(OSThread *thread);
+OSId osGetThreadId(N64_OSThread *thread);
+OSPri osGetThreadPri(N64_OSThread *thread);
+void osSetThreadPri(N64_OSThread *thread, OSPri pri);
+void osStartThread(N64_OSThread *thread);
+void osStopThread(N64_OSThread *thread);
 
 #endif

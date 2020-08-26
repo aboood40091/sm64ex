@@ -19,11 +19,11 @@ struct StructSH8031D9B0 {
     s16 unk0E;
 };
 
-extern OSThread D_80339210;
-extern OSThread gIdleThread;
-extern OSThread gMainThread;
-extern OSThread gGameLoopThread;
-extern OSThread gSoundThread;
+extern N64_OSThread D_80339210;
+extern N64_OSThread gIdleThread;
+extern N64_OSThread gMainThread;
+extern N64_OSThread gGameLoopThread;
+extern N64_OSThread gSoundThread;
 
 extern OSMesgQueue gPIMesgQueue;
 extern OSMesgQueue gIntrMesgQueue;
@@ -40,7 +40,7 @@ extern OSMesgQueue gDmaMesgQueue;
 extern OSMesgQueue gSIEventMesgQueue;
 
 #ifdef VERSION_SH
-extern OSThread gRumblePakThread;
+extern N64_OSThread gRumblePakThread;
 extern OSMesg gRumblePakSchedulerMesgBuf[1];
 extern OSMesg gRumbleThreadVIMesgBuf[1];
 extern OSMesgQueue gRumblePakSchedulerMesgQueue;

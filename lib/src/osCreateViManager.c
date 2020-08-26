@@ -3,7 +3,7 @@
 #define OS_VI_MANAGER_MESSAGE_BUFF_SIZE 5
 
 static OSMgrArgs viMgrMainArgs = { 0 };
-static OSThread viMgrThread;
+static N64_OSThread viMgrThread;
 static u32 viMgrStack[0x400]; // stack bottom
 static OSMesgQueue __osViMesgQueue;
 static OSMesg viMgrMesgBuff[OS_VI_MANAGER_MESSAGE_BUFF_SIZE];

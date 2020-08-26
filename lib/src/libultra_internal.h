@@ -11,11 +11,11 @@
 #ifdef AVOID_UB
 typedef struct OSThread_ListHead_s
 {
-    /*0x00*/ struct OSThread_s *next;
+    /*0x00*/ struct N64_OSThread_s *next;
     /*0x04*/ OSPri priority;
-    /*0x08*/ struct OSThread_s *queue;
-    /*0x0C*/ struct OSThread_s *tlnext;
-    /*0x10*/ struct OSThread_s *unk10;
+    /*0x08*/ struct N64_OSThread_s *queue;
+    /*0x0C*/ struct N64_OSThread_s *tlnext;
+    /*0x10*/ struct N64_OSThread_s *unk10;
     /*0x14*/ u32 unk14;
 } OSThread_ListHead;
 
@@ -35,11 +35,11 @@ extern u32 D_80365E00[16];
 #define D_80365E3C D_80365E00[15]
 #else
 // Original OSThread_ListHead definitions
-extern OSThread *D_80334890;
+extern N64_OSThread *D_80334890;
 extern u32 D_80334894;
-extern OSThread *D_80334898;
-extern OSThread *D_8033489C;
-extern OSThread *D_803348A0;
+extern N64_OSThread *D_80334898;
+extern N64_OSThread *D_8033489C;
+extern N64_OSThread *D_803348A0;
 
 // Original EEPROM definitions
 extern u32 D_80365E00[15];
@@ -48,7 +48,7 @@ extern u32 D_80365E3C;
 
 typedef struct {
     u32 initialized; // probably something like initialized?
-    OSThread *mgrThread;
+    N64_OSThread *mgrThread;
     OSMesgQueue *unk08;
     OSMesgQueue *unk0c;
     OSMesgQueue *unk10;
@@ -62,10 +62,10 @@ typedef struct {
 
 s32 __osDisableInt();
 void __osRestoreInt(s32);
-void __osEnqueueAndYield(OSThread **);
-void __osDequeueThread(OSThread **, OSThread *);
-void __osEnqueueThread(OSThread **, OSThread *);
-OSThread *__osPopThread(OSThread **);
+void __osEnqueueAndYield(N64_OSThread **);
+void __osDequeueThread(N64_OSThread **, N64_OSThread *);
+void __osEnqueueThread(N64_OSThread **, N64_OSThread *);
+N64_OSThread *__osPopThread(N64_OSThread **);
 s32 __osSiRawStartDma(s32, void *);
 void __osSiCreateAccessQueue();
 void __osSiGetAccess();

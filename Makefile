@@ -471,6 +471,8 @@ GENERATED_C_FILES := $(BUILD_DIR)/assets/mario_anim_data.c $(BUILD_DIR)/assets/d
     osAiGetLength.c \
     osAiSetFrequency.c \
     osAiSetNextBuffer.c \
+    osGetThreadPri.c \
+    osSetThreadPri.c \
     __osViInit.c \
     __osSyncPutChars.c \
     __osAtomicDec.c \

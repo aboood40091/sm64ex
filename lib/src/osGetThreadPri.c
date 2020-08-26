@@ -1,6 +1,6 @@
 #include "libultra_internal.h"
 
-OSPri osGetThreadPri(OSThread *thread) {
+OSPri osGetThreadPri(N64_OSThread *thread) {
     if (thread == NULL) {
         thread = D_803348A0;
     }

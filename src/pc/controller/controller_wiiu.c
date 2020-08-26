@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <ultra64.h>
 
@@ -21,6 +22,8 @@ int mouse_y = 0;
 extern u8 newcam_mouse;
 #endif
 
+extern void WPADControlMotor(int controller, int onOff);
+
 struct WiiUKeymap {
     uint32_t n64Button;
     uint32_t vpadButton;
@@ -36,6 +39,9 @@ struct WiiUKeymap {
 
 // Stick emulation
 #define SE(dir) VPAD_STICK_R_EMULATION_##dir, WPAD_CLASSIC_STICK_R_EMULATION_##dir, WPAD_PRO_STICK_R_EMULATION_##dir
+
+// Rumble stack size
+#define RUMBLE_STACK_SIZE 4096
 
 struct WiiUKeymap map[] = {
     { B_BUTTON, VB(B) | VB(Y), CB(B) | CB(Y), PB(B) | PB(Y) },
@@ -54,6 +60,13 @@ size_t num_buttons = sizeof(map) / sizeof(map[0]);
 KPADStatus last_kpad = {0};
 int kpad_timeout = 10;
 
+static N64_OSThread rumbleThread;
+static u8 *rumbleThreadStack = NULL;
+static u8 rumblePattern[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+static bool rumbleActive;
+static bool rumbleStop = false;
+static f32 rumbleLength;
+
 static void controller_wiiu_init(void) {
     VPADInit();
     KPADInit();
@@ -64,6 +77,8 @@ static void controller_wiiu_init(void) {
         map[0] = (struct WiiUKeymap) { B_BUTTON, VB(Y) | VB(X), CB(Y) | CB(X), PB(Y) | PB(X) };
         map[1] = (struct WiiUKeymap) { A_BUTTON, VB(B) | VB(A), CB(B) | CB(A), PB(B) | PB(A) };
     }
+    
+    rumbleThreadStack = malloc(RUMBLE_STACK_SIZE);
 }
 
 static void read_vpad(OSContPad *pad) {
@@ -198,6 +213,47 @@ static u32 controller_wiiu_rawkey(void) {
 }
 
 static void controller_wiiu_shutdown(void) {
+    free(rumbleThreadStack);
+}
+
+static void rumbleThreadMain(void *arg) {
+    int length = (int)(rumbleLength * 1000.0f); // Seconds to milliseconds
+
+    // We lazily fill the DRC rumble queue to maximum. This has room for improvement but we cancel the queue later on, so it works
+    for (int i = 0; i < 5; i++)
+        VPADControlMotor(VPAD_CHAN_0, rumblePattern, 120);
+
+    // Start rumble on other controllers
+    for (int i = 0; i < 4; i++)
+        WPADControlMotor(i, 1);
+
+    // TODO: Make this more accurate while still beeing able to handle stop requests
+    while (length-- > 0)
+       usleep(1);
+
+    // Stop rumble
+    for (int i = 0; i < 4; i++)
+        WPADControlMotor(i, 0);
+
+    VPADStopMotor(VPAD_CHAN_0);
+	rumbleActive = rumbleStop = false;
+}
+
+// Right now we support one rumble request only. A rumble request while rumbling will be ignored!
+static void controller_wiiu_rumble_play(f32 strength, f32 length) {
+    if (rumbleActive)
+        return;
+
+    rumbleActive = true;
+    rumbleLength = length;
+    rumbleStop = false;
+    osCreateThread(&rumbleThread, 3, rumbleThreadMain, NULL, rumbleThreadStack + RUMBLE_STACK_SIZE, 10);
+    osStartThread(&rumbleThread);
+}
+
+static void controller_wiiu_rumble_stop(void) {
+    if (rumbleActive)
+        rumbleStop = true;
 }
 
 struct ControllerAPI controller_wiiu = {
@@ -205,8 +261,8 @@ struct ControllerAPI controller_wiiu = {
     controller_wiiu_init,
     controller_wiiu_read,
     controller_wiiu_rawkey,
-    NULL, // no rumble_play
-    NULL, // no rumble_stop
+    controller_wiiu_rumble_play,
+    controller_wiiu_rumble_stop,
     NULL, // no rebinding
     controller_wiiu_shutdown
 };

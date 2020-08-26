@@ -26,11 +26,11 @@
 #define MESG_START_GFX_SPTASK 103
 #define MESG_NMI_REQUEST 104
 
-OSThread D_80339210; // unused?
-OSThread gIdleThread;
-OSThread gMainThread;
-OSThread gGameLoopThread;
-OSThread gSoundThread;
+N64_OSThread D_80339210; // unused?
+N64_OSThread gIdleThread;
+N64_OSThread gMainThread;
+N64_OSThread gGameLoopThread;
+N64_OSThread gSoundThread;
 
 OSIoMesg gDmaIoMesg;
 OSMesg D_80339BEC;
@@ -46,7 +46,7 @@ OSMesg gIntrMesgBuf[16];
 OSMesg gUnknownMesgBuf[16];
 
 #ifdef VERSION_SH
-OSThread gRumblePakThread;
+N64_OSThread gRumblePakThread;
 OSMesgQueue gRumblePakSchedulerMesgQueue;
 OSMesgQueue gRumbleThreadVIMesgQueue;
 OSMesg gRumblePakSchedulerMesgBuf[1];
@@ -148,7 +148,7 @@ void alloc_pool(void) {
     gEffectsMemoryPool = mem_pool_init(0x4000, MEMORY_POOL_LEFT);
 }
 
-void create_thread(OSThread *thread, OSId id, void (*entry)(void *), void *arg, void *sp, OSPri pri) {
+void create_thread(N64_OSThread *thread, OSId id, void (*entry)(void *), void *arg, void *sp, OSPri pri) {
     thread->next = NULL;
     thread->queue = NULL;
     osCreateThread(thread, id, entry, arg, sp, pri);

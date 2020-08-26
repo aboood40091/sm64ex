@@ -1,6 +1,6 @@
 #include "libultra_internal.h"
 
-void osStartThread(OSThread *thread) {
+void osStartThread(N64_OSThread *thread) {
     register u32 int_disabled;
     register uintptr_t state;
     int_disabled = __osDisableInt();
@@ -22,7 +22,7 @@ void osStartThread(OSThread *thread) {
             thread->state = OS_STATE_WAITING;
             __osEnqueueThread(thread->queue, thread);
             state = (uintptr_t) __osPopThread(thread->queue);
-            __osEnqueueThread(&D_80334898, (OSThread *) state);
+            __osEnqueueThread(&D_80334898, (N64_OSThread *) state);
         }
     }
     if (D_803348A0 == NULL) {

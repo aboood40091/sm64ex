@@ -162,3 +162,82 @@ s32 osEepromLongWrite(UNUSED OSMesgQueue *mq, u8 address, u8 *buffer, int nbytes
 #endif
     return ret;
 }
+
+#ifdef __WIIU__
+#include <coreinit/thread.h>
+
+static int wThreadMain(int argc, const char **argv) {
+    N64_OSThread *thread = (N64_OSThread *)argv;
+    thread->entry(thread->arg);
+    return 0;
+}
+
+/* 
+ * Priority mapping:
+ * Wii U: 0 = highest priority, 31 = lowest, 16 = default
+ * SM64: 127 = highest, 0 = lowest, game (default) = 10, audio = 20
+ * For simplicity we support prios 0 - 26 only for now
+ */
+int wMapThreadPriority(OSPri pri) {
+    return 32 - (pri + 6);
+}
+
+#endif
+
+void osCreateThread(N64_OSThread *thread, OSId id, void (*entry)(void *), void *arg, void *sp, OSPri pri) {
+#ifdef __WIIU__
+    // Get stack size - TODO: Is there no more efficient way?
+    char *stack = (char *)sp;
+    size_t size = 0;
+    do {
+        size += 1;
+        stack -= 1;
+    } while(malloc_usable_size(stack) == 0);
+    stack -= size; // The stack might be bigger than defined thanks to alignment, so we use this instead of sp.
+
+    OSCreateThread(&(thread->wiiUThread), wThreadMain, 1, (char *)thread, stack, size, wMapThreadPriority(pri), OS_THREAD_ATTRIB_DETACHED | OS_THREAD_ATTRIB_AFFINITY_CPU1);
+    thread->entry = entry;
+    thread->arg = arg;
+    thread->pri = pri;
+    char name[32];
+    sprintf(name, "Super Mario Thread %d", id);
+    OSSetThreadName(&(thread->wiiUThread), name);
+#endif
+}
+
+void osDestroyThread(N64_OSThread *thread) {
+#ifdef __WIIU__
+    OSCancelThread(&(thread->wiiUThread));
+#endif
+}
+
+void osStartThread(N64_OSThread *thread) {
+#ifdef __WIIU__
+WHBLogPrint("osStartThread");
+    OSResumeThread(&(thread->wiiUThread));
+#endif
+}
+
+void osStopThread(N64_OSThread *thread) {
+#ifdef __WIIU__
+    OSCancelThread(&(thread->wiiUThread));
+#endif
+}
+
+
+OSPri osGetThreadPri(N64_OSThread *thread) {
+#ifdef __WIIU__
+    return &(thread->pri);
+#else
+    // STUB
+    return 10;
+#endif
+}
+
+void osSetThreadPri(N64_OSThread *thread, OSPri pri) {
+#ifdef __WIIU__
+    if (OSSetThreadPriority(&(thread->wiiUThread), wMapThreadPriority(pri)))
+        thread->pri = pri;
+#endif
+}
+

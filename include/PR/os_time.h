@@ -16,7 +16,9 @@ typedef struct OSTimer_str
     OSMesg *msg;
 } OSTimer;
 
+#ifndef __WIIU__
 typedef u64 OSTime;
+#endif
 
 /* Functions */
 
