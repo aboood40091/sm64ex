@@ -23,6 +23,8 @@
 static bool is_running;
 uint32_t window_height = 0;
 
+extern void KPADShutdown();
+
 void gfx_whb_window_proc_ui_save_callback(void) {
     OSSavesDone_ReadyToRelease();
 }
@@ -36,6 +38,7 @@ uint32_t gfx_whb_window_proc_ui_exit_callback(UNUSED void* data) {
     whb_free_vbo();
     whb_free();
 
+    KPADShutdown();
     AXQuit();
     WHBGfxShutdown();
 
