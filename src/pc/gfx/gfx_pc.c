@@ -167,7 +167,11 @@ struct GfxDimensions gfx_current_dimensions;
 
 static bool dropped_frame;
 
+#ifdef TARGET_WII_U
+static float buf_vbo[MAX_BUFFERED * (28 * 3)]; // 3 vertices in a triangle and 28 floats per vtx
+#else
 static float buf_vbo[MAX_BUFFERED * (26 * 3)]; // 3 vertices in a triangle and 26 floats per vtx
+#endif
 static size_t buf_vbo_len;
 static size_t buf_vbo_num_tris;
 
@@ -183,18 +187,20 @@ static inline size_t string_hash(const uint8_t *str) {
 }
 #endif
 
+/*
 static unsigned long get_time(void) {
     return 0;
 }
+*/
 
 static void gfx_flush(void) {
     if (buf_vbo_len > 0) {
         int num = buf_vbo_num_tris;
-        unsigned long t0 = get_time();
+        //unsigned long t0 = get_time();
         gfx_rapi->draw_triangles(buf_vbo, buf_vbo_len, buf_vbo_num_tris);
         buf_vbo_len = 0;
         buf_vbo_num_tris = 0;
-        unsigned long t1 = get_time();
+        //unsigned long t1 = get_time();
         /*if (t1 - t0 > 1000) {
             printf("f: %d %d\n", num, (int)(t1 - t0));
         }*/
@@ -607,7 +613,7 @@ static void import_texture(int tile) {
     load_texture(texname);
 #else
     // the texture data is actual texture data
-    int t0 = get_time();
+    //int t0 = get_time();
     if (fmt == G_IM_FMT_RGBA) {
         if (siz == G_IM_SIZ_32b) {
             import_texture_rgba32(tile);
@@ -646,7 +652,7 @@ static void import_texture(int tile) {
     } else {
         sys_fatal("unsupported texture format: %u", fmt);
     }
-    int t1 = get_time();
+    //int t1 = get_time();
     //printf("Time diff: %d\n", t1 - t0);
 #endif
 }
@@ -1010,6 +1016,11 @@ static void gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx) {
             }
             buf_vbo[buf_vbo_len++] = u / tex_width;
             buf_vbo[buf_vbo_len++] = v / tex_height;
+#ifdef TARGET_WII_U
+            // Padding for faster GPU reading
+            buf_vbo[buf_vbo_len++] = 0.0f;
+            buf_vbo[buf_vbo_len++] = 0.0f;
+#endif
         }
 
         if (use_fog) {
@@ -1793,11 +1804,11 @@ void gfx_run(Gfx *commands) {
     }
     dropped_frame = false;
 
-    double t0 = gfx_wapi->get_time();
+    //double t0 = gfx_wapi->get_time();
     gfx_rapi->start_frame();
     gfx_run_dl(commands);
     gfx_flush();
-    double t1 = gfx_wapi->get_time();
+    //double t1 = gfx_wapi->get_time();
     //printf("Process %f %f\n", t1, t1 - t0);
     gfx_wapi->swap_buffers_begin();
 }
