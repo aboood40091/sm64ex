@@ -18,6 +18,10 @@ typedef struct {
 } ConfigWindow;
 
 extern ConfigWindow configWindow;
+extern unsigned int configLanguage;
+#ifdef TARGET_SWITCH
+extern bool         configSwitchHud;
+#endif
 extern unsigned int configFiltering;
 extern unsigned int configMasterVolume;
 extern unsigned int configMusicVolume;
@@ -39,9 +43,7 @@ extern unsigned int configKeyStickLeft[];
 extern unsigned int configKeyStickRight[];
 extern unsigned int configStickDeadzone;
 extern unsigned int configRumbleStrength;
-#ifdef EXTERNAL_DATA
 extern bool         configPrecacheRes;
-#endif
 #ifdef BETTERCAMERA
 extern unsigned int configCameraXSens;
 extern unsigned int configCameraYSens;
