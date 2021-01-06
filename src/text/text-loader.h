@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "game/ingame_menu.h"
+#include "pc/fs/fs.h"
 
 extern char* currentLanguage;
 extern u8 languagesAmount;

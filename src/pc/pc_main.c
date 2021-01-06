@@ -19,6 +19,7 @@
 
 #include "gfx/gfx_dxgi.h"
 #include "gfx/gfx_sdl.h"
+#include "gfx/gfx_whb.h"
 
 #include "audio/audio_api.h"
 #include "audio/audio_sdl.h"
@@ -133,17 +134,21 @@ void game_deinit(void) {
     discord_shutdown();
 #endif
     configfile_save(configfile_name());
+#ifndef TARGET_WII_U
     controller_shutdown();
     audio_shutdown();
     gfx_shutdown();
+#endif
     dealloc_dialog_pool();
     inited = false;
 }
 
 void game_exit(void) {
+#ifndef TARGET_WII_U
     game_deinit();
 #ifndef TARGET_WEB
     exit(0);
+#endif
 #endif
 }
 
@@ -182,26 +187,32 @@ static void on_anim_frame(double time) {
 #endif
 
 void main_func(char *argv[]) {
-    static u64 pool[0x165000/8 / 4 * sizeof(void *)];
-    main_pool_init(pool, pool + sizeof(pool) / sizeof(pool[0]));
+    static u8 pool[DOUBLE_SIZE_ON_64_BIT(0x165000)] __attribute__ ((aligned(64)));
+    main_pool_init(pool, pool + sizeof(pool));
     gEffectsMemoryPool = mem_pool_init(0x4000, MEMORY_POOL_LEFT);
 
     const char *gamedir = gCLIOpts.GameDir[0] ? gCLIOpts.GameDir : FS_BASEDIR;
-    const char *userpath = gCLIOpts.SavePath[0] ? gCLIOpts.SavePath : sys_user_path();    
+    const char *userpath = gCLIOpts.SavePath[0] ? gCLIOpts.SavePath : sys_user_path();
     fs_init(sys_ropaths, gamedir, userpath);
     configfile_load(configfile_name());
 
     alloc_dialog_pool(argv[0], gamedir);
 
+    #ifdef TARGET_WII_U
+    configfile_save(configfile_name()); // Mount SD write now
+    #else
     if (gCLIOpts.FullScreen == 1)
         configWindow.fullscreen = true;
     else if (gCLIOpts.FullScreen == 2)
         configWindow.fullscreen = false;
+    #endif
 
     #if defined(WAPI_SDL1) || defined(WAPI_SDL2)
     wm_api = &gfx_sdl;
     #elif defined(WAPI_DXGI)
     wm_api = &gfx_dxgi;
+    #elif defined(WAPI_WHB)
+    wm_api = &gfx_whb_window;
     #else
     #error No window API!
     #endif
@@ -219,6 +230,9 @@ void main_func(char *argv[]) {
     # else
     #  define RAPI_NAME "OpenGL"
     # endif
+    #elif defined(RAPI_WHB)
+    rendering_api = &gfx_whb_api;
+    # define RAPI_NAME "WHB - GX2"
     #else
     #error No rendering API!
     #endif
@@ -233,10 +247,12 @@ void main_func(char *argv[]) {
     ;
 
     gfx_init(wm_api, rendering_api, window_title);
+    #ifndef TARGET_WII_U
     wm_api->set_keyboard_callbacks(keyboard_on_key_down, keyboard_on_key_up, keyboard_on_all_keys_up);
+    #endif
 
     #if defined(AAPI_SDL1) || defined(AAPI_SDL2)
-    if (audio_api == NULL && audio_sdl.init()) 
+    if (audio_api == NULL && audio_sdl.init())
         audio_api = &audio_sdl;
     #endif
 
@@ -247,7 +263,7 @@ void main_func(char *argv[]) {
     audio_init();
     sound_init();
 
-    thread5_game_loop(NULL);    
+    thread5_game_loop(NULL);
     inited = true;
 
     // precache data if needed
@@ -265,7 +281,11 @@ void main_func(char *argv[]) {
     emscripten_set_main_loop(em_main_loop, 0, 0);
     request_anim_frame(on_anim_frame);
 #else
+    #ifdef TARGET_WII_U
+    while (whb_window_is_running()) {
+    #else
     while (true) {
+    #endif
         wm_api->main_loop(produce_one_frame);
 #ifdef DISCORDRPC
         discord_update_rich_presence();
@@ -278,8 +298,13 @@ int main(int argc, char *argv[]) {
 #ifdef TARGET_SWITCH
     initNX();
 #endif
+
+#ifndef TARGET_WII_U
     parse_cli_opts(argc, argv);
+#endif
+
     main_func(argv);
+
 #ifdef TARGET_SWITCH
     exitNX();
 #endif

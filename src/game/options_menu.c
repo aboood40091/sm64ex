@@ -241,6 +241,7 @@ static struct Option optsCamera[] = {
 #endif
 
 static struct Option optsControls[] = {
+#ifndef TARGET_WII_U
     DEF_OPT_BIND( bindStr[ 2], configKeyA ),
     DEF_OPT_BIND( bindStr[ 3], configKeyB ),
     DEF_OPT_BIND( bindStr[ 4], configKeyStart ),
@@ -259,16 +260,17 @@ static struct Option optsControls[] = {
     // way, the player can't accidentally lock themselves out of using the stick
     DEF_OPT_SCROLL( bindStr[16], &configStickDeadzone, 0, 100, 1 ),
     DEF_OPT_SCROLL( bindStr[17], &configRumbleStrength, 0, 100, 1)
+#endif
 };
 
 static struct Option optsVideo[] = {
-    #ifndef TARGET_SWITCH
+    #if !defined(TARGET_WII_U) && !defined(TARGET_SWITCH)
     DEF_OPT_TOGGLE( optsVideoStr[0], &configWindow.fullscreen ),
     DEF_OPT_TOGGLE( optsVideoStr[5], &configWindow.vsync ),
     #endif
     DEF_OPT_CHOICE( optsVideoStr[1], &configFiltering, filterChoices ),
     DEF_OPT_TOGGLE( optsVideoStr[7], &configHUD ),
-    #ifndef TARGET_SWITCH
+    #if !defined(TARGET_WII_U) && !defined(TARGET_SWITCH)
     DEF_OPT_BUTTON( optsVideoStr[4], optvideo_reset_window ),
     DEF_OPT_BUTTON( optsVideoStr[9], optvideo_apply ),
     #endif
@@ -379,7 +381,7 @@ static void optmenu_draw_text(s16 x, s16 y, const u8 *str, u8 col) {
 
 static void optmenu_draw_opt(const struct Option *opt, s16 x, s16 y, u8 sel) {
     u8 buf[32] = { 0 };
-    u8 * choice;    
+    u8 * choice;
 
     if (opt->type == OPT_SUBMENU || opt->type == OPT_BUTTON)
         y -= 6;
@@ -389,7 +391,7 @@ static void optmenu_draw_opt(const struct Option *opt, s16 x, s16 y, u8 sel) {
     s16 sx = 0;
     s16 sy = 0;
     s16 sw = 0;
-    s16 sh = 0;    
+    s16 sh = 0;
 
     switch (opt->type) {
         case OPT_TOGGLE:
@@ -409,7 +411,7 @@ static void optmenu_draw_opt(const struct Option *opt, s16 x, s16 y, u8 sel) {
 
         case OPT_SCROLL:
             sx = x - 127 / 2;
-            sy = 209 - (y - 35);            
+            sy = 209 - (y - 35);
             sw = sx + (127.0 * (((*opt->uval * 1.0) + __FLT_MIN__) / (opt->scrMax * 1.0)));
             sh = sy + 7;
 
@@ -549,7 +551,7 @@ void optmenu_toggle(void) {
 
         currentMenu = &menuMain;
         optmenu_open = 1;
-        
+
         /* Resets l_counter to 0 every time the options menu is open */
         l_counter = 0;
     } else {
@@ -581,9 +583,9 @@ void optmenu_check_buttons(void) {
 
     if (gPlayer1Controller->buttonPressed & R_TRIG)
         optmenu_toggle();
-    
+
     /* Enables cheats if the user press the L trigger 3 times while in the options menu. Also plays a sound. */
-    
+
     if ((gPlayer1Controller->buttonPressed & L_TRIG) && !Cheats.EnableCheats) {
         if (l_counter == 2) {
                 Cheats.EnableCheats = true;
@@ -593,7 +595,7 @@ void optmenu_check_buttons(void) {
             l_counter++;
         }
     }
-    
+
     if (!optmenu_open) return;
 
     u8 allowInput = 0;

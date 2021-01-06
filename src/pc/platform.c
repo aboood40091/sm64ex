@@ -5,6 +5,13 @@
 #include <string.h>
 #include <ctype.h>
 
+#ifdef TARGET_WII_U
+#include <whb/sdcard.h>
+#include <whb/log.h>
+#include <coreinit/internal.h>
+#include <coreinit/debug.h>
+#endif
+
 #include "cliopts.h"
 #include "fs/fs.h"
 #include "configfile.h"
@@ -80,7 +87,37 @@ void sys_fatal(const char *fmt, ...) {
     sys_fatal_impl(msg);
 }
 
-#ifdef HAVE_SDL2
+#ifdef TARGET_WII_U
+
+static bool mounted = false;
+
+const char *sys_user_path(void) {
+    static bool mounted_set = false;
+    if (!mounted_set) {
+        mounted = WHBMountSdCard();
+        mounted_set = true;
+    }
+
+    if (mounted) {
+        return WHBGetSdCardMountPath();;
+    } else {
+        return "";
+    }
+}
+
+const char *sys_exe_path(void) {
+    return sys_user_path();
+}
+
+static void sys_fatal_impl(const char *msg) {
+    WHBLogPrintf("FATAL ERROR:\n%s\n", msg);
+    static char log_msg[2048];
+    __os_snprintf(log_msg, sizeof(log_msg), "FATAL ERROR:\n%s\n", msg);
+   OSConsoleWrite(log_msg, sizeof(log_msg));
+    exit(1);
+}
+
+#elif defined(HAVE_SDL2)
 
 // we can just ask SDL for most of this shit if we have it
 #include <SDL2/SDL.h>

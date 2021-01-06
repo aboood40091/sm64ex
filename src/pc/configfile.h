@@ -9,11 +9,13 @@
 #define MAX_VOLUME 127
 
 typedef struct {
+#ifndef TARGET_WII_U
     unsigned int x, y, w, h;
     bool vsync;
-    bool reset;
     bool fullscreen;
     bool exiting_fullscreen;
+#endif
+    bool reset;
     bool settings_changed;
 } ConfigWindow;
 
@@ -27,6 +29,7 @@ extern unsigned int configMasterVolume;
 extern unsigned int configMusicVolume;
 extern unsigned int configSfxVolume;
 extern unsigned int configEnvVolume;
+#ifndef TARGET_WII_U
 extern unsigned int configKeyA[];
 extern unsigned int configKeyB[];
 extern unsigned int configKeyStart[];
@@ -41,6 +44,7 @@ extern unsigned int configKeyStickUp[];
 extern unsigned int configKeyStickDown[];
 extern unsigned int configKeyStickLeft[];
 extern unsigned int configKeyStickRight[];
+#endif
 extern unsigned int configStickDeadzone;
 extern unsigned int configRumbleStrength;
 extern bool         configPrecacheRes;

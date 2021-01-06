@@ -185,26 +185,16 @@ void load_language(char *jsonTxt, s8 language) {
 void alloc_languages(char *exePath, char *gamedir) {
     languages = realloc(languages, sizeof(struct LanguageEntry*) * MAX_LANG);
 
-    char *lastSlash = NULL;
-    char *parent = malloc(FILENAME_MAX * sizeof(char*));
-    #ifndef WIN32
-    lastSlash = strrchr(exePath, '/');
-    #else
-    lastSlash = strrchr(exePath, '\\');
-    #endif
-    strncpy(parent, exePath, strlen(exePath) - strlen(lastSlash));
-    parent[strlen(exePath) - strlen(lastSlash)] = 0;
-
     char *languagesDir = malloc(FILENAME_MAX * sizeof(char*));
     #ifndef WIN32
-    strcpy(languagesDir, parent);
+    strcpy(languagesDir, sys_exe_path());
     strcat(languagesDir, "/");
-    strcat(languagesDir, gamedir);
+    strcat(languagesDir, fs_gamedir);
     strcat(languagesDir, "/texts/");
     #else
-    strcpy(languagesDir, parent);
+    strcpy(languagesDir, sys_exe_path());
     strcat(languagesDir, "\\");
-    strcat(languagesDir, gamedir);
+    strcat(languagesDir, fs_gamedir);
     strcat(languagesDir, "\\texts\\");
     #endif
 
@@ -233,7 +223,6 @@ void alloc_languages(char *exePath, char *gamedir) {
     }
 
     free(languagesDir);
-    free(parent);
     closedir(lf);
 
     if(languagesAmount > 0) {
@@ -310,7 +299,7 @@ void dealloc_dialog_pool(void) {
         free(entry->dialogs);
         free(entry->logo);
         free(entry->name);
-        free(languages[l]); 
+        free(languages[l]);
     }
 
     free(languages);

@@ -1,0 +1,24 @@
+#ifdef TARGET_WII_U
+
+#include <stdint.h>
+
+extern const uint8_t shader_wiiu_alpha_coloralphasame_notextureedge_fog_noise[];
+extern const uint8_t shader_wiiu_alpha_coloralphasame_notextureedge_fog_nonoise[];
+extern const uint8_t shader_wiiu_alpha_coloralphasame_notextureedge_nofog_noise[];
+extern const uint8_t shader_wiiu_alpha_coloralphasame_notextureedge_nofog_nonoise[];
+extern const uint8_t shader_wiiu_alpha_coloralphasame_textureedge_fog_noise[];
+extern const uint8_t shader_wiiu_alpha_coloralphasame_textureedge_fog_nonoise[];
+extern const uint8_t shader_wiiu_alpha_coloralphasame_textureedge_nofog_noise[];
+extern const uint8_t shader_wiiu_alpha_coloralphasame_textureedge_nofog_nonoise[];
+extern const uint8_t shader_wiiu_alpha_nocoloralphasame_notextureedge_fog_noise[];
+extern const uint8_t shader_wiiu_alpha_nocoloralphasame_notextureedge_fog_nonoise[];
+extern const uint8_t shader_wiiu_alpha_nocoloralphasame_notextureedge_nofog_noise[];
+extern const uint8_t shader_wiiu_alpha_nocoloralphasame_notextureedge_nofog_nonoise[];
+extern const uint8_t shader_wiiu_alpha_nocoloralphasame_textureedge_fog_noise[];
+extern const uint8_t shader_wiiu_alpha_nocoloralphasame_textureedge_fog_nonoise[];
+extern const uint8_t shader_wiiu_alpha_nocoloralphasame_textureedge_nofog_noise[];
+extern const uint8_t shader_wiiu_alpha_nocoloralphasame_textureedge_nofog_nonoise[];
+extern const uint8_t shader_wiiu_noalpha_fog[];
+extern const uint8_t shader_wiiu_noalpha_nofog[];
+
+#endif
