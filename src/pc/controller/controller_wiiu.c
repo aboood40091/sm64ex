@@ -14,6 +14,9 @@
 #include "controller_api.h"
 #include "../configfile.h"
 
+extern int16_t rightx;
+extern int16_t righty;
+
 #ifdef BETTERCAMERA
 int mouse_x = 0;
 int mouse_y = 0;
@@ -96,6 +99,13 @@ static void read_vpad(OSContPad *pad) {
     if (status.leftStick.y != 0) {
         pad->stick_y = (s8) round(status.leftStick.y * 80);
     }
+
+    if (status.rightStick.x != 0) {
+        rightx = (int16_t) round(status.rightStick.x * 32767);
+    }
+    if (status.rightStick.y != 0) {
+        righty = (int16_t) round(status.rightStick.y * 32767);
+    }
 }
 
 static void read_wpad(OSContPad* pad) {
@@ -132,25 +142,29 @@ static void read_wpad(OSContPad* pad) {
 
     uint32_t wm = status.hold;
     KPADVec2D stick;
+    KPADVec2D rStick;
 
     bool gamepadStickNotSet = pad->stick_x == 0 && pad->stick_y == 0;
+    bool gamepadRightStickNotSet = rightx == 0 && righty == 0;
 
     if (status.extensionType == WPAD_EXT_NUNCHUK || status.extensionType == WPAD_EXT_MPLUS_NUNCHUK) {
         uint32_t ext = status.nunchuck.hold;
         stick = status.nunchuck.stick;
+        rStick = (KPADVec2D) {0.0, 0.0};
 
         if (wm & WPAD_BUTTON_A) pad->button |= A_BUTTON;
         if (wm & WPAD_BUTTON_B) pad->button |= B_BUTTON;
         if (wm & WPAD_BUTTON_PLUS) pad->button |= START_BUTTON;
-        if (wm & WPAD_BUTTON_UP) pad->button |= U_CBUTTONS;
-        if (wm & WPAD_BUTTON_DOWN) pad->button |= D_CBUTTONS;
-        if (wm & WPAD_BUTTON_LEFT) pad->button |= L_CBUTTONS;
-        if (wm & WPAD_BUTTON_RIGHT) pad->button |= R_CBUTTONS;
+        if (wm & WPAD_BUTTON_UP) { pad->button |= U_CBUTTONS; rStick.y += 1.0; }
+        if (wm & WPAD_BUTTON_DOWN) { pad->button |= D_CBUTTONS; rStick.y -= 1.0; }
+        if (wm & WPAD_BUTTON_LEFT) { pad->button |= L_CBUTTONS; rStick.x -= 1.0; }
+        if (wm & WPAD_BUTTON_RIGHT) { pad->button |= R_CBUTTONS; rStick.x += 1.0; }
         if (ext & WPAD_NUNCHUK_BUTTON_C) pad->button |= R_TRIG;
         if (ext & WPAD_NUNCHUK_BUTTON_Z) pad->button |= Z_TRIG;
     } else if (status.extensionType == WPAD_EXT_CLASSIC || status.extensionType == WPAD_EXT_MPLUS_CLASSIC) {
         uint32_t ext = status.classic.hold;
         stick = status.classic.leftStick;
+        rStick = status.classic.rightStick;
         for (size_t i = 0; i < num_buttons; i++) {
             if (ext & map[i].classicButton) {
                 pad->button |= map[i].n64Button;
@@ -163,6 +177,7 @@ static void read_wpad(OSContPad* pad) {
     } else if (status.extensionType == WPAD_EXT_PRO_CONTROLLER) {
         uint32_t ext = status.pro.hold;
         stick = status.pro.leftStick;
+        rStick = status.pro.rightStick;
         for (size_t i = 0; i < num_buttons; i++) {
             if (ext & map[i].proButton) {
                 pad->button |= map[i].n64Button;
@@ -183,11 +198,23 @@ static void read_wpad(OSContPad* pad) {
             pad->stick_y = (s8) round(stick.y * 80);
         }
     }
+
+    if (gamepadRightStickNotSet) {
+        if (rStick.x != 0) {
+            rightx = (int16_t) round(rStick.x * 32767);
+        }
+        if (rStick.y != 0) {
+            righty = (int16_t) round(rStick.y * 32767);
+        }
+    }
 }
 
 static void controller_wiiu_read(OSContPad* pad) {
     pad->stick_x = 0;
     pad->stick_y = 0;
+
+    rightx = 0;
+    righty = 0;
 
     read_vpad(pad);
     read_wpad(pad);
