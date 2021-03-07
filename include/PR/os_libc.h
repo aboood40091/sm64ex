@@ -10,6 +10,11 @@
 // macOS libc has them
 #include <strings.h>
 
+#elif defined(__WIIU__)
+
+extern void bcopy(const void *, void *, size_t);
+extern void bzero(void *, size_t);
+
 #elif defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE >= 200809L) || defined(NO_BZERO_BCOPY)
 
 // there's no way that shit's defined, use memcpy/memset
