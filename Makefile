@@ -312,7 +312,11 @@ endif
 endif
 
 # Make tools if out of date
+ifeq ($(TARGET_WII_U),0)
 DUMMY != CC=$(CC) CXX=$(CXX) $(MAKE) -C tools >&2 || echo FAIL
+else
+DUMMY != make -C tools >&2 || echo FAIL
+endif
 ifeq ($(DUMMY),FAIL)
   $(error Failed to build tools)
 endif
