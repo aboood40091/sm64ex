@@ -242,9 +242,9 @@ static int generatePixelShader(GX2PixelShader *psh, struct CCFeatures *cc_featur
         ADD_INSTR(
             /* if (texel.a > 0.3) texel.a = 1.0; else discard; */
             ALU_KILLGT(__, _x, ALU_SRC_LITERAL, _x, _R1, _w),
-            ALU_MOV(_R1, _w, ALU_SRC_LITERAL, _y)
+            ALU_MOV(_R1, _w, ALU_SRC_1, _x)
             ALU_LAST,
-            ALU_LITERAL2(0x3e99999a /*0.3f*/, 0x3f800000 /* 1.0f */),
+            ALU_LITERAL(0x3e99999a /*0.3f*/),
         );
     }
 
