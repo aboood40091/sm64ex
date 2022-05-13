@@ -624,18 +624,22 @@ ifeq ($(SDL2_USED),1)
 else ifeq ($(SDL1_USED),1)
   SDLCONFIG := $(CROSS)sdl-config
   BACKEND_CFLAGS += -DHAVE_SDL1=1
-else ifeq ($(TARGET_WII_U),0)
-  ifeq ($(OSX_BUILD),1)
-    # on OSX at least the homebrew version of sdl-config gives include path as `.../include/SDL2` instead of `.../include`
-    OSX_PREFIX := $(shell $(SDLCONFIG) --prefix)
-    BACKEND_CFLAGS += -I$(OSX_PREFIX)/include $(shell $(SDLCONFIG) --cflags)
-  else
-    BACKEND_CFLAGS += $(shell $(SDLCONFIG) --cflags)
-  endif
-  ifeq ($(WINDOWS_BUILD),1)
-    BACKEND_LDFLAGS += $(shell $(SDLCONFIG) --static-libs) -lsetupapi -luser32 -limm32 -lole32 -loleaut32 -lshell32 -lwinmm -lversion
-  else
-    BACKEND_LDFLAGS += $(shell $(SDLCONFIG) --libs)
+endif
+
+ifeq ($(TARGET_WII_U),0)
+  ifneq ($(SDL1_USED)$(SDL2_USED),00)
+    ifeq ($(OSX_BUILD),1)
+      # on OSX at least the homebrew version of sdl-config gives include path as `.../include/SDL2` instead of `.../include`
+      OSX_PREFIX := $(shell $(SDLCONFIG) --prefix)
+      BACKEND_CFLAGS += -I$(OSX_PREFIX)/include $(shell $(SDLCONFIG) --cflags)
+    else
+      BACKEND_CFLAGS += $(shell $(SDLCONFIG) --cflags)
+    endif
+    ifeq ($(WINDOWS_BUILD),1)
+      BACKEND_LDFLAGS += $(shell $(SDLCONFIG) --static-libs) -lsetupapi -luser32 -limm32 -lole32 -loleaut32 -lshell32 -lwinmm -lversion
+    else
+      BACKEND_LDFLAGS += $(shell $(SDLCONFIG) --libs)
+    endif
   endif
 endif
 
