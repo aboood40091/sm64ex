@@ -114,7 +114,7 @@ static void gfx_gx2_set_uniforms(struct ShaderProgram* prg)
 {
     if (prg->used_noise)
     {
-        float window_params_array[4] = { current_height, frame_count };
+        float window_params_array[4] = { (float)current_height, (float)frame_count };
         GX2SetPixelUniformReg(prg->window_params_offset, 4, window_params_array);
     }
 }

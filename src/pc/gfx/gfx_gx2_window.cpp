@@ -324,6 +324,12 @@ static bool gfx_gx2_window_foreground_acquire_callback(void)
         GX2SetDepthBuffer(&g_depth_buffer);
     }
 
+    // Initialize GQR2 to GQR5
+    asm volatile ("mtspr %0, %1" : : "i" (898), "r" (0x00040004));
+    asm volatile ("mtspr %0, %1" : : "i" (899), "r" (0x00050005));
+    asm volatile ("mtspr %0, %1" : : "i" (900), "r" (0x00060006));
+    asm volatile ("mtspr %0, %1" : : "i" (901), "r" (0x00070007));
+
     return true;
 }
 

@@ -16,6 +16,8 @@
 #endif
 #include <PR/gbi.h>
 
+#include "engine/math_util.h"
+
 #include "config.h"
 
 #include "gfx_pc.h"
@@ -669,13 +671,6 @@ static void import_texture(int tile) {
 #endif
 }
 
-static void gfx_normalize_vector(float v[3]) {
-    float s = sqrtf(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-    v[0] /= s;
-    v[1] /= s;
-    v[2] /= s;
-}
-
 static void gfx_transposed_matrix_mul(float res[3], const float a[3], const float b[4][4]) {
     res[0] = a[0] * b[0][0] + a[1] * b[0][1] + a[2] * b[0][2];
     res[1] = a[0] * b[1][0] + a[1] * b[1][1] + a[2] * b[1][2];
@@ -689,10 +684,13 @@ static void calculate_normal_dir(const Light_t *light, float coeffs[3]) {
         light->dir[2] / 127.0f
     };
     gfx_transposed_matrix_mul(coeffs, light_dir, rsp.modelview_matrix_stack[rsp.modelview_matrix_stack_size - 1]);
-    gfx_normalize_vector(coeffs);
+    vec3f_normalize(coeffs);
 }
 
 static void gfx_matrix_mul(float res[4][4], const float a[4][4], const float b[4][4]) {
+#ifdef TARGET_WII_U
+    mtxf_mul(res, (float(*)[4])a, (float(*)[4])b);
+#else
     float tmp[4][4];
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
@@ -702,7 +700,8 @@ static void gfx_matrix_mul(float res[4][4], const float a[4][4], const float b[4
                         a[i][3] * b[3][j];
         }
     }
-    memcpy(res, tmp, sizeof(tmp));
+    mtxf_copy(res, tmp);
+#endif // TARGET_WII_U
 }
 
 static void gfx_sp_matrix(uint8_t parameters, const int32_t *addr) {
@@ -718,22 +717,22 @@ static void gfx_sp_matrix(uint8_t parameters, const int32_t *addr) {
         }
     }
 #else
-    memcpy(matrix, addr, sizeof(matrix));
+    mtxf_copy(matrix, (float(*)[4])addr);
 #endif
 
     if (parameters & G_MTX_PROJECTION) {
         if (parameters & G_MTX_LOAD) {
-            memcpy(rsp.P_matrix, matrix, sizeof(matrix));
+            mtxf_copy(rsp.P_matrix, matrix);
         } else {
             gfx_matrix_mul(rsp.P_matrix, matrix, rsp.P_matrix);
         }
     } else { // G_MTX_MODELVIEW
         if ((parameters & G_MTX_PUSH) && rsp.modelview_matrix_stack_size < 11) {
             ++rsp.modelview_matrix_stack_size;
-            memcpy(rsp.modelview_matrix_stack[rsp.modelview_matrix_stack_size - 1], rsp.modelview_matrix_stack[rsp.modelview_matrix_stack_size - 2], sizeof(matrix));
+            mtxf_copy(rsp.modelview_matrix_stack[rsp.modelview_matrix_stack_size - 1], rsp.modelview_matrix_stack[rsp.modelview_matrix_stack_size - 2]);
         }
         if (parameters & G_MTX_LOAD) {
-            memcpy(rsp.modelview_matrix_stack[rsp.modelview_matrix_stack_size - 1], matrix, sizeof(matrix));
+            mtxf_copy(rsp.modelview_matrix_stack[rsp.modelview_matrix_stack_size - 1], matrix);
         } else {
             gfx_matrix_mul(rsp.modelview_matrix_stack[rsp.modelview_matrix_stack_size - 1], matrix, rsp.modelview_matrix_stack[rsp.modelview_matrix_stack_size - 1]);
         }
