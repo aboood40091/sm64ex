@@ -36,7 +36,11 @@ void guRotateF(float m[4][4], float a, float x, float y, float z) {
 }
 
 void guRotate(Mtx *m, float a, float x, float y, float z) {
+#if defined(NON_MATCHING) && defined(GBI_FLOATS)
+    guRotateF(m->m, a, x, y, z);
+#else
     float mf[4][4];
     guRotateF(mf, a, x, y, z);
     guMtxF2L(mf, m);
+#endif
 }

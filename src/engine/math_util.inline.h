@@ -963,8 +963,8 @@ MATH_DO_INLINE void mtxf_mul_vec3s(Mat4 mtx, Vec3s b) {
  * and no crashes occur.
  */
 MATH_DO_INLINE void mtxf_to_mtx(Mtx *dest, Mat4 src) {
-#if defined(TARGET_WII_U) && defined(GBI_FLOATS)
-    mtxf_copy((float(*)[4])dest, src);
+#if defined(NON_MATCHING) && defined(GBI_FLOATS)
+    mtxf_copy(dest->m, src);
 #elif defined(AVOID_UB)
     // Avoid type-casting which is technically UB by calling the equivalent
     // guMtxF2L function. This helps little-endian systems, as well.
