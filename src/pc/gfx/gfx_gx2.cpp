@@ -13,6 +13,7 @@
 #include <PR/gbi.h>
 
 #include <gx2/draw.h>
+#include <gx2/event.h>
 #include <gx2/mem.h>
 #include <gx2/registers.h>
 #include <gx2/shaders.h>
@@ -409,6 +410,10 @@ static void gfx_gx2_end_frame(void)
 
 static void gfx_gx2_finish_render(void)
 {
+    // Wait until drawing is done
+    GX2DrawDone();
+    // Free resources
+    gfx_gx2_free_vbo();
 }
 
 static void gfx_gx2_shutdown(void)

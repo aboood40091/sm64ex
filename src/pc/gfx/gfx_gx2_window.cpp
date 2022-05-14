@@ -456,12 +456,8 @@ static bool gfx_gx2_window_start_frame(void)
 
 static void gfx_gx2_window_swap_buffers_begin(void)
 {
-}
-
-static void gfx_gx2_window_swap_buffers_end(void)
-{
     // Make sure to flush all commands to GPU before copying the color buffer to the scan buffers
-    // (Calling GX2DrawDone instead here causes slow downs)
+    // (Calling GX2DrawDone instead here *may* cause slow downs)
     GX2Flush();
 
     // Copy the color buffer to the TV and DRC scan buffers
@@ -473,17 +469,37 @@ static void gfx_gx2_window_swap_buffers_end(void)
     // Reset context state for next frame
     GX2SetContextState(g_context);
 
-    // Flush all commands to GPU before GX2WaitForFlip since it will block the CPU
+    // Flush all commands to GPU before waiting for flip since it will block the CPU
     GX2Flush();
 
     // Make sure TV and DRC are enabled
     GX2SetTVEnable(true);
     GX2SetDRCEnable(true);
+}
 
-    // Wait until swapping is done
-    GX2WaitForFlip();
+// 2022/05/13: OSSecondsToTicks provided by WUT does not allow for fractions of seconds
+#define OSSecondsF32ToTicks(val) (uint64_t)((float)(val) * OSTimerClockSpeed)
 
-    gfx_gx2_free_vbo();
+static void gfx_gx2_window_swap_buffers_end(void)
+{
+    uint32_t swap_count, flip_count;
+    OSTime prev_flip, prev_vsync;
+
+    uint32_t swap_interval = GX2GetSwapInterval();
+    OSTime swap_interval_ticks = swap_interval * OSSecondsF32ToTicks(0.75f / 59.94f);
+
+    if (swap_interval > 0)
+    {
+        while (true)
+        {
+            GX2GetSwapStatus(&swap_count, &flip_count, &prev_flip, &prev_vsync);
+            if (flip_count >= swap_count)
+                break;
+
+            if (prev_vsync - prev_flip < swap_interval_ticks)
+                GX2WaitForVsync();
+        }
+    }
 }
 
 static double gfx_gx2_window_get_time(void)
