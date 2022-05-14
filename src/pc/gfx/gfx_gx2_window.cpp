@@ -498,6 +498,13 @@ static void gfx_gx2_window_swap_buffers_end(void)
 
             if (prev_vsync - prev_flip < swap_interval_ticks)
                 GX2WaitForVsync();
+
+            else
+            {
+                // Swapping is going to happen at the next vsync
+                // Do not wait for it (hopefully this does not cause issues)
+                break;
+            }
         }
     }
 }
