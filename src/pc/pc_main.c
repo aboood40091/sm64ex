@@ -19,7 +19,7 @@
 
 #include "gfx/gfx_dxgi.h"
 #include "gfx/gfx_sdl.h"
-#include "gfx/gfx_whb.h"
+#include "gfx/gfx_gx2.h"
 
 #include "audio/audio_api.h"
 #include "audio/audio_sdl.h"
@@ -202,8 +202,8 @@ void main_func(void) {
     wm_api = &gfx_sdl;
     #elif defined(WAPI_DXGI)
     wm_api = &gfx_dxgi;
-    #elif defined(WAPI_WHB)
-    wm_api = &gfx_whb_window;
+    #elif defined(WAPI_GX2)
+    wm_api = &gfx_gx2_window;
     #else
     #error No window API!
     #endif
@@ -221,9 +221,9 @@ void main_func(void) {
     # else
     #  define RAPI_NAME "OpenGL"
     # endif
-    #elif defined(RAPI_WHB)
-    rendering_api = &gfx_whb_api;
-    # define RAPI_NAME "WHB - GX2"
+    #elif defined(RAPI_GX2)
+    rendering_api = &gfx_gx2_api;
+    # define RAPI_NAME "GX2"
     #else
     #error No rendering API!
     #endif
@@ -273,11 +273,7 @@ void main_func(void) {
     emscripten_set_main_loop(em_main_loop, 0, 0);
     request_anim_frame(on_anim_frame);
 #else
-    #ifdef TARGET_WII_U
-    while (whb_window_is_running()) {
-    #else
     while (true) {
-    #endif
         wm_api->main_loop(produce_one_frame);
 #ifdef DISCORDRPC
         discord_update_rich_presence();

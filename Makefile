@@ -62,9 +62,9 @@ NO_LDIV ?= 0
 
 # Backend selection
 
-# Renderers: GL, GL_LEGACY, D3D11, D3D12, WHB (forced if the target is Wii U)
+# Renderers: GL, GL_LEGACY, D3D11, D3D12, GX2 (forced if the target is Wii U)
 RENDER_API ?= GL
-# Window managers: SDL1, SDL2, DXGI (forced if D3D11 or D3D12 in RENDER_API), WHB (forced if the target is Wii U)
+# Window managers: SDL1, SDL2, DXGI (forced if D3D11 or D3D12 in RENDER_API), GX2 (forced if the target is Wii U)
 WINDOW_API ?= SDL2
 # Audio backends: SDL1, SDL2 (forced if the target is Wii U)
 AUDIO_API ?= SDL2
@@ -72,8 +72,8 @@ AUDIO_API ?= SDL2
 CONTROLLER_API ?= SDL2
 
 ifeq ($(TARGET_WII_U),1)
-  RENDER_API := WHB
-  WINDOW_API := WHB
+  RENDER_API := GX2
+  WINDOW_API := GX2
   AUDIO_API := SDL2
   CONTROLLER_API := WII_U
 endif
@@ -369,9 +369,7 @@ LEVEL_DIRS := $(patsubst levels/%,%,$(dir $(wildcard levels/*/header.h)))
 SRC_DIRS := src src/engine src/game src/audio src/menu src/buffers actors levels bin data assets src/pc src/pc/gfx src/pc/audio src/pc/controller src/pc/fs src/pc/fs/packtypes
 ASM_DIRS :=
 
-ifeq ($(TARGET_WII_U),1)
-  SRC_DIRS += src/pc/gfx/shaders_wiiu
-else ifeq ($(DISCORDRPC),1)
+ifeq ($(TARGET_WII_U)$(DISCORDRPC),01)
   SRC_DIRS += src/pc/discord
 endif
 
@@ -582,7 +580,7 @@ BACKEND_LDFLAGS :=
 SDL1_USED := 0
 SDL2_USED := 0
 
-# for now, it's either SDL+GL, DXGI+DirectX or WHB, so choose based on WAPI
+# for now, it's either SDL+GL, DXGI+DirectX or GX2, so choose based on WAPI
 ifeq ($(WINDOW_API),DXGI)
   DXBITS := `cat $(ENDIAN_BITWIDTH) | tr ' ' '\n' | tail -1`
   ifeq ($(RENDER_API),D3D12)
@@ -600,7 +598,7 @@ else ifeq ($(findstring SDL,$(WINDOW_API)),SDL)
   else
     BACKEND_LDFLAGS += -lGL
   endif
-else ifeq ($(WINDOW_API),WHB)
+else ifeq ($(WINDOW_API),GX2)
   BACKEND_LDFLAGS += -lSDL2 -lwut
 endif
 
