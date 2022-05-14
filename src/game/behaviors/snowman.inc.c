@@ -209,7 +209,7 @@ void bhv_snowmans_head_loop(void) {
                 o->oPosY = -994.0f;
                 o->oAction = 4;
                 cur_obj_play_sound_2(SOUND_OBJ_SNOWMAN_EXPLODE);
-                play_puzzle_jingle();
+                r96_play_jingle(R96_EVENT_SOLVE_PUZZLE);
             }
             break;
 

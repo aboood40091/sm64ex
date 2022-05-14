@@ -24,6 +24,8 @@ static const LevelScript script_func_local_1[] = {
     OBJECT(/*model*/ MODEL_VCUTM_CHECKERBOARD_PLATFORM_SPAWNER,           /*pos*/  2355, -1901, -6256, /*angle*/ 0, 270, 0, /*behParam*/ 0x014B0000, /*beh*/ bhvCheckerboardElevatorGroup),
     OBJECT(/*model*/ MODEL_VCUTM_CHECKERBOARD_PLATFORM_SPAWNER,           /*pos*/  1459, -1594, -6256, /*angle*/ 0,  90, 0, /*behParam*/ 0x014B0000, /*beh*/ bhvCheckerboardElevatorGroup),
     OBJECT(/*model*/ MODEL_VCUTM_CHECKERBOARD_PLATFORM_SPAWNER,           /*pos*/ -1151, -2413, -6256, /*angle*/ 0, 270, 0, /*behParam*/ 0x014B0000, /*beh*/ bhvCheckerboardElevatorGroup),
+    OBJECT(/*model*/ MODEL_WARIO_COIN_TREE, /*pos*/ -5914,  -383,  -1110, /*angle*/ 0, 0, 0, /*behParam*/ 2, /*beh*/ bhvWarioCoin),
+    OBJECT(/*model*/ MODEL_WARIO_COIN_KOOPA, /*pos*/ 4287,  685,  -4391, /*angle*/ 0, 0, 0, /*behParam*/ 3, /*beh*/ bhvWarioCoin),
     RETURN(),
 };
 
@@ -64,7 +66,8 @@ const LevelScript level_vcutm_entry[] = {
         TERRAIN(/*terrainData*/ vcutm_seg7_collision),
         MACRO_OBJECTS(/*objList*/ vcutm_seg7_macro_objs),
         SHOW_DIALOG(/*index*/ 0x00, DIALOG_129),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0000, /*seq*/ SEQ_LEVEL_SLIDE),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0000, /*seq*/ SEQ_LEVEL_SLIDE),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_slide),        
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_STONE),
     END_AREA(),
 

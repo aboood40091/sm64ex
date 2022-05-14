@@ -1,7 +1,7 @@
 #ifdef EXT_OPTIONS_MENU
+#ifdef DYNOS_INL
 
 #include "sm64.h"
-#include "include/text_strings.h"
 #include "engine/math_util.h"
 #include "audio/external.h"
 #include "game/camera.h"
@@ -9,11 +9,11 @@
 #include "game/print.h"
 #include "game/segment2.h"
 #include "game/save_file.h"
-#ifdef BETTERCAMERA
+#include "game/hud.h"
 #include "game/bettercamera.h"
-#endif
 #include "game/mario_misc.h"
 #include "game/game_init.h"
+#include "game/cheats_menu.h"
 #include "game/ingame_menu.h"
 #include "game/options_menu.h"
 #include "pc/pc_main.h"
@@ -21,9 +21,11 @@
 #include "pc/cheats.h"
 #include "pc/configfile.h"
 #include "pc/controller/controller_api.h"
-
 #include <stdbool.h>
 #include "../../include/libc/stdlib.h"
+
+#include "text/txtconv.h"
+#include "text/text-loader.h"
 
 u8 optmenu_open = 0;
 
@@ -40,89 +42,112 @@ static s32 l_counter = 0;
 // menus:   add a new submenu definition and a new
 //          option to the optsMain list
 
-static const u8 toggleStr[][16] = {
-    { TEXT_OPT_DISABLED },
-    { TEXT_OPT_ENABLED },
+static const u8 toggleStr[][20] = {
+    "TEXT_OPT_DISABLED",
+    "TEXT_OPT_ENABLED"
 };
 
 static const u8 menuStr[][32] = {
-    { TEXT_OPT_HIGHLIGHT },
-    { TEXT_OPT_BUTTON1 },
-    { TEXT_OPT_BUTTON2 },
-    { TEXT_OPT_OPTIONS },
-    { TEXT_OPT_CAMERA },
-    { TEXT_OPT_CONTROLS },
-    { TEXT_OPT_VIDEO },
-    { TEXT_OPT_AUDIO },
-    { TEXT_EXIT_GAME },
-    { TEXT_OPT_CHEATS },
-
+    "TEXT_OPT_HIGHLIGHT",
+    "TEXT_OPT_BUTTON1",
+    "TEXT_OPT_BUTTON2",
+    "TEXT_OPT_OPTIONS",
+    "TEXT_OPT_CAMERA",
+    "TEXT_OPT_CONTROLS",
+    "TEXT_OPT_VIDEO",
+    "TEXT_OPT_AUDIO",
+    "TEXT_EXIT_GAME",
+    "TEXT_OPT_CHEATS",
+    "TEXT_OPT_GAME"
 };
 
 static const u8 optsCameraStr[][32] = {
-    { TEXT_OPT_CAMX },
-    { TEXT_OPT_CAMY },
-    { TEXT_OPT_INVERTX },
-    { TEXT_OPT_INVERTY },
-    { TEXT_OPT_CAMC },
-    { TEXT_OPT_CAMP },
-    { TEXT_OPT_ANALOGUE },
-    { TEXT_OPT_MOUSE },
-    { TEXT_OPT_CAMD },
-    { TEXT_OPT_CAMON },
+    "TEXT_OPT_CAMX",
+    "TEXT_OPT_CAMY",
+    "TEXT_OPT_INVERTX",
+    "TEXT_OPT_INVERTY",
+    "TEXT_OPT_CAMC",
+    "TEXT_OPT_CAMP",
+    "TEXT_OPT_ANALOGUE",
+    "TEXT_OPT_MOUSE",
+    "TEXT_OPT_CAMD",
+    "TEXT_OPT_CAMON"
+};
+
+// TODO: Get dynamic languages
+// This is only for testing
+
+static const u8 optsGameStr[][32] = {
+    "TEXT_OPT_LANGUAGE",
+    "TEXT_OPT_PRECACHE",
+    "TEXT_OPT_SWITCH_HUD",
+    "TEXT_OPT_BILLBOARDS"
 };
 
 static const u8 optsVideoStr[][32] = {
-    { TEXT_OPT_FSCREEN },
-    { TEXT_OPT_TEXFILTER },
-    { TEXT_OPT_NEAREST },
-    { TEXT_OPT_LINEAR },
-    { TEXT_OPT_RESETWND },
-    { TEXT_OPT_VSYNC },
-    { TEXT_OPT_AUTO },
-    { TEXT_OPT_HUD },
-    { TEXT_OPT_THREEPT },
-    { TEXT_OPT_APPLY },
+    "TEXT_OPT_FSCREEN",
+    "TEXT_OPT_TEXFILTER",
+    "TEXT_OPT_NEAREST",
+    "TEXT_OPT_LINEAR",
+    "TEXT_OPT_RESETWND",
+    "TEXT_OPT_VSYNC",
+    "TEXT_OPT_AUTO",
+    "TEXT_OPT_HUD",
+    "TEXT_OPT_THREEPT",
+    "TEXT_OPT_DRAWDIST",
+    "TEXT_OPT_APPLY",
+    "TEXT_OPT_60FPS",
+    "TEXT_OPT_INTERNAL_BOOL",
+    "TEXT_OPT_INTERNAL",
+    "TEXT_OPT_WINDOW",
+    "TEXT_OPT_FORCE4BY3"
 };
 
 static const u8 optsAudioStr[][32] = {
-    { TEXT_OPT_MVOLUME },    
-    { TEXT_OPT_MUSVOLUME },
-    { TEXT_OPT_SFXVOLUME },
-    { TEXT_OPT_ENVVOLUME },
+    "TEXT_OPT_MVOLUME",
+    "TEXT_OPT_MUSVOLUME",
+    "TEXT_OPT_SFXVOLUME",
+    "TEXT_OPT_ENVVOLUME",
+    "TEXT_OPT_MUSMUTE",
+    "TEXT_OPT_SFXMUTE",
+    "TEXT_OPT_ENVMUTE"
 };
 
 static const u8 optsCheatsStr[][64] = {
-    { TEXT_OPT_CHEAT1 },
-    { TEXT_OPT_CHEAT2 },
-    { TEXT_OPT_CHEAT3 },
-    { TEXT_OPT_CHEAT4 },
-    { TEXT_OPT_CHEAT5 },
-    { TEXT_OPT_CHEAT6 },
-    { TEXT_OPT_CHEAT7 },
-    { TEXT_OPT_CHEAT8 },
-    { TEXT_OPT_CHEAT9 },
+    "TEXT_OPT_CHEAT1",
+    "TEXT_OPT_CHEAT2",
+    "TEXT_OPT_CHEAT3",
+    "TEXT_OPT_CHEAT4",
+    "TEXT_OPT_CHEAT5",
+    "TEXT_OPT_CHEAT6",
+    "TEXT_OPT_CHEAT7",
+    "TEXT_OPT_CHEAT8",
+    "TEXT_OPT_CHEAT9"
 };
 
 static const u8 bindStr[][32] = {
-    { TEXT_OPT_UNBOUND },
-    { TEXT_OPT_PRESSKEY },
-    { TEXT_BIND_A },
-    { TEXT_BIND_B },
-    { TEXT_BIND_START },
-    { TEXT_BIND_L },
-    { TEXT_BIND_R },
-    { TEXT_BIND_Z },
-    { TEXT_BIND_C_UP },
-    { TEXT_BIND_C_DOWN },
-    { TEXT_BIND_C_LEFT },
-    { TEXT_BIND_C_RIGHT },
-    { TEXT_BIND_UP },
-    { TEXT_BIND_DOWN },
-    { TEXT_BIND_LEFT },
-    { TEXT_BIND_RIGHT },
-    { TEXT_OPT_DEADZONE },
-    { TEXT_OPT_RUMBLE }
+    "TEXT_OPT_UNBOUND",
+    "TEXT_OPT_PRESSKEY",
+    "TEXT_BIND_A",
+    "TEXT_BIND_B",
+    "TEXT_BIND_START",
+    "TEXT_BIND_L",
+    "TEXT_BIND_R",
+    "TEXT_BIND_Z",
+    "TEXT_BIND_C_UP",
+    "TEXT_BIND_C_DOWN",
+    "TEXT_BIND_C_LEFT",
+    "TEXT_BIND_C_RIGHT",
+    "TEXT_BIND_UP",
+    "TEXT_BIND_DOWN",
+    "TEXT_BIND_LEFT",
+    "TEXT_BIND_RIGHT",
+    "TEXT_OPT_DEADZONE",
+    "TEXT_OPT_RUMBLE",
+    "TEXT_BIND_D_UP",
+    "TEXT_BIND_D_DOWN",
+    "TEXT_BIND_D_LEFT",
+    "TEXT_BIND_D_RIGHT",
 };
 
 static const u8 *filterChoices[] = {
@@ -136,6 +161,66 @@ static const u8 *vsyncChoices[] = {
     toggleStr[1],
     optsVideoStr[6],
 };
+
+static const u8 optsInternalRes[][32] = {
+    "TEXT_OPT_RES1", //320x240
+    "TEXT_OPT_RES2", //640x480
+    "TEXT_OPT_RES3", //960x720
+    "TEXT_OPT_RES4", //1440x1080
+    "TEXT_OPT_RES5", //1920x1440
+    "TEXT_OPT_RES6", //640x360
+    "TEXT_OPT_RES7", //848x480
+    "TEXT_OPT_RES8", //1280x720
+    "TEXT_OPT_RES9", //1600x900
+    "TEXT_OPT_RES10", //1920x1080
+    "TEXT_OPT_RES11", //2560x1440
+    "TEXT_OPT_RES12" //3840x2160
+};
+
+static const u8 *internalChoices[] = {
+    optsInternalRes[0],
+    optsInternalRes[1],
+    optsInternalRes[2],
+    optsInternalRes[3],
+    optsInternalRes[4],
+    optsInternalRes[5],
+    optsInternalRes[6],
+    optsInternalRes[7],
+    optsInternalRes[8],
+    optsInternalRes[9],
+    optsInternalRes[10],
+    optsInternalRes[11]
+};
+
+//static const u8 optsWindowRes[][32] = {
+//    "TEXT_OPT_WINDOW_RES1", //320x240
+//    "TEXT_OPT_WINDOW_RES2", //640x480
+//    "TEXT_OPT_WINDOW_RES3", //960x720
+//    "TEXT_OPT_WINDOW_RES4", //1440x1080
+//    "TEXT_OPT_WINDOW_RES5", //1920x1440
+//    "TEXT_OPT_WINDOW_RES6", //640x360
+//    "TEXT_OPT_WINDOW_RES7", //848x480
+//    "TEXT_OPT_WINDOW_RES8", //1280x720
+//    "TEXT_OPT_WINDOW_RES9", //1600x900
+//    "TEXT_OPT_WINDOW_RES10", //1920x1080
+//    "TEXT_OPT_WINDOW_RES11", //2560x1440
+//    "TEXT_OPT_WINDOW_RES12" //3840x2160
+//};
+//
+//static const u8 *windowChoices[] = {
+//    optsWindowRes[0],
+//    optsWindowRes[1],
+//    optsWindowRes[2],
+//    optsWindowRes[3],
+//    optsWindowRes[4],
+//    optsWindowRes[5],
+//    optsWindowRes[6],
+//    optsWindowRes[7],
+//    optsWindowRes[8],
+//    optsWindowRes[9],
+//    optsWindowRes[10],
+//    optsWindowRes[11]
+//};
 
 enum OptType {
     OPT_INVALID = 0,
@@ -203,21 +288,16 @@ static void optmenu_act_exit(UNUSED struct Option *self, s32 arg) {
     if (!arg) game_exit(); // only exit on A press and not directions
 }
 
-static void optvideo_reset_window(UNUSED struct Option *self, s32 arg) {
-    if (!arg) {
-        // Restrict reset to A press and not directions
-        configWindow.reset = true;
-        configWindow.settings_changed = true;
-    }
-}
-
 static void optvideo_apply(UNUSED struct Option *self, s32 arg) {
     if (!arg) configWindow.settings_changed = true;
 }
 
+static void optcheat_disable_all_cheats(UNUSED struct Option *self, s32 arg) {
+    if (!arg) memset(&Cheats, 0, sizeof(Cheats));
+}
+
 /* submenu option lists */
 
-#ifdef BETTERCAMERA
 static struct Option optsCamera[] = {
     DEF_OPT_TOGGLE( optsCameraStr[9], &configEnableCamera ),
     DEF_OPT_TOGGLE( optsCameraStr[6], &configCameraAnalog ),
@@ -230,7 +310,6 @@ static struct Option optsCamera[] = {
     DEF_OPT_SCROLL( optsCameraStr[5], &configCameraPan, 0, 100, 1 ),
     DEF_OPT_SCROLL( optsCameraStr[8], &configCameraDegrade, 0, 100, 1 ),
 };
-#endif
 
 static struct Option optsControls[] = {
     DEF_OPT_BIND( bindStr[ 2], configKeyA ),
@@ -243,6 +322,10 @@ static struct Option optsControls[] = {
     DEF_OPT_BIND( bindStr[ 9], configKeyCDown ),
     DEF_OPT_BIND( bindStr[10], configKeyCLeft ),
     DEF_OPT_BIND( bindStr[11], configKeyCRight ),
+    DEF_OPT_BIND( bindStr[18], configKeyDUp ),
+    DEF_OPT_BIND( bindStr[19], configKeyDDown ),
+    DEF_OPT_BIND( bindStr[20], configKeyDLeft ),
+    DEF_OPT_BIND( bindStr[21], configKeyDRight ),
     DEF_OPT_BIND( bindStr[12], configKeyStickUp ),
     DEF_OPT_BIND( bindStr[13], configKeyStickDown ),
     DEF_OPT_BIND( bindStr[14], configKeyStickLeft ),
@@ -254,12 +337,30 @@ static struct Option optsControls[] = {
 };
 
 static struct Option optsVideo[] = {
+    #ifndef TARGET_SWITCH
     DEF_OPT_TOGGLE( optsVideoStr[0], &configWindow.fullscreen ),
     DEF_OPT_TOGGLE( optsVideoStr[5], &configWindow.vsync ),
+    //DEF_OPT_CHOICE( optsVideoStr[14], &configCustomWindowResolution, windowChoices ),
+    #endif
+    //DEF_OPT_TOGGLE( optsVideoStr[15], &configForce4by3 ),
+    DEF_OPT_TOGGLE( optsVideoStr[11], &config60FPS ),
+    #if defined(RAPI_D3D11)
+    DEF_OPT_TOGGLE( optsVideoStr[12], &configInternalResolutionBool ),
+    DEF_OPT_CHOICE( optsVideoStr[13], &configCustomInternalResolution, internalChoices ),
+    #endif
     DEF_OPT_CHOICE( optsVideoStr[1], &configFiltering, filterChoices ),
+    DEF_OPT_SCROLL( optsVideoStr[9], &configDrawDistance, 50, 509, 10 ),
     DEF_OPT_TOGGLE( optsVideoStr[7], &configHUD ),
-    DEF_OPT_BUTTON( optsVideoStr[4], optvideo_reset_window ),
-    DEF_OPT_BUTTON( optsVideoStr[9], optvideo_apply ),
+    DEF_OPT_BUTTON( optsVideoStr[10], optvideo_apply ),
+};
+
+static struct Option optsGame[] = {
+    { .type = OPT_CHOICE, .label = optsGameStr[0], .uval = &configLanguage, .choices = NULL, .numChoices = 0 },
+    DEF_OPT_TOGGLE( optsGameStr[1], &configPrecacheRes ),
+    #ifdef TARGET_SWITCH
+    DEF_OPT_TOGGLE( optsGameStr[2], &configSwitchHud ),
+    #endif
+    DEF_OPT_TOGGLE( optsGameStr[3], &configBillboard ),
 };
 
 static struct Option optsAudio[] = {
@@ -267,26 +368,70 @@ static struct Option optsAudio[] = {
     DEF_OPT_SCROLL( optsAudioStr[1], &configMusicVolume, 0, MAX_VOLUME, 1),
     DEF_OPT_SCROLL( optsAudioStr[2], &configSfxVolume, 0, MAX_VOLUME, 1),
     DEF_OPT_SCROLL( optsAudioStr[3], &configEnvVolume, 0, MAX_VOLUME, 1),
+    DEF_OPT_TOGGLE( optsAudioStr[4], &configMusicMute),
+    DEF_OPT_TOGGLE( optsAudioStr[5], &configSfxMute),
+    DEF_OPT_TOGGLE( optsAudioStr[6], &configEnvMute),
 };
 
-static struct Option optsCheats[] = {
-    DEF_OPT_TOGGLE( optsCheatsStr[0], &Cheats.EnableCheats ),
-    DEF_OPT_TOGGLE( optsCheatsStr[1], &Cheats.MoonJump ),
-    DEF_OPT_TOGGLE( optsCheatsStr[2], &Cheats.GodMode ),
-    DEF_OPT_TOGGLE( optsCheatsStr[3], &Cheats.InfiniteLives ),
-    DEF_OPT_TOGGLE( optsCheatsStr[4], &Cheats.SuperSpeed ),
-    DEF_OPT_TOGGLE( optsCheatsStr[5], &Cheats.Responsive ),
-    DEF_OPT_TOGGLE( optsCheatsStr[6], &Cheats.ExitAnywhere ),
-    DEF_OPT_TOGGLE( optsCheatsStr[7], &Cheats.HugeMario ),
-    DEF_OPT_TOGGLE( optsCheatsStr[8], &Cheats.TinyMario ),
+static struct Option optsCheatsClassic[] = {
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[3], &Cheats.MoonJump),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[4], &Cheats.GodMode),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[5], &Cheats.InfiniteLives),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[6], &Cheats.Responsive),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[7], &Cheats.MoonGravity),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[8], &Cheats.DebugMove),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[9], &Cheats.SuperCopter),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[10], &Cheats.AutoWallKick),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[11], &Cheats.NoHoldHeavy),
+};
 
+static struct Option optsCheatsModifiers[] = {
+    DEF_OPT_CHOICE(optsCheatsChtStrings[12], &Cheats.SpeedModifier, optsCheatsModifierChoices),
+    DEF_OPT_CHOICE(optsCheatsChtStrings[13], &Cheats.JumpModifier, optsCheatsModifierChoices),
+    DEF_OPT_CHOICE(optsCheatsChtStrings[14], &Cheats.SwimModifier, optsCheatsModifierChoices),
+    DEF_OPT_CHOICE(optsCheatsChtStrings[15], &Cheats.SizeModifier, optsCheatsSizeChoices),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[16], &Cheats.CapModifier),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[17], &Cheats.SuperWingCap),
+    DEF_OPT_CHOICE(optsCheatsChtStrings[18], &Cheats.PlayAs, PlayAsCheatChoices),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[19], &Cheats.Jukebox),
+    DEF_OPT_CHOICE(optsCheatsChtStrings[20], &Cheats.JukeboxMusic, optsCheatsJukeboxChoices),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[21], &Cheats.SpeedDisplay),
+};
+
+static struct Option optsCheatsTimeSpace[] = {
+    DEF_OPT_CHOICE(optsCheatsChtStrings[22], &Cheats.BLJAnywhere, bljCheatChoices),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[23], &Cheats.SwimAnywhere),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[24], &Cheats.ExitAnywhere),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[25], &Cheats.WalkOnHazards),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[26], &Cheats.NoDeathBarrier),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[27], &Cheats.NoBounds),
+    DEF_OPT_CHOICE(optsCheatsChtStrings[28], &Cheats.WaterLevel, optsCheatsWaterLevelChoices),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[29], &Cheats.CoinsMagnet),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[30], &Cheats.TimeStop),
+    DEF_OPT_BIND  (optsCheatsBtnStrings[0],  CheatsControls.TimeStopButton),
+    DEF_OPT_TOGGLE(optsCheatsChtStrings[31], &Cheats.QuickEnding),
+    DEF_OPT_CHOICE(optsCheatsChtStrings[32], &Cheats.HurtMario, optsCheatsHurtChoices),
+};
+
+static struct SubMenu menuCheatsClassic   = DEF_SUBMENU(optsCheatsCatStrings[0], optsCheatsClassic);
+static struct SubMenu menuCheatsModifiers = DEF_SUBMENU(optsCheatsCatStrings[1], optsCheatsModifiers);
+static struct SubMenu menuCheatsTimeSpace = DEF_SUBMENU(optsCheatsCatStrings[2], optsCheatsTimeSpace);
+
+static struct Option optsCheats[] = {
+    DEF_OPT_TOGGLE (optsCheatsChtStrings[0], &Cheats.EnableCheats),
+    DEF_OPT_SUBMENU(optsCheatsCatStrings[3], &menuCheatsClassic),
+    DEF_OPT_SUBMENU(optsCheatsCatStrings[4], &menuCheatsModifiers),
+    DEF_OPT_SUBMENU(optsCheatsCatStrings[5], &menuCheatsTimeSpace),
+    DEF_OPT_TOGGLE (optsCheatsChtStrings[1], &Cheats.Spamba),
+    DEF_OPT_BIND   (optsCheatsBtnStrings[1], CheatsControls.SpambaControls),
+    DEF_OPT_TOGGLE (optsCheatsChtStrings[2], &Cheats.ChaosMode),
+    DEF_OPT_BUTTON (optsCheatsCatStrings[6], optcheat_disable_all_cheats),
 };
 
 /* submenu definitions */
 
-#ifdef BETTERCAMERA
 static struct SubMenu menuCamera   = DEF_SUBMENU( menuStr[4], optsCamera );
-#endif
+static struct SubMenu menuGame     = DEF_SUBMENU( menuStr[10], optsGame );
 static struct SubMenu menuControls = DEF_SUBMENU( menuStr[5], optsControls );
 static struct SubMenu menuVideo    = DEF_SUBMENU( menuStr[6], optsVideo );
 static struct SubMenu menuAudio    = DEF_SUBMENU( menuStr[7], optsAudio );
@@ -295,9 +440,8 @@ static struct SubMenu menuCheats   = DEF_SUBMENU( menuStr[9], optsCheats );
 /* main options menu definition */
 
 static struct Option optsMain[] = {
-#ifdef BETTERCAMERA
+    DEF_OPT_SUBMENU( menuStr[10], &menuGame ),
     DEF_OPT_SUBMENU( menuStr[4], &menuCamera ),
-#endif
     DEF_OPT_SUBMENU( menuStr[5], &menuControls ),
     DEF_OPT_SUBMENU( menuStr[6], &menuVideo ),
     DEF_OPT_SUBMENU( menuStr[7], &menuAudio ),
@@ -357,24 +501,42 @@ static void optmenu_draw_text(s16 x, s16 y, const u8 *str, u8 col) {
 
 static void optmenu_draw_opt(const struct Option *opt, s16 x, s16 y, u8 sel) {
     u8 buf[32] = { 0 };
+    u8 * choice;    
 
     if (opt->type == OPT_SUBMENU || opt->type == OPT_BUTTON)
         y -= 6;
 
-    optmenu_draw_text(x, y, opt->label, sel);
+    optmenu_draw_text(x, y, get_key_string(opt->label), sel);
+	
+    s16 sx = 0;
+    s16 sy = 0;
+    s16 sw = 0;
+    s16 sh = 0;
 
     switch (opt->type) {
         case OPT_TOGGLE:
-            optmenu_draw_text(x, y-13, toggleStr[(int)*opt->bval], sel);
+            optmenu_draw_text(x, y-13, get_key_string(toggleStr[(int)*opt->bval]), sel);
             break;
 
         case OPT_CHOICE:
-            optmenu_draw_text(x, y-13, opt->choices[*opt->uval], sel);
+            if(strcmp(opt->label, optsGameStr[0]) != 0){
+                choice = get_key_string(opt->choices[*opt->uval]);
+                optmenu_draw_text(x, y-13, choice, sel);
+            }else{
+                choice = getTranslatedText(languages[*opt->uval]->name);
+                optmenu_draw_text(x, y-13, choice, sel);
+                free(choice);
+            }
             break;
 
         case OPT_SCROLL:
-            int_to_str(*opt->uval, buf);
-            optmenu_draw_text(x, y-13, buf, sel);
+            sx = x - 127 / 2;
+            sy = 209 - (y - 35);            
+            sw = sx + (127.0 * (((*opt->uval * 1.0)) / (opt->scrMax * 1.0)));
+            sh = sy + 7;
+
+            render_hud_rectangle(sx - 1, sy - 1, (sx + 126), sh + 1, 180, 180, 180);
+            render_hud_rectangle(sx, sy, sw - 2, sh, 255, 255, 255);
             break;
 
         case OPT_BIND:
@@ -384,9 +546,9 @@ static void optmenu_draw_opt(const struct Option *opt, s16 x, s16 y, u8 sel) {
                 // TODO: button names
                 if (opt->uval[i] == VK_INVALID) {
                     if (optmenu_binding && white)
-                        optmenu_draw_text(x, y-13, bindStr[1], 1);
+                        optmenu_draw_text(x, y-13, get_key_string(bindStr[1]), 1);
                     else
-                        optmenu_draw_text(x, y-13, bindStr[0], white);
+                        optmenu_draw_text(x, y-13, get_key_string(bindStr[0]), white);
                 } else {
                     uint_to_hex(opt->uval[i], buf);
                     optmenu_draw_text(x, y-13, buf, white);
@@ -405,7 +567,8 @@ static void optmenu_opt_change(struct Option *opt, s32 val) {
             break;
 
         case OPT_CHOICE:
-            *opt->uval = wrap_add(*opt->uval, val, 0, opt->numChoices - 1);
+            *opt->uval = wrap_add(*opt->uval, val, 0, strcmp(opt->label, optsGameStr[0]) == 0 ? get_num_languages() - 1: (s32) opt->numChoices - 1);
+            set_language(languages[configLanguage]);
             break;
 
         case OPT_SCROLL:
@@ -451,10 +614,12 @@ void optmenu_draw(void) {
     s16 scroll;
     s16 scrollpos;
 
-    const s16 labelX = get_hudstr_centered_x(160, currentMenu->label);
+    u8* label = get_key_string(currentMenu->label);
+
+    const s16 labelX = get_hudstr_centered_x(160, label);
     gSPDisplayList(gDisplayListHead++, dl_rgba16_text_begin);
     gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, 255);
-    print_hud_lut_string(HUD_LUT_GLOBAL, labelX, 40, currentMenu->label);
+    print_hud_lut_string(HUD_LUT_GLOBAL, labelX, 40, label);
     gSPDisplayList(gDisplayListHead++, dl_rgba16_text_end);
 
     if (currentMenu->numOpts > 4) {
@@ -475,16 +640,16 @@ void optmenu_draw(void) {
     gDPSetScissor(gDisplayListHead++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     gSPDisplayList(gDisplayListHead++, dl_ia_text_end);
     gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, 255);
-    gSPDisplayList(gDisplayListHead++, dl_rgba16_text_begin);
-    print_hud_lut_string(HUD_LUT_GLOBAL, 80, 90 + (32 * (currentMenu->select - currentMenu->scroll)), menuStr[0]);
-    print_hud_lut_string(HUD_LUT_GLOBAL, 224, 90 + (32 * (currentMenu->select - currentMenu->scroll)), menuStr[0]);
-    gSPDisplayList(gDisplayListHead++, dl_rgba16_text_end);
+    // gSPDisplayList(gDisplayListHead++, dl_rgba16_text_begin);
+    // print_hud_lut_string(HUD_LUT_GLOBAL, 80, 90 + (32 * (currentMenu->select - currentMenu->scroll)), get_key_string(menuStr[0]));
+    // print_hud_lut_string(HUD_LUT_GLOBAL, 224, 90 + (32 * (currentMenu->select - currentMenu->scroll)), get_key_string(menuStr[0]));
+    // gSPDisplayList(gDisplayListHead++, dl_rgba16_text_end);
 }
 
 //This has been separated for interesting reasons. Don't question it.
 void optmenu_draw_prompt(void) {
     gSPDisplayList(gDisplayListHead++, dl_ia_text_begin);
-    optmenu_draw_text(264, 212, menuStr[1 + optmenu_open], 0);
+    optmenu_draw_text(264, 212, get_key_string(menuStr[1 + optmenu_open]), 0);
     gSPDisplayList(gDisplayListHead++, dl_ia_text_end);
 }
 
@@ -511,12 +676,12 @@ void optmenu_toggle(void) {
         l_counter = 0;
     } else {
         #ifndef nosound
+        dynos_jingle_stop();
+        dynos_music_stop();
         play_sound(SOUND_MENU_MARIO_CASTLE_WARP2, gDefaultSoundArgs);
         #endif
         optmenu_open = 0;
-        #ifdef BETTERCAMERA
         newcam_init_settings(); // load bettercam settings from config vars
-        #endif
         controller_reconfigure(); // rebind using new config values
         configfile_save(configfile_name());
     }
@@ -629,3 +794,4 @@ void optmenu_check_buttons(void) {
 }
 
 #endif // EXT_OPTIONS_MENU
+#endif

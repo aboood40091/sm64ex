@@ -4,6 +4,7 @@
 #include <PR/ultratypes.h>
 
 #include "types.h"
+#include "engine/extended_bounds.h"
 
 struct SurfaceNode
 {
@@ -23,8 +24,8 @@ typedef struct SurfaceNode SpatialPartitionCell[3];
 // Needed for bs bss reordering memes.
 extern s32 unused8038BE90;
 
-extern SpatialPartitionCell gStaticSurfacePartition[16][16];
-extern SpatialPartitionCell gDynamicSurfacePartition[16][16];
+extern SpatialPartitionCell gStaticSurfacePartition[CELL_AMOUNT][CELL_AMOUNT];
+extern SpatialPartitionCell gDynamicSurfacePartition[CELL_AMOUNT][CELL_AMOUNT];
 extern struct SurfaceNode *sSurfaceNodePool;
 extern struct Surface *sSurfacePool;
 extern s16 sSurfacePoolSize;

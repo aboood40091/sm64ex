@@ -379,7 +379,7 @@ void bhv_monty_mole_update(void) {
             //  attack moles in these holes consecutively.
             if (distToLastKill < 1500.0f) {
                 if (sMontyMoleKillStreak == 7) {
-                    play_puzzle_jingle();
+                    r96_play_jingle(R96_EVENT_SOLVE_PUZZLE);
                     spawn_object(o, MODEL_1UP, bhv1upWalking);
                 }
             } else {

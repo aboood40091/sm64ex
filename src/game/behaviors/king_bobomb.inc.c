@@ -1,3 +1,5 @@
+#include "pc/configfile.h"
+
 // king_bobomb.c.inc
 
 // Copy of geo_update_projectile_pos_from_parent
@@ -21,10 +23,8 @@ void bhv_bobomb_anchor_mario_loop(void) {
 }
 
 void king_bobomb_act_0(void) {
-#ifndef VERSION_JP
     o->oForwardVel = 0;
     o->oVelY = 0;
-#endif
     if (o->oSubAction == 0) {
         cur_obj_become_intangible();
         gSecondCameraFocus = o;
@@ -32,6 +32,8 @@ void king_bobomb_act_0(void) {
         cur_obj_set_pos_to_home();
         o->oHealth = 3;
         if (cur_obj_can_mario_activate_textbox_2(500.0f, 100.0f)) {
+            dynos_music_stop();
+            r96_play_music(R96_EVENT_BOSS_INTRO);
             o->oSubAction++;
             func_8031FFB4(SEQ_PLAYER_LEVEL, 60, 40);
         }
@@ -77,7 +79,8 @@ void king_bobomb_act_2(void) {
         o->oAction = 3;
     if (mario_is_far_below_object(1200.0f)) {
         o->oAction = 0;
-        stop_background_music(SEQUENCE_ARGS(4, SEQ_EVENT_BOSS));
+        r96_stop_music();
+        r96_cap_music_boss_fix();
     }
 }
 
@@ -132,7 +135,8 @@ void king_bobomb_act_1(void) {
         o->oAction = 2;
     if (mario_is_far_below_object(1200.0f)) {
         o->oAction = 0;
-        stop_background_music(SEQUENCE_ARGS(4, SEQ_EVENT_BOSS));
+        r96_stop_music();
+        r96_cap_music_boss_fix();
     }
 }
 
@@ -177,19 +181,17 @@ void king_bobomb_act_7(void) {
         spawn_mist_particles_variable(0, 0, 200.0f);
         spawn_triangle_break_particles(20, 138, 3.0f, 4);
         cur_obj_shake_screen(SHAKE_POS_SMALL);
-#ifndef VERSION_JP
         cur_obj_spawn_star_at_y_offset(2000.0f, 4500.0f, -4500.0f, 200.0f);
-#else
-        o->oPosY += 100.0f;
-        spawn_default_star(2000.0f, 4500.0f, -4500.0f);
-#endif
         o->oAction = 8;
     }
 }
 
 void king_bobomb_act_8(void) {
-    if (o->oTimer == 60)
-        stop_background_music(SEQUENCE_ARGS(4, SEQ_EVENT_BOSS));
+    if (o->oTimer == 60){
+        r96_stop_music();
+        r96_cap_music_boss_fix();
+        //dynos_music_pause();
+    }
 }
 
 void king_bobomb_act_4(void) { // bobomb been thrown
@@ -256,7 +258,8 @@ void king_bobomb_act_5(void) { // bobomb returns home
         case 3:
             if (mario_is_far_below_object(1200.0f)) {
                 o->oAction = 0;
-                stop_background_music(SEQUENCE_ARGS(4, SEQ_EVENT_BOSS));
+                r96_stop_music();
+                r96_cap_music_boss_fix();
             }
             if (cur_obj_can_mario_activate_textbox_2(500.0f, 100.0f))
                 o->oSubAction++;
@@ -295,14 +298,10 @@ void king_bobomb_move(void) {
         cur_obj_move_using_fvel_and_gravity();
     cur_obj_call_action_function(sKingBobombActions);
     exec_anim_sound_state(sKingBobombSoundStates);
-#ifndef NODRAWINGDISTANCE
-    if (o->oDistanceToMario < 5000.0f)
-#endif
+    if (o->oDistanceToMario < 50 * configDrawDistance)
         cur_obj_enable_rendering();
-#ifndef NODRAWINGDISTANCE
     else
         cur_obj_disable_rendering();
-#endif
 }
 
 void bhv_king_bobomb_loop(void) {

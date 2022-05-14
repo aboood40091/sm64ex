@@ -83,14 +83,6 @@ Vp D_8032CF00 = { {
     { 640, 480, 511, 0 },
 } };
 
-#ifdef VERSION_EU
-const char *gNoControllerMsg[] = {
-    "NO CONTROLLER",
-    "MANETTE DEBRANCHEE",
-    "CONTROLLER FEHLT",
-};
-#endif
-
 void override_viewport_and_clip(Vp *a, Vp *b, u8 c, u8 d, u8 e) {
     u16 sp6 = ((c >> 3) << 11) | ((d >> 3) << 6) | ((e >> 3) << 1) | 1;
 
@@ -114,23 +106,12 @@ static int scale_x_to_correct_aspect_center(int x) {
 }
 
 void print_intro_text(void) {
-#ifdef VERSION_EU
-    int language = eu_get_language();
-#endif
     if ((gGlobalTimer & 0x1F) < 20) {
         if (gControllerBits == 0) {
-#ifdef VERSION_EU
-            print_text_centered(SCREEN_WIDTH / 2, 20, gNoControllerMsg[language]);
-#else
             print_text_centered(scale_x_to_correct_aspect_center(SCREEN_WIDTH / 2), 20, "NO CONTROLLER");
-#endif
         } else {
-#ifdef VERSION_EU
-            print_text(20, 20, "START");
-#else
             print_text_centered(60, 38, "PRESS");
             print_text_centered(60, 20, "START");
-#endif
         }
     }
 }
@@ -369,6 +350,7 @@ void play_transition_after_delay(s16 transType, s16 time, u8 red, u8 green, u8 b
 }
 
 void render_game(void) {
+    dynos_update_gfx();
     if (gCurrentArea != NULL && !gWarpTransition.pauseRendering) {
         geo_process_root(gCurrentArea->unk04, D_8032CE74, D_8032CE78, gFBSetColor);
 
@@ -418,6 +400,12 @@ void render_game(void) {
         } else {
             clear_frame_buffer(gWarpTransFBSetColor);
         }
+    }
+
+    if (configForce4by3) {
+        gDPSetFillColor(gDisplayListHead++, GPACK_RGBA5551(0, 0, 0, 1));
+        gDPFillRectangle(gDisplayListHead++, GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(0), 0, 0, SCREEN_HEIGHT);
+        gDPFillRectangle(gDisplayListHead++, SCREEN_WIDTH, 0, GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(0), SCREEN_HEIGHT);
     }
 
     D_8032CE74 = NULL;

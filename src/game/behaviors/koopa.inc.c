@@ -473,7 +473,7 @@ s32 obj_begin_race(s32 noTimer) {
         cur_obj_play_sound_2(SOUND_GENERAL_RACE_GUN_SHOT);
 
         if (!noTimer) {
-            play_music(SEQ_PLAYER_LEVEL, SEQUENCE_ARGS(4, SEQ_LEVEL_SLIDE), 0);
+            r96_play_music(R96_EVENT_RACE);
 
             level_control_timer(TIMER_CONTROL_SHOW);
             level_control_timer(TIMER_CONTROL_START);
@@ -709,7 +709,8 @@ static void koopa_the_quick_act_after_race(void) {
 
     if (o->parentObj->oKoopaRaceEndpointUnk100 == 0) {
         if (cur_obj_can_mario_activate_textbox_2(400.0f, 400.0f)) {
-            stop_background_music(SEQUENCE_ARGS(4, SEQ_LEVEL_SLIDE));
+            r96_stop_music();
+            r96_cap_music_boss_fix();
 
             // Determine which text to display
 
@@ -827,7 +828,7 @@ void bhv_koopa_race_endpoint_update(void) {
             level_control_timer(TIMER_CONTROL_STOP);
 
             if (!o->oKoopaRaceEndpointKoopaFinished) {
-                play_race_fanfare();
+                r96_play_jingle(R96_EVENT_RACE_FANFARE);
                 if (gMarioShotFromCannon) {
                     o->oKoopaRaceEndpointRaceStatus = -1;
                 } else {

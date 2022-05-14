@@ -250,4 +250,18 @@ extern const Gfx wooden_signpost_seg3_dl_0302DCD0[];
 extern const Gfx wooden_signpost_seg3_dl_0302DD08[];
 extern const Collision wooden_signpost_seg3_collision_0302DD80[];
 
+#include "warp_pipe_boo/geo_header.h"
+
+#include "boo_key/geo_header.h"
+
+#include "luigi_cap/geo_header.h"
+
+#include "wario_cap/geo_header.h"
+
+#include "wario_coin/geo_header.h"
+
+#include "milk_bottle/geo_header.h"
+
+#include "mario_cap/geo_header.h"
+
 #endif

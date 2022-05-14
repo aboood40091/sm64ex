@@ -14,7 +14,14 @@
 #include "area.h"
 #include "save_file.h"
 #include "print.h"
+#include "engine/surface_load.h"
 #include "pc/configfile.h"
+
+#ifdef TARGET_SWITCH
+#define AVOID_UTYPES
+#include "nx/m_nx.h"
+#include "nx/m_controller.h"
+#endif
 
 /* @file hud.c
  * This file implements HUD rendering and power meter animations.
@@ -55,9 +62,51 @@ static struct PowerMeterHUD sPowerMeterHUD = {
 // when the power meter is hidden.
 s32 sPowerMeterVisibleTimer = 0;
 
+// Custom left and right snapping functions
+s32 get_left(s32 value) {
+    if (configForce4by3) {
+        return value;
+    }
+    else {
+        return GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(value);
+    }
+}
+s32 get_right(s32 value) {
+    if (configForce4by3) {
+        return SCREEN_WIDTH-value;
+    }
+    else {
+        return GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(value);
+    }
+}
+
 static struct UnusedHUDStruct sUnusedHUDValues = { 0x00, 0x0A, 0x00 };
 
 static struct CameraHUD sCameraHUD = { CAM_STATUS_NONE };
+
+void render_hud_rectangle(s16 x1, s16 y1, s16 x2, s16 y2, u8 r, u8 g, u8 b) {
+    gDPPipeSync(gDisplayListHead++);
+    gDPSetRenderMode(gDisplayListHead++, G_RM_OPA_SURF, G_RM_OPA_SURF2);
+    gDPSetCycleType(gDisplayListHead++, G_CYC_FILL);
+    gDPSetFillColor(gDisplayListHead++, GPACK_RGBA5551(r, g, b, 255));
+    gDPFillRectangle(gDisplayListHead++, x1, y1, x2 + 1, y2 + 1);
+    gDPPipeSync(gDisplayListHead++);
+    gDPSetCycleType(gDisplayListHead++, G_CYC_1CYCLE);
+}
+
+static u32 sPowerMeterLastRenderTimestamp;
+static s16 sPowerMeterLastY;
+static Gfx *sPowerMeterDisplayListPos;
+
+void patch_interpolated_hud(void) {
+    if (sPowerMeterDisplayListPos != NULL) {
+        Mtx *mtx = alloc_display_list(sizeof(Mtx));
+        guTranslate(mtx, (f32) sPowerMeterHUD.x, (f32) sPowerMeterHUD.y, 0);
+        gSPMatrix(sPowerMeterDisplayListPos, VIRTUAL_TO_PHYSICAL(mtx),
+              G_MTX_MODELVIEW | G_MTX_MUL | G_MTX_PUSH);
+        sPowerMeterDisplayListPos = NULL;
+    }
+}
 
 /**
  * Renders a rgba16 16x16 glyph texture from a table list.
@@ -88,6 +137,20 @@ void render_hud_small_tex_lut(s32 x, s32 y, u8 *texture) {
                         0, 0, 4 << 10, 1 << 10);
 }
 
+void render_hud_texture(s32 x, s32 y, u32 w, u32 h, u8 *texture) {
+    gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+    gDPSetTile(gDisplayListHead++, G_IM_FMT_RGBA, G_IM_SIZ_32b, 0, 0, G_TX_LOADTILE, 0, G_TX_NOMIRROR, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOMIRROR, G_TX_NOMASK, G_TX_NOLOD);
+    gDPTileSync(gDisplayListHead++);
+    gDPSetTile(gDisplayListHead++, G_IM_FMT_RGBA, G_IM_SIZ_32b, 2, 0, G_TX_RENDERTILE, 0, G_TX_NOMIRROR, 3, G_TX_NOLOD, G_TX_NOMIRROR, 3, G_TX_NOLOD);
+    gDPSetTileSize(gDisplayListHead++, G_TX_RENDERTILE, 0, 0, w << G_TEXTURE_IMAGE_FRAC, h << G_TEXTURE_IMAGE_FRAC);
+    gDPPipeSync(gDisplayListHead++);
+    gDPSetTextureImage(gDisplayListHead++, G_IM_FMT_RGBA, G_IM_SIZ_32b, 1, texture);
+    gDPLoadSync(gDisplayListHead++);
+    gDPLoadBlock(gDisplayListHead++, G_TX_LOADTILE, 0, 0, w * h - 1, CALC_DXT(w, G_IM_SIZ_32b_BYTES));
+    gSPTextureRectangle(gDisplayListHead++, x << 2, y << 2, (x + w) << 2, (y + h) << 2, G_TX_RENDERTILE, 0, 0, 4 << 10, 1 << 10);
+    gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+}
+
 /**
  * Renders power meter health segment texture using a table list.
  */
@@ -111,6 +174,7 @@ void render_power_meter_health_segment(s16 numHealthWedges) {
  */
 void render_dl_power_meter(s16 numHealthWedges) {
     Mtx *mtx;
+    f32 interpolatedY;
 
     mtx = alloc_display_list(sizeof(Mtx));
 
@@ -118,7 +182,15 @@ void render_dl_power_meter(s16 numHealthWedges) {
         return;
     }
 
-    guTranslate(mtx, (f32) sPowerMeterHUD.x, (f32) sPowerMeterHUD.y, 0);
+    if (gGlobalTimer == sPowerMeterLastRenderTimestamp + 1) {
+        interpolatedY = (sPowerMeterLastY + sPowerMeterHUD.y) / 2.0f;
+    } else {
+        interpolatedY = sPowerMeterHUD.y;
+    }
+    guTranslate(mtx, (f32) sPowerMeterHUD.x, interpolatedY, 0);
+    sPowerMeterLastY = sPowerMeterHUD.y;
+    sPowerMeterLastRenderTimestamp = gGlobalTimer;
+    sPowerMeterDisplayListPos = gDisplayListHead;
 
     gSPMatrix(gDisplayListHead++, VIRTUAL_TO_PHYSICAL(mtx++),
               G_MTX_MODELVIEW | G_MTX_MUL | G_MTX_PUSH);
@@ -264,13 +336,133 @@ void render_hud_power_meter(void) {
 #define HUD_TOP_Y 209
 #endif
 
+void render_debug_info(void) {
+    print_text_fmt_int(GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(22), HUD_TOP_Y - 30, "%d", gMarioState->pos[0]);
+    print_text_fmt_int(GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(22), HUD_TOP_Y - 50, "%d", gMarioState->pos[1]);
+    print_text_fmt_int(GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(22), HUD_TOP_Y - 70, "%d", gMarioState->pos[2]);
+}
+
 /**
  * Renders the amount of lives Mario has.
  */
+
+s32 is_metal_cap(struct MarioState *m){
+    return (m->flags & MARIO_METAL_CAP);
+}
+
+s32 is_vanish_cap(struct MarioState *m){
+    return (m->flags & MARIO_VANISH_CAP);
+}
+
+s32 is_wing_cap(struct MarioState *m){
+    return (m->flags & MARIO_WING_CAP);
+}
+
+s32 is_hatless(struct MarioState *m){
+    return !(m->flags & MARIO_CAP_ON_HEAD);
+}
+
 void render_hud_mario_lives(void) {
-    print_text(GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(22), HUD_TOP_Y, ","); // 'Mario Head' glyph
-    print_text(GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(38), HUD_TOP_Y, "*"); // 'X' glyph
-    print_text_fmt_int(GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(54), HUD_TOP_Y, "%d", gHudDisplay.lives);
+
+    if (isLuigi()) {
+        if(is_metal_cap(gMarioState) && is_vanish_cap(gMarioState)){
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_tex_lut(get_left(22), 15, "textures/segment2/luigi_metal_invis.rgba32"); // 'Luigi metal vanish Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+        else if(is_metal_cap(gMarioState)) {
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_tex_lut(get_left(22), 15, "textures/segment2/luigi_metal.rgba32"); // 'Luigi metal Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+        else if(is_vanish_cap(gMarioState)) {
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_tex_lut(get_left(22), 15, "textures/segment2/luigi_invis.rgba32"); // 'Luigi vanish Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+        else if(is_wing_cap(gMarioState)) {
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_texture(get_left(12), 15, 32, 16, "textures/segment2/luigi_wings.rgba32"); // 'Luigi wing Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+        else if(is_hatless(gMarioState)) {
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_tex_lut(get_left(22), 15, "textures/segment2/luigi_capless.rgba32"); // 'Luigi hatless Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+        else {
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_tex_lut(get_left(22), 15, "textures/segment2/luigi_normal.rgba32"); // 'Luigi Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+    }
+    if(isWario()) {
+        if(is_metal_cap(gMarioState) && is_vanish_cap(gMarioState)){
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_tex_lut(get_left(22), 15, "textures/segment2/wario_metal_invis.rgba32"); // 'Wario metal vanish Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+        else if(is_metal_cap(gMarioState)) {
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_tex_lut(get_left(22), 15, "textures/segment2/wario_metal.rgba32"); // 'Wario metal Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+        else if(is_vanish_cap(gMarioState)) {
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_tex_lut(get_left(22), 15, "textures/segment2/wario_invis.rgba32"); // 'Wario vanish Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+        else if(is_wing_cap(gMarioState)) {
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_texture(get_left(12), 15, 32, 16, "textures/segment2/wario_wings.rgba32"); // 'Wario wing Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+        else if(is_hatless(gMarioState)) {
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_tex_lut(get_left(22), 15, "textures/segment2/wario_capless.rgba32"); // 'Wario hatless Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+        else {
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_tex_lut(get_left(22), 15, "textures/segment2/wario_normal.rgba32"); // 'Wario Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+    }
+    if (!isLuigi() && !isWario()) {
+        if(is_metal_cap(gMarioState) && is_vanish_cap(gMarioState)){
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_tex_lut(get_left(22), 15, "textures/segment2/mario_metal_invis.rgba32"); // 'Mario metal vanish Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+        else if(is_metal_cap(gMarioState)) {
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_tex_lut(get_left(22), 15, "textures/segment2/mario_metal.rgba32"); // 'Mario metal Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+        else if(is_vanish_cap(gMarioState)) {
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_tex_lut(get_left(22), 15, "textures/segment2/mario_invis.rgba32"); // 'Mario vanish Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+        else if(is_wing_cap(gMarioState)) {
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_texture(get_left(12), 15, 32, 16, "textures/segment2/mario_wings.rgba32"); // 'Mario wing Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+        else if(is_hatless(gMarioState)) {
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_tex_lut(get_left(22), 15, "textures/segment2/mario_capless.rgba32"); // 'Mario hatless Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+        else {
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+            render_hud_tex_lut(get_left(22), 15, "textures/segment2/mario_normal.rgba32"); // 'Mario Head' glyph
+            gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        }
+    }
+    print_text(get_left(38), HUD_TOP_Y, "*"); // 'X' glyph
+    print_text_fmt_int(get_left(54), HUD_TOP_Y, "%d", gHudDisplay.lives);
+	//render_debug_info();
 }
 
 /**
@@ -282,11 +474,7 @@ void render_hud_coins(void) {
     print_text_fmt_int(198, HUD_TOP_Y, "%d", gHudDisplay.coins);
 }
 
-#ifdef VERSION_JP
-#define HUD_STARS_X 73
-#else
 #define HUD_STARS_X 78
-#endif
 
 /**
  * Renders the amount of stars collected.
@@ -303,23 +491,91 @@ void render_hud_stars(void) {
         showX = 1;
     }
 
-    print_text(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(HUD_STARS_X), HUD_TOP_Y, "-"); // 'Star' glyph
+    print_text(get_right(HUD_STARS_X), HUD_TOP_Y, "-"); // 'Star' glyph
     if (showX == 1) {
-        print_text(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(HUD_STARS_X) + 16, HUD_TOP_Y, "*"); // 'X' glyph
+        print_text(get_right(HUD_STARS_X) + 16, HUD_TOP_Y, "*"); // 'X' glyph
     }
-    print_text_fmt_int((showX * 14) + GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(HUD_STARS_X - 16),
+    print_text_fmt_int((showX * 14) + get_right(HUD_STARS_X - 16),
                        HUD_TOP_Y, "%d", gHudDisplay.stars);
 }
+
+f32 slideY = 0;
+f32 slideTimer = 0;
+
+s32 buttonTimer = 0;
+
+char* normal = "textures/segment2/luigi.rgba16";
+char* press = "textures/segment2/luigi_pressed.rgba16";
+
+char* current = "textures/segment2/luigi.rgba16";
+
+s32 currentSwitch = FALSE;
 
 /**
  * Unused function that renders the amount of keys collected.
  * Leftover function from the beta version of the game.
  */
 void render_hud_keys(void) {
-    s16 i;
+    if(gHudDisplay.keys > 0 && gHudDisplay.keys < 10){
+        gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+        render_hud_tex_lut(GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(22), 35, "textures/segment2/boo_key.rgba16");
+        gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        print_text(GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(38), HUD_TOP_Y - 20, "*"); // 'X' glyph
+        print_text_fmt_int(GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(54), HUD_TOP_Y - 20, "%d", gHudDisplay.keys);
+    }
+}
 
-    for (i = 0; i < gHudDisplay.keys; i++) {
-        print_text((i * 16) + 220, 142, "/"); // unused glyph - beta key
+void render_hud_wario_coins(void) {
+    if(gHudDisplay.wario_coins > 0 && gHudDisplay.wario_coins < 6){
+        gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+        render_hud_tex_lut(GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(22), 55, "textures/segment2/wario_coin.rgba16");
+        gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+        print_text(GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(38), HUD_TOP_Y - 40, "*"); // 'X' glyph
+        print_text_fmt_int(GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(54), HUD_TOP_Y - 40, "%d", gHudDisplay.wario_coins);
+    }
+}
+
+s8 renderNotification = FALSE;
+
+void set_notification_state(s8 newState){
+    renderNotification = newState;
+}
+s8 get_notification_state(){
+    return renderNotification;
+}
+
+void render_notification(){
+    if(renderNotification){
+        if(buttonTimer < 15){
+            buttonTimer++;
+        }else{
+            current = (strcmp(current, normal) != 0) ? normal : press;
+            buttonTimer= 0;
+        }
+
+        if(!currentSwitch){
+            if(slideTimer < 100){
+                if(slideTimer < 15) slideY += 2;
+                slideTimer++;
+            }else{
+                currentSwitch = TRUE;
+            }
+        }else{
+            if(slideTimer > 0) {
+                if(slideTimer > 85) slideY -= 2;
+                else renderNotification = FALSE;
+                slideTimer--;
+            }else {
+                currentSwitch = FALSE;
+            }
+        }
+
+        u32 baseWidth = 845;
+        u32 baseHeight = 109;
+
+        f32 newWidth = 16 * baseWidth / baseHeight;
+
+        render_hud_texture((SCREEN_WIDTH / 2) - (newWidth / 2), -28 + slideY, newWidth, 16, current);
     }
 }
 
@@ -335,32 +591,17 @@ void render_hud_timer(void) {
 
     hudLUT = segmented_to_virtual(&main_hud_lut);
     timerValFrames = gHudDisplay.timer;
-#ifdef VERSION_EU
-    switch (eu_get_language()) {
-        case LANGUAGE_ENGLISH:
-            print_text(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(150), 185, "TIME");
-            break;
-        case LANGUAGE_FRENCH:
-            print_text(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(155), 185, "TEMPS");
-            break;
-        case LANGUAGE_GERMAN:
-            print_text(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(150), 185, "ZEIT");
-            break;
-    }
-#endif
     timerMins = timerValFrames / (30 * 60);
     timerSecs = (timerValFrames - (timerMins * 1800)) / 30;
 
     timerFracSecs = ((timerValFrames - (timerMins * 1800) - (timerSecs * 30)) & 0xFFFF) / 3;
-#ifndef VERSION_EU
-    print_text(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(150), 185, "TIME");
-#endif
-    print_text_fmt_int(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(91), 185, "%0d", timerMins);
-    print_text_fmt_int(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(71), 185, "%02d", timerSecs);
-    print_text_fmt_int(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(37), 185, "%d", timerFracSecs);
+    print_text(get_right(150), 185, "TIME");
+    print_text_fmt_int(get_right(91), 185, "%0d", timerMins);
+    print_text_fmt_int(get_right(71), 185, "%02d", timerSecs);
+    print_text_fmt_int(get_right(37), 185, "%d", timerFracSecs);
     gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
-    render_hud_tex_lut(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(81), 32, (*hudLUT)[GLYPH_APOSTROPHE]);
-    render_hud_tex_lut(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(46), 32, (*hudLUT)[GLYPH_DOUBLE_QUOTE]);
+    render_hud_tex_lut(get_right(81), 32, (*hudLUT)[GLYPH_APOSTROPHE]);
+    render_hud_tex_lut(get_right(46), 32, (*hudLUT)[GLYPH_DOUBLE_QUOTE]);
     gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
 }
 
@@ -372,49 +613,82 @@ void set_hud_camera_status(s16 status) {
     sCameraHUD.status = status;
 }
 
+#define HUD_LAKITU_X 54
+#define HUD_LAKITU_Y 205
+
 /**
  * Renders camera HUD glyphs using a table list, depending of
  * the camera status called, a defined glyph is rendered.
  */
 void render_hud_camera_status(void) {
     u8 *(*cameraLUT)[6];
-    s32 x;
-    s32 y;
-
     cameraLUT = segmented_to_virtual(&main_hud_camera_lut);
-    x = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(54);
-    y = 205;
 
     if (sCameraHUD.status == CAM_STATUS_NONE) {
         return;
     }
-
+    if (configEnableCamera == false) {
     gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
-    render_hud_tex_lut(x, y, (*cameraLUT)[GLYPH_CAM_CAMERA]);
+    render_hud_tex_lut(get_right(HUD_LAKITU_X), HUD_LAKITU_Y, (*cameraLUT)[GLYPH_CAM_CAMERA]);
 
     switch (sCameraHUD.status & CAM_STATUS_MODE_GROUP) {
         case CAM_STATUS_MARIO:
-            render_hud_tex_lut(x + 16, y, (*cameraLUT)[GLYPH_CAM_MARIO_HEAD]);
+            if(isLuigi()){
+                render_hud_tex_lut(get_right(HUD_LAKITU_X) + 16, HUD_LAKITU_Y, "textures/segment2/luigi_normal.rgba32");
+            }
+            if(isWario()){
+                render_hud_tex_lut(get_right(HUD_LAKITU_X) + 16, HUD_LAKITU_Y, "textures/segment2/wario_normal.rgba32");
+            }
+            else if (!isLuigi() && !isWario()){
+                render_hud_tex_lut(get_right(HUD_LAKITU_X) + 16, HUD_LAKITU_Y, "textures/segment2/mario_normal.rgba32");
+            }
             break;
         case CAM_STATUS_LAKITU:
-            render_hud_tex_lut(x + 16, y, (*cameraLUT)[GLYPH_CAM_LAKITU_HEAD]);
+            render_hud_tex_lut(get_right(HUD_LAKITU_X) + 16, HUD_LAKITU_Y, (*cameraLUT)[GLYPH_CAM_LAKITU_HEAD]);
             break;
         case CAM_STATUS_FIXED:
-            render_hud_tex_lut(x + 16, y, (*cameraLUT)[GLYPH_CAM_FIXED]);
+            render_hud_tex_lut(get_right(HUD_LAKITU_X) + 16, HUD_LAKITU_Y, (*cameraLUT)[GLYPH_CAM_FIXED]);
             break;
     }
 
     switch (sCameraHUD.status & CAM_STATUS_C_MODE_GROUP) {
         case CAM_STATUS_C_DOWN:
-            render_hud_small_tex_lut(x + 4, y + 16, (*cameraLUT)[GLYPH_CAM_ARROW_DOWN]);
+            render_hud_small_tex_lut(get_right(HUD_LAKITU_X) + 4, HUD_LAKITU_Y + 16, (*cameraLUT)[GLYPH_CAM_ARROW_DOWN]);
             break;
         case CAM_STATUS_C_UP:
-            render_hud_small_tex_lut(x + 4, y - 8, (*cameraLUT)[GLYPH_CAM_ARROW_UP]);
+            render_hud_small_tex_lut(get_right(HUD_LAKITU_X) + 4, HUD_LAKITU_Y - 8, (*cameraLUT)[GLYPH_CAM_ARROW_UP]);
             break;
     }
-
+  }
     gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
 }
+
+#ifdef TARGET_SWITCH
+void render_nx_hud(void){
+    s16 x = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(40);
+    s16 y = 212;
+    s16 w = x + 14;
+    s16 h = y + 6;
+
+    render_hud_rectangle(x - 1, y - 1, w + 1, h + 1, 57, 57, 57);
+    render_hud_rectangle(w, y + 1, w + 2, y + 6, 57, 57, 57);
+    render_hud_rectangle(x, y, w, h, 194, 194, 194);
+    render_hud_rectangle(x, y, x + (s16)(14 * getBatteryPercentage()), h, 76, 235, 52);
+
+    x = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(20);
+    y = 207;
+
+    struct NXController controller;
+
+    get_controller_nx(&controller);
+
+    gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
+    render_hud_tex_lut(x, y, controller.icon);
+    gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
+
+}
+#endif
+
 
 /**
  * Render HUD strings using hudDisplayFlags with it's render functions,
@@ -422,9 +696,6 @@ void render_hud_camera_status(void) {
  */
 void render_hud(void) {
     s16 hudDisplayFlags;
-#ifdef VERSION_EU
-    Mtx *mtx;
-#endif
 
     hudDisplayFlags = gHudDisplay.flags;
 
@@ -433,21 +704,7 @@ void render_hud(void) {
         sPowerMeterStoredHealth = 8;
         sPowerMeterVisibleTimer = 0;
     } else {
-#ifdef VERSION_EU
-        // basically create_dl_ortho_matrix but guOrtho screen width is different
-
-        mtx = alloc_display_list(sizeof(*mtx));
-        if (mtx == NULL) {
-            return;
-        }
-        create_dl_identity_matrix();
-        guOrtho(mtx, -16.0f, SCREEN_WIDTH + 16, 0, SCREEN_HEIGHT, -10.0f, 10.0f, 1.0f);
-        gSPPerspNormalize(gDisplayListHead++, 0xFFFF);
-        gSPMatrix(gDisplayListHead++, VIRTUAL_TO_PHYSICAL(mtx),
-                G_MTX_PROJECTION | G_MTX_MUL | G_MTX_NOPUSH);
-#else
         create_dl_ortho_matrix();
-#endif
 
         if (gCurrentArea != NULL && gCurrentArea->camera->mode == CAMERA_MODE_INSIDE_CANNON) {
             render_hud_cannon_reticle();
@@ -455,6 +712,14 @@ void render_hud(void) {
 
         if (hudDisplayFlags & HUD_DISPLAY_FLAG_LIVES && configHUD) {
             render_hud_mario_lives();
+        }
+
+        if (configHUD) {
+            render_hud_keys();
+        }
+    
+        if (configHUD) {
+            render_hud_wario_coins();
         }
 
         if (hudDisplayFlags & HUD_DISPLAY_FLAG_COIN_COUNT && configHUD) {
@@ -465,10 +730,6 @@ void render_hud(void) {
             render_hud_stars();
         }
 
-        if (hudDisplayFlags & HUD_DISPLAY_FLAG_KEYS && configHUD) {
-            render_hud_keys();
-        }
-
         if (hudDisplayFlags & HUD_DISPLAY_FLAG_CAMERA_AND_POWER && configHUD) {
             render_hud_power_meter();
             render_hud_camera_status();
@@ -477,5 +738,16 @@ void render_hud(void) {
         if (hudDisplayFlags & HUD_DISPLAY_FLAG_TIMER && configHUD) {
             render_hud_timer();
         }
+
+        if( configHUD ) {
+
+        #ifdef TARGET_SWITCH
+            if ( configSwitchHud )
+                render_nx_hud();
+        #endif
+
+        }
+
+        //render_notification();
     }
 }

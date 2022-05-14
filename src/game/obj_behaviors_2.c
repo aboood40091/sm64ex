@@ -362,7 +362,7 @@ static s32 cur_obj_set_anim_if_at_end(s32 arg0) {
 static s32 cur_obj_play_sound_at_anim_range(s8 arg0, s8 arg1, u32 sound) {
     s32 val04;
 
-    if ((val04 = o->header.gfx.unk38.animAccel / 0x10000) <= 0) {
+    if ((val04 = o->header.gfx.curAnim.animAccel / 0x10000) <= 0) {
         val04 = 1;
     }
 
@@ -708,6 +708,19 @@ static s32 obj_handle_attacks(struct ObjectHitbox *hitbox, s32 attackedMarioActi
             }
         } else {
             attackType = o->oInteractStatus & INT_STATUS_ATTACK_MASK;
+            if(gMarioState->milk == 1) {
+                if(gMarioState->defeatEnemy !=5)
+                {
+                    gMarioState->defeatEnemy++;
+                    spawn_orange_number(gMarioState->defeatEnemy, 0, 0, 0);
+                }
+                else
+                {
+                    gMarioState->numLives++;
+                    play_sound(SOUND_GENERAL_COLLECT_1UP, gDefaultSoundArgs);
+                    //1up
+                }
+            }
 
             switch (attackHandlers[attackType - 1]) {
                 case ATTACK_HANDLER_NOP:
@@ -722,6 +735,10 @@ static s32 obj_handle_attacks(struct ObjectHitbox *hitbox, s32 attackedMarioActi
                     break;
 
                 case ATTACK_HANDLER_SQUISHED:
+                    obj_set_squished_action();
+                    break;
+
+                case ATTACK_HANDLER_STUN:
                     obj_set_squished_action();
                     break;
 
@@ -759,7 +776,7 @@ static s32 obj_handle_attacks(struct ObjectHitbox *hitbox, s32 attackedMarioActi
 static void obj_act_knockback(UNUSED f32 baseScale) {
     cur_obj_update_floor_and_walls();
 
-    if (o->header.gfx.unk38.curAnim != NULL) {
+    if (o->header.gfx.curAnim.curAnim != NULL) {
         cur_obj_extend_animation_if_at_end();
     }
 
@@ -778,7 +795,7 @@ static void obj_act_squished(f32 baseScale) {
 
     cur_obj_update_floor_and_walls();
 
-    if (o->header.gfx.unk38.curAnim != NULL) {
+    if (o->header.gfx.curAnim.curAnim != NULL) {
         cur_obj_extend_animation_if_at_end();
     }
 
@@ -830,6 +847,18 @@ static s32 obj_check_attacks(struct ObjectHitbox *hitbox, s32 attackedMarioActio
                 o->oTimer = 0;
             }
         } else {
+            if(gMarioState->milk == 1) {
+                if(gMarioState->defeatEnemy !=5) {
+                    gMarioState->defeatEnemy++;
+                    spawn_orange_number(gMarioState->defeatEnemy, 0, 0, 0);
+                }
+                else {
+                    spawn_orange_number(10, 0, 0, 0);
+                    gMarioState->numLives++;
+                    play_sound(SOUND_GENERAL_COLLECT_1UP, gDefaultSoundArgs);
+                    //1up
+                }
+            }
             attackType = o->oInteractStatus & INT_STATUS_ATTACK_MASK;
             obj_die_if_health_non_positive();
             o->oInteractStatus = 0;

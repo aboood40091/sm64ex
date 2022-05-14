@@ -48,6 +48,7 @@ static void eyerok_boss_act_wake_up(void) {
             }
 
             if (o->oEyerokBossUnk110 == 0.0f && mario_ready_to_speak() != 0) {
+                r96_play_music(R96_EVENT_BOSS_INTRO);
                 o->oAction = EYEROK_BOSS_ACT_SHOW_INTRO_TEXT;
             } else if (o->oTimer > 150) {
                 if (approach_f32_ptr(&o->oEyerokBossUnk110, 0.0f, 10.0f)) {
@@ -123,7 +124,8 @@ static void eyerok_boss_act_die(void) {
             o->oTimer -= 1;
         }
     } else if (o->oTimer > 120) {
-        stop_background_music(SEQUENCE_ARGS(4, SEQ_EVENT_BOSS));
+        r96_stop_music();
+        r96_cap_music_boss_fix();
         obj_mark_for_deletion(o);
     }
 }

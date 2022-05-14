@@ -115,12 +115,12 @@ void func_80181EB0(struct Connection *cxn) {
     sp34.y = sp4->unk20.y - sp0->unk20.y;
     sp34.z = 0.0f;
     sp34.y *= 0.01;
-    sp4->unk38.x -= sp34.x;
-    sp4->unk38.y -= sp34.y;
-    sp4->unk38.z -= sp34.z;
-    sp0->unk38.x += sp34.x;
-    sp0->unk38.y += sp34.y;
-    sp0->unk38.z += sp34.z;
+    sp4->curAnim.x -= sp34.x;
+    sp4->curAnim.y -= sp34.y;
+    sp4->curAnim.z -= sp34.z;
+    sp0->curAnim.x += sp34.x;
+    sp0->curAnim.y += sp34.y;
+    sp0->curAnim.z += sp34.z;
     if (!(sp4->unk54 & 2)) {
         sp4->unk20.x -= sp34.x;
         sp4->unk20.y -= sp34.y;
@@ -159,12 +159,12 @@ void func_80182088(struct Connection *cxn) {
     sp4C.x *= sp24 * 0.1;
     sp4C.y *= sp24 * 0.1;
     sp4C.z *= sp24 * 0.1;
-    sp1C->unk38.x -= sp4C.x;
-    sp1C->unk38.y -= sp4C.y;
-    sp1C->unk38.z -= sp4C.z;
-    sp18->unk38.x += sp4C.x;
-    sp18->unk38.y += sp4C.y;
-    sp18->unk38.z += sp4C.z;
+    sp1C->curAnim.x -= sp4C.x;
+    sp1C->curAnim.y -= sp4C.y;
+    sp1C->curAnim.z -= sp4C.z;
+    sp18->curAnim.x += sp4C.x;
+    sp18->curAnim.y += sp4C.y;
+    sp18->curAnim.z += sp4C.z;
     if (!(sp1C->unk54 & 2)) {
         sp1C->unk20.x -= sp4C.x;
         sp1C->unk20.y -= sp4C.y;
@@ -215,7 +215,7 @@ struct ObjParticle *make_particle(u32 a, s32 b, f32 x, f32 y, f32 z) {
     sp2C->unk20.x = x;
     sp2C->unk20.y = y;
     sp2C->unk20.z = z;
-    sp2C->unk38.x = sp2C->unk38.y = sp2C->unk38.z = 0.0f;
+    sp2C->curAnim.x = sp2C->curAnim.y = sp2C->curAnim.z = 0.0f;
     sp2C->unk58 = b;
     sp2C->unk54 = a | 8;
     sp2C->unk5C = -1;
@@ -301,13 +301,13 @@ void func_80182A08(struct ObjParticle *ptc, struct GdVec3f *b) {
                 sp20->unk20.z = ptc->unk20.z;
                 sp20->unk5C = 12.0f - func_8018D560() * 5.0f;
                 do {
-                    sp20->unk38.x = func_8018D560() * 50.0 - 25.0;
-                    sp20->unk38.y = func_8018D560() * 50.0 - 25.0;
-                    sp20->unk38.z = func_8018D560() * 50.0 - 25.0;
-                } while (gd_vec3f_magnitude(&sp20->unk38) > 30.0);
-                sp20->unk38.x += b->x;
-                sp20->unk38.y += b->y;
-                sp20->unk38.z += b->z;
+                    sp20->curAnim.x = func_8018D560() * 50.0 - 25.0;
+                    sp20->curAnim.y = func_8018D560() * 50.0 - 25.0;
+                    sp20->curAnim.z = func_8018D560() * 50.0 - 25.0;
+                } while (gd_vec3f_magnitude(&sp20->curAnim) > 30.0);
+                sp20->curAnim.x += b->x;
+                sp20->curAnim.y += b->y;
+                sp20->curAnim.z += b->z;
                 sp20->header.drawFlags &= ~OBJ_NOT_DRAWABLE;
                 sp20->unk54 |= 8;
             }
@@ -366,11 +366,11 @@ void move_particle(struct ObjParticle *ptc) {
         ptc->unk20.z = sp64.z;
     }
     sp7C = -0.4f;
-    ptc->unk20.x += ptc->unk38.x;
-    ptc->unk20.y += ptc->unk38.y;
-    ptc->unk20.z += ptc->unk38.z;
+    ptc->unk20.x += ptc->curAnim.x;
+    ptc->unk20.y += ptc->curAnim.y;
+    ptc->unk20.z += ptc->curAnim.z;
     if (ptc->unk54 & 1) {
-        ptc->unk38.y += sp7C;
+        ptc->curAnim.y += sp7C;
     }
     func_801838D0(ptc);
     if (ptc->unkB0 == 1) {
@@ -402,9 +402,9 @@ void move_particle(struct ObjParticle *ptc) {
         }
     } else if (0) {
     }
-    ptc->unk38.x *= 0.9;
-    ptc->unk38.y *= 0.9;
-    ptc->unk38.z *= 0.9;
+    ptc->curAnim.x *= 0.9;
+    ptc->curAnim.y *= 0.9;
+    ptc->curAnim.z *= 0.9;
     if (ptc->unk60 == 3) {
         switch (ptc->unk64) {
             case 1:
@@ -426,10 +426,10 @@ void move_particle(struct ObjParticle *ptc) {
                         sp2C->unk20.z = ptc->unk20.z;
                         sp2C->unk5C = 20;
                         do {
-                            sp2C->unk38.x = func_8018D560() * 64.0 - 32.0;
-                            sp2C->unk38.y = func_8018D560() * 64.0 - 32.0;
-                            sp2C->unk38.z = func_8018D560() * 64.0 - 32.0;
-                        } while (gd_vec3f_magnitude(&sp2C->unk38) > 32.0);
+                            sp2C->curAnim.x = func_8018D560() * 64.0 - 32.0;
+                            sp2C->curAnim.y = func_8018D560() * 64.0 - 32.0;
+                            sp2C->curAnim.z = func_8018D560() * 64.0 - 32.0;
+                        } while (gd_vec3f_magnitude(&sp2C->curAnim) > 32.0);
                         sp2C->unk30 = func_8018D560() * 180.0f;
                         sp2C->header.drawFlags &= ~OBJ_NOT_DRAWABLE;
                         sp2C->unk54 |= 8;

@@ -27,6 +27,7 @@
 #include "obj_behaviors.h"
 #include "object_helpers.h"
 #include "object_list_processor.h"
+#include "pc/configfile.h"
 #include "rendering_graph_node.h"
 #include "save_file.h"
 #include "spawn_object.h"
@@ -530,15 +531,11 @@ void set_object_visibility(struct Object *obj, s32 dist) {
     f32 objY = obj->oPosY;
     f32 objZ = obj->oPosZ;
 
-#ifndef NODRAWINGDISTANCE
-    if (is_point_within_radius_of_mario(objX, objY, objZ, dist) == TRUE) {
-#endif
+    if (is_point_within_radius_of_mario(objX, objY, objZ, dist * configDrawDistance / 100) == TRUE) {
         obj->header.gfx.node.flags &= ~GRAPH_RENDER_INVISIBLE;
-#ifndef NODRAWINGDISTANCE
     } else {
         obj->header.gfx.node.flags |= GRAPH_RENDER_INVISIBLE;
     }
-#endif
 }
 
 /**
@@ -623,7 +620,11 @@ void obj_spawn_yellow_coins(struct Object *obj, s8 nCoins) {
     s8 count;
 
     for (count = 0; count < nCoins; count++) {
-        coin = spawn_object(obj, MODEL_YELLOW_COIN, bhvMovingYellowCoin);
+        if (isWario())
+            coin = spawn_object(obj, MODEL_YELLOW_COIN, bhvMovingYellowCoinWario);
+        else
+            coin = spawn_object(obj, MODEL_YELLOW_COIN, bhvMovingYellowCoin);
+        
         coin->oForwardVel = random_float() * 20;
         coin->oVelY = random_float() * 40 + 20;
         coin->oMoveAngleYaw = random_u16();
@@ -856,3 +857,6 @@ s32 UNUSED debug_sequence_tracker(s16 debugInputSequence[]) {
 #include "behaviors/treasure_chest.inc.c"
 #include "behaviors/mips.inc.c"
 #include "behaviors/yoshi.inc.c"
+#include "behaviors/blargg.inc.c"
+#include "behaviors/motos.inc.c"
+#include "behaviors/got_milk.inc.c"

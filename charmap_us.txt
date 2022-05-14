@@ -1,0 +1,223 @@
+#######################################################################
+#       Pruned to match only the glyphs available in the US ROM       #
+# --------------------------------------------------------------------#
+#             Digits = 10 (normal)                                    #
+#              Alpha = 52 (normal)                                    #
+#        Punctuation = 14 (normal)                                    #
+#  +     Symbols/HUD = 16 ('+' is dup. of' ↔')                        #
+# ------------------------                                            #
+#                      92 Total `segment2/font_graphics.XXXX.ia4.png` #
+#                                                                     #
+#             Digits = 10 (fullwidth)                                 #
+#              Alpha = 52 (fullwidth)                                 #
+#        Punctuation = 14 (fullwidth)                                 #
+#        Symbols/HUD =  4 ('+' is dup. of' ↔')                        #
+#       JP Leftovers =  2                                             #
+#            Newline =  2 (normal + fullwidth)                        #
+#              Space =  1                                             #
+#  +  Multitxt/Split =  3                                             #
+# ------------------------                                            #
+#                     180 Total Array Size                            #
+#                                                                     #
+#######################################################################
+
+# Digits
+'0' = 0x00
+'０' = 0x00
+'1' = 0x01
+'１' = 0x01
+'2' = 0x02
+'２' = 0x02
+'3' = 0x03
+'３' = 0x03
+'4' = 0x04
+'４' = 0x04
+'5' = 0x05
+'５' = 0x05
+'6' = 0x06
+'６' = 0x06
+'7' = 0x07
+'７' = 0x07
+'8' = 0x08
+'８' = 0x08
+'9' = 0x09
+'９' = 0x09
+
+# Uppercase Letters
+'A' = 0x0A
+'Ａ' = 0x0A
+'B' = 0x0B
+'Ｂ' = 0x0B
+'C' = 0x0C
+'Ｃ' = 0x0C
+'D' = 0x0D
+'Ｄ' = 0x0D
+'E' = 0x0E
+'Ｅ' = 0x0E
+'F' = 0x0F
+'Ｆ' = 0x0F
+'G' = 0x10
+'Ｇ' = 0x10
+'H' = 0x11
+'Ｈ' = 0x11
+'I' = 0x12
+'Ｉ' = 0x12
+'J' = 0x13
+'Ｊ' = 0x13
+'K' = 0x14
+'Ｋ' = 0x14
+'L' = 0x15
+'Ｌ' = 0x15
+'M' = 0x16
+'Ｍ' = 0x16
+'N' = 0x17
+'Ｎ' = 0x17
+'O' = 0x18
+'Ｏ' = 0x18
+'P' = 0x19
+'Ｐ' = 0x19
+'Q' = 0x1A
+'Ｑ' = 0x1A
+'R' = 0x1B
+'Ｒ' = 0x1B
+'S' = 0x1C
+'Ｓ' = 0x1C
+'T' = 0x1D
+'Ｔ' = 0x1D
+'U' = 0x1E
+'Ｕ' = 0x1E
+'V' = 0x1F
+'Ｖ' = 0x1F
+'W' = 0x20
+'Ｗ' = 0x20
+'X' = 0x21
+'Ｘ' = 0x21
+'Y' = 0x22
+'Ｙ' = 0x22
+'Z' = 0x23
+'Ｚ' = 0x23
+
+# Lowercase Letters
+'a' = 0x24
+'ａ' = 0x24
+'b' = 0x25
+'ｂ' = 0x25
+'c' = 0x26
+'ｃ' = 0x26
+'d' = 0x27
+'ｄ' = 0x27
+'e' = 0x28
+'ｅ' = 0x28
+'f' = 0x29
+'ｆ' = 0x29
+'g' = 0x2A
+'ｇ' = 0x2A
+'h' = 0x2B
+'ｈ' = 0x2B
+'i' = 0x2C
+'ｉ' = 0x2C
+'j' = 0x2D
+'ｊ' = 0x2D
+'k' = 0x2E
+'ｋ' = 0x2E
+'l' = 0x2F
+'ｌ' = 0x2F
+'m' = 0x30
+'ｍ' = 0x30
+'n' = 0x31
+'ｎ' = 0x31
+'o' = 0x32
+'ｏ' = 0x32
+'p' = 0x33
+'ｐ' = 0x33
+'q' = 0x34
+'ｑ' = 0x34
+'r' = 0x35
+'ｒ' = 0x35
+'s' = 0x36
+'ｓ' = 0x36
+'t' = 0x37
+'ｔ' = 0x37
+'u' = 0x38
+'ｕ' = 0x38
+'v' = 0x39
+'ｖ' = 0x39
+'w' = 0x3A
+'ｗ' = 0x3A
+'x' = 0x3B
+'ｘ' = 0x3B
+'y' = 0x3C
+'ｙ' = 0x3C
+'z' = 0x3D
+'ｚ' = 0x3D
+
+# Punctuation
+'FIXME - Single Quote\'' = 0x3E
+'＇' = 0x3E
+'.' = 0x3F
+'．' = 0x3F
+',' = 0x6F
+'，' = 0x6F
+'-' = 0x9F
+'－' = 0x9F
+'(' = 0xE1
+'（' = 0xE1
+')(' = 0xE2
+'）（' = 0xE2
+')' = 0xE3
+'）' = 0xE3
+'+' = 0xE4
+'＋' = 0xE4
+'&' = 0xE5
+'＆' = 0xE5
+':' = 0xE6
+'：' = 0xE6
+'!' = 0xF2
+'！' = 0xF2
+'%' = 0xF3
+'％' = 0xF3
+'?' = 0xF4
+'？' = 0xF4
+'~' = 0xF7
+'～' = 0xF7
+
+# Newline/Space
+' ' = 0x9E
+'　' = 0x9E
+'\n' = 0xFE
+
+# JP Leftovers - still present for some reason
+'゛' = 0xF0
+'゜' = 0xF1
+
+# Special Cases
+'『' = 0xF5
+'』' = 0xF6
+'…' = 0xF8
+'↔' = 0xE4
+'$' = 0xF9
+'★' = 0xFA
+'×' = 0xFB
+'・' = 0xFC
+'☆' = 0xFD
+'^' = 0x50
+'|' = 0x51
+'<' = 0x52
+'>' = 0x53
+'[%]' = 0xE0
+'[A]' = 0x54
+'[B]' = 0x55
+'[C]' = 0x56
+'[Z]' = 0x57
+'[R]' = 0x58
+'/' = 0xD0
+
+# multi-text symbols
+'the' = 0xD1
+'you' = 0xD2
+
+# Mario face menu string
+# (Note: NOT multi-text, each char has a part of the face)
+'☺' = 0x40, 0x41
+# Needs to be manual fixed in source code after running `tools/text2ascii.py`: 
+# '{0x40, 0x40}}' ->  '{0x40, 0x41}}'

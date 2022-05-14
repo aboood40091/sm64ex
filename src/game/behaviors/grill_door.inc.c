@@ -42,7 +42,7 @@ void bhv_openable_grill_loop(void) {
                 cur_obj_play_sound_2(SOUND_GENERAL_CAGE_OPEN);
                 o->oAction++;
                 if (o->oBehParams2ndByte != 0)
-                    play_puzzle_jingle();
+                    r96_play_jingle(R96_EVENT_SOLVE_PUZZLE);
             }
             break;
         case 3:

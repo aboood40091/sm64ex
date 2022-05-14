@@ -15,7 +15,10 @@ static void handle_merry_go_round_music(void) {
     if (o->oMerryGoRoundMusicShouldPlay == FALSE) {
         if (gMarioCurrentRoom == BBH_NEAR_MERRY_GO_ROUND_ROOM) {
             // Play the merry-go-round and BBH music at the same time
-            play_secondary_music(SEQ_EVENT_MERRY_GO_ROUND, 45, 20, 200);
+            softenVolume = 0.70f;
+            softenJingleVolume = 0.40f;
+            r96_play_jingle(R96_EVENT_MERRY_GO_ROUND);
+            //play_secondary_music(SEQ_EVENT_MERRY_GO_ROUND, 45, 20, 200);
             // Set to TRUE
             o->oMerryGoRoundMusicShouldPlay++;
         }
@@ -38,12 +41,19 @@ static void handle_merry_go_round_music(void) {
         // without being on a floor with surface type 0x1A (SURFACE_MGR_MUSIC).
         if (cur_obj_is_mario_on_platform() || marioFloorType == SURFACE_MGR_MUSIC) {
             // If Mario is in the merry-go-round's enclosure, play only the merry-go-round music.
-            play_secondary_music(SEQ_EVENT_MERRY_GO_ROUND, 0, 78, 50);
+            //play_secondary_music(SEQ_EVENT_MERRY_GO_ROUND, 0, 78, 50);
+            softenVolume = 0.0f;
+            softenJingleVolume = 1.0f;
+            r96_play_jingle(R96_EVENT_MERRY_GO_ROUND);
+            
             gMarioOnMerryGoRound = TRUE;
         } else {
             // If Mario is not in the merry-go-round's enclosure,
             // i.e. he's around it, play both the merry-go-round music and the BBH music.
-            play_secondary_music(SEQ_EVENT_MERRY_GO_ROUND, 45, 20, 200);
+            //play_secondary_music(SEQ_EVENT_MERRY_GO_ROUND, 45, 20, 200);
+            softenVolume = 0.70f;
+            softenJingleVolume = 0.40f;
+            r96_play_jingle(R96_EVENT_MERRY_GO_ROUND);
             gMarioOnMerryGoRound = FALSE;
         }
 
@@ -54,7 +64,9 @@ static void handle_merry_go_round_music(void) {
             // The merry-go-round is a dynamic surface.
             gMarioCurrentRoom != BBH_DYNAMIC_SURFACE_ROOM
             && gMarioCurrentRoom != BBH_NEAR_MERRY_GO_ROUND_ROOM) {
-            func_80321080(300); // Switch to BBH music? FIXME: Audio needs labelling
+            //func_80321080(300); // Switch to BBH music? FIXME: Audio needs labelling
+            softenVolume = 1.0f;
+            r96_stop_jingle();
             o->oMerryGoRoundMusicShouldPlay = FALSE;
         } else {
             cur_obj_play_sound_1(SOUND_ENV_MERRY_GO_ROUND_CREAKING);
@@ -95,6 +107,8 @@ void bhv_merry_go_round_loop(void) {
         handle_merry_go_round_music();
     } else {
         o->oAngleVelYaw = 0;
-        func_80321080(300); // Switch to BBH music? FIXME: Audio needs labelling
+        softenVolume = 1.0f;
+        dynos_jingle_stop();
+        //func_80321080(300); // Switch to BBH music? FIXME: Audio needs labelling
     }
 }

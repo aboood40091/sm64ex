@@ -35,6 +35,7 @@ static const LevelScript script_func_local_1[] = {
     OBJECT(/*model*/ MODEL_RED_FLAME, /*pos*/ 3817,  717,  1034, /*angle*/ 0, 0, 0, /*behParam*/ 0x00000000, /*beh*/ bhvFlame),
     OBJECT(/*model*/ MODEL_NONE,      /*pos*/  799, 1024,  4434, /*angle*/ 0, 0, 0, /*behParam*/ 0x00B80000, /*beh*/ bhvPoleGrabbing),
     OBJECT(/*model*/ MODEL_NONE,      /*pos*/  889, 1024,  3277, /*angle*/ 0, 0, 0, /*behParam*/ 0x00B80000, /*beh*/ bhvPoleGrabbing),
+    OBJECT(/*model*/ MODEL_BETA_BOO_KEY, /*pos*/ 6691,  -357,  -1634, /*angle*/ 0, 0, 0, /*behParam*/ 5, /*beh*/ bhvBetaBooKey),
     RETURN(),
 };
 
@@ -108,7 +109,8 @@ const LevelScript level_hmc_entry[] = {
         TERRAIN(/*terrainData*/ hmc_seg7_collision_level),
         MACRO_OBJECTS(/*objList*/ hmc_seg7_macro_objs),
         ROOMS(/*surfaceRooms*/ hmc_seg7_rooms),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0004, /*seq*/ SEQ_LEVEL_UNDERGROUND),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0004, /*seq*/ SEQ_LEVEL_UNDERGROUND),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_underground),
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_STONE),
     END_AREA(),
 

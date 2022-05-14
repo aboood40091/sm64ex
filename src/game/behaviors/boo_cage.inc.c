@@ -44,7 +44,7 @@ void bhv_boo_cage_loop(void) {
             if (o->parentObj->oBooDeathStatus != BOO_DEATH_STATUS_ALIVE) {
                 o->oAction++;
                 o->oVelY = 60.0f;
-                play_puzzle_jingle();
+                r96_play_jingle(R96_EVENT_SOLVE_PUZZLE);
             } else {
                 obj_copy_pos_and_angle(o, o->parentObj);
             }

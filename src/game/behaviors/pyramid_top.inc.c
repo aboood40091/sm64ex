@@ -94,7 +94,7 @@ void bhv_pyramid_top_loop(void) {
     switch (o->oAction) {
         case PYRAMID_TOP_ACT_CHECK_IF_SOLVED:
             if (o->oPyramidTopPillarsTouched == 4) {
-                play_puzzle_jingle();
+                r96_play_jingle(R96_EVENT_SOLVE_PUZZLE);
                 o->oAction = PYRAMID_TOP_ACT_SPINNING;
             }
             break;

@@ -1,3 +1,5 @@
+#include "pc/configfile.h"
+
 // bub.c.inc
 
 // NOTE: These first set of functions spawn a school of bub depending on objF4's
@@ -8,15 +10,11 @@
 void bub_spawner_act_0(void) {
     s32 i;
     s32 sp18 = o->oBirdChirpChirpUnkF4;
-#ifndef NODRAWINGDISTANCE
-    if (o->oDistanceToMario < 1500.0f) {
-#endif
+    if (o->oDistanceToMario < 15 * configDrawDistance) {
         for (i = 0; i < sp18; i++)
             spawn_object(o, MODEL_BUB, bhvBub);
         o->oAction = 1;
-#ifndef NODRAWINGDISTANCE
     }
-#endif
 }
 
 void bub_spawner_act_1(void) {

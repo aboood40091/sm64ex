@@ -35,6 +35,8 @@ static const LevelScript script_func_local_1[] = {
     OBJECT(/*model*/ MODEL_BITFS_SLIDING_PLATFORM,        /*pos*/  2103,   198,  312, /*angle*/ 0, 0, 0,   /*behParam*/ 0x019F0000, /*beh*/ bhvSlidingPlatform2),
     OBJECT(/*model*/ MODEL_BITFS_TUMBLING_PLATFORM,       /*pos*/  4979,  4250,   96, /*angle*/ 0, 0, 0,   /*behParam*/ 0x00030000, /*beh*/ bhvWfTumblingBridge),
     OBJECT(/*model*/ MODEL_NONE,                          /*pos*/  3890, -2043,  266, /*angle*/ 0, 0, 0,   /*behParam*/ 0x00520000, /*beh*/ bhvPoleGrabbing),
+    //OBJECT(/*model*/ MODEL_MOTOS,           /*pos*/     4172,  -1279,  631, /*angle*/ 0,   0, 0, /*behParam*/ 0x00000000, /*beh*/ bhvMotos),
+    //OBJECT(/*model*/ MODEL_MOTOS,           /*pos*/     11,  3789,  -291, /*angle*/ 0,   0, 0, /*behParam*/ 0x00000000, /*beh*/ bhvMotos),
     RETURN(),
 };
 
@@ -112,7 +114,8 @@ const LevelScript level_bitfs_entry[] = {
         JUMP_LINK(script_func_local_3),
         TERRAIN(/*terrainData*/ bitfs_seg7_collision_level),
         MACRO_OBJECTS(/*objList*/ bitfs_seg7_macro_objs),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0000, /*seq*/ SEQ_LEVEL_KOOPA_ROAD),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0000, /*seq*/ SEQ_LEVEL_KOOPA_ROAD),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_koopa_road),
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_STONE),
     END_AREA(),
 

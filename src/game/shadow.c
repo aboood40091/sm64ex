@@ -543,8 +543,8 @@ s8 correct_shadow_solidity_for_animations(s32 isLuigi, u8 initialSolidity, struc
             break;
     }
 
-    animFrame = player->header.gfx.unk38.animFrame;
-    switch (player->header.gfx.unk38.animID) {
+    animFrame = player->header.gfx.curAnim.animFrame;
+    switch (player->header.gfx.curAnim.animID) {
         case MARIO_ANIM_IDLE_ON_LEDGE:
             ret = SHADOW_SOLIDITY_NO_SHADOW;
             break;

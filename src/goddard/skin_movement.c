@@ -89,7 +89,7 @@ void func_80181894(struct ObjJoint *joint) {
             linkedObj = link->obj;
             curWeight = (struct ObjWeight *) linkedObj;
 
-            if (curWeight->unk38 > 0.0) //? 0.0f
+            if (curWeight->curAnim > 0.0) //? 0.0f
             {
                 stackVec.x = curWeight->vec20.x;
                 stackVec.y = curWeight->vec20.y;
@@ -97,7 +97,7 @@ void func_80181894(struct ObjJoint *joint) {
                 gd_rotate_and_translate_vec3f(&stackVec, &joint->matE8);
 
                 connectedVtx = curWeight->unk3C;
-                scaleFactor = curWeight->unk38;
+                scaleFactor = curWeight->curAnim;
 
                 connectedVtx->pos.x += stackVec.x * scaleFactor;
                 connectedVtx->pos.y += stackVec.y * scaleFactor;
@@ -123,7 +123,7 @@ void func_801819D0(struct ObjVertex *vtx) {
         sSkinNetCurWeight->vec20.y = localVec.y;
         sSkinNetCurWeight->vec20.z = localVec.z;
 
-        vtx->scaleFactor -= sSkinNetCurWeight->unk38;
+        vtx->scaleFactor -= sSkinNetCurWeight->curAnim;
     }
 }
 

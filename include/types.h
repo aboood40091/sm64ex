@@ -6,6 +6,7 @@
 
 #include <ultra64.h>
 #include "macros.h"
+#include "data/dynos.c.h"
 
 
 // Certain functions are marked as having return values, but do not
@@ -106,6 +107,7 @@ struct GraphNode
     /*0x08*/ struct GraphNode *next;
     /*0x0C*/ struct GraphNode *parent;
     /*0x10*/ struct GraphNode *children;
+    /*0x14*/ const void *georef;
 };
 
 // struct AnimInfo?
@@ -118,6 +120,10 @@ struct GraphNodeObject_sub
     /*0x0A 0x42*/ u16 animTimer;
     /*0x0C 0x44*/ s32 animFrameAccelAssist;
     /*0x10 0x48*/ s32 animAccel;
+    s16 prevAnimFrame;
+    s16 prevAnimID;
+    u32 prevAnimFrameTimestamp;
+    struct Animation *prevAnimPtr;
 };
 
 struct GraphNodeObject
@@ -129,10 +135,21 @@ struct GraphNodeObject
     /*0x1A*/ Vec3s angle;
     /*0x20*/ Vec3f pos;
     /*0x2C*/ Vec3f scale;
-    /*0x38*/ struct GraphNodeObject_sub unk38;
+    /*0x38*/ struct GraphNodeObject_sub curAnim;
     /*0x4C*/ struct SpawnInfo *unk4C;
     /*0x50*/ Mat4 *throwMatrix; // matrix ptr
     /*0x54*/ Vec3f cameraToObject;
+    Vec3s prevAngle;
+    Vec3f prevPos;
+    u32 prevTimestamp;
+    Vec3f prevShadowPos;
+    u32 prevShadowPosTimestamp;
+    Vec3f prevScale;
+    u32 prevScaleTimestamp;
+    Mat4 prevThrowMatrix;
+    u32 prevThrowMatrixTimestamp;
+    Mat4 *throwMatrixInterpolated;
+    u32 skipInterpolationTimestamp;
 };
 
 struct ObjectNode
@@ -243,6 +260,10 @@ struct Surface
     } normal;
     /*0x28*/ f32 originOffset;
     /*0x2C*/ struct Object *object;
+    Vec3s prevVertex1;
+    Vec3s prevVertex2;
+    Vec3s prevVertex3;
+    u32 modifiedTimestamp;
 };
 
 struct MarioBodyState
@@ -277,6 +298,36 @@ struct MarioAnimDmaRelatedThing
 struct MarioAnimation
 {
     struct MarioAnimDmaRelatedThing *animDmaTable;
+    u8 *currentAnimAddr;
+    struct Animation *targetAnim;
+    u8 padding[4];
+};
+
+struct LuigiAnimDmaRelatedThing
+{
+    u32 count;
+    u8 *srcAddr;
+    struct OffsetSizePair anim[1]; // dynamic size
+};
+
+struct LuigiAnimation
+{
+    struct LuigiAnimDmaRelatedThing *animDmaTable;
+    u8 *currentAnimAddr;
+    struct Animation *targetAnim;
+    u8 padding[4];
+};
+
+struct WarioAnimDmaRelatedThing
+{
+    u32 count;
+    u8 *srcAddr;
+    struct OffsetSizePair anim[1]; // dynamic size
+};
+
+struct WarioAnimation
+{
+    struct WarioAnimDmaRelatedThing *animDmaTable;
     u8 *currentAnimAddr;
     struct Animation *targetAnim;
     u8 padding[4];
@@ -344,6 +395,37 @@ struct MarioState
     /*0xBC*/ f32 peakHeight;
     /*0xC0*/ f32 quicksandDepth;
     /*0xC4*/ f32 unkC4;
+             s8 numWarioCoins;
+             s16 milk;
+             s16 defeatEnemy;
 };
+
+// Not important warnings
+#ifndef __cplusplus
+#pragma GCC diagnostic ignored "-Wpointer-sign"
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#endif
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Woverflow"
+
+// Global declarations
+extern s16 object_step(void);
+extern s32 check_fall_damage(struct MarioState *m, u32 hardFallAction);
+extern void animated_stationary_ground_step(struct MarioState *m, s32 animation, u32 endAction);
+extern void bhv_koopa_shell_flame_spawn(void);
+extern void interpolate_vectors(Vec3f res, Vec3f a, Vec3f b);
+extern void interpolate_vectors_s16(Vec3s res, Vec3s a, Vec3s b);
+extern void koopa_shell_spawn_sparkles(f32 a);
+extern void load_object_collision_model(void);
+extern void mario_attract_nearby_coins(struct MarioState *m, f32 range);
+extern void obj_check_floor_death(s16 collisionFlags, struct Surface *floor);
+extern void obj_spawn_yellow_coins(struct Object *obj, s8 nCoins);
+extern void play_step_sound(struct MarioState *m, s16 frame1, s16 frame2);
+extern void queue_rumble_data(s16 a0, s16 a1);
+extern void reset_rumble_timers(void);
+extern void spawn_orange_number(s8 behParam, s16 relX, s16 relY, s16 relZ);
+extern void update_air_without_turn(struct MarioState *m);
+extern void update_shell_speed(struct MarioState *m);
 
 #endif // _SM64_TYPES_H_

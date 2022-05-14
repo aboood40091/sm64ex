@@ -1,7 +1,9 @@
+#include "pc/configfile.h"
+
 // whomp.c.inc
 
 void whomp_play_sfx_from_pound_animation(void) {
-    UNUSED s32 sp2C = o->header.gfx.unk38.animFrame;
+    UNUSED s32 sp2C = o->header.gfx.curAnim.animFrame;
     s32 sp28 = 0;
     if (o->oForwardVel < 5.0f) {
         sp28 = cur_obj_check_anim_frame(0);
@@ -24,12 +26,14 @@ void whomp_act_0(void) {
             if (o->oDistanceToMario < 600.0f) {
                 o->oSubAction++;
                 func_8031FFB4(SEQ_PLAYER_LEVEL, 60, 40);
+                r96_play_music(R96_EVENT_BOSS_INTRO);
             } else {
                 cur_obj_set_pos_to_home();
                 o->oHealth = 3;
             }
-        } else if (cur_obj_update_dialog_with_cutscene(2, 1, CUTSCENE_DIALOG, DIALOG_114))
+        } else if (cur_obj_update_dialog_with_cutscene(2, 1, CUTSCENE_DIALOG, DIALOG_114)){
             o->oAction = 2;
+        }
     } else if (o->oDistanceToMario < 500.0f)
         o->oAction = 1;
     whomp_play_sfx_from_pound_animation();
@@ -95,7 +99,8 @@ void whomp_act_2(void) {
     whomp_play_sfx_from_pound_animation();
     if (mario_is_far_below_object(1000.0f)) {
         o->oAction = 0;
-        stop_background_music(SEQUENCE_ARGS(4, SEQ_EVENT_BOSS));
+        r96_stop_music();
+        r96_cap_music_boss_fix();
     }
 }
 
@@ -231,8 +236,10 @@ void whomp_act_8(void) {
 }
 
 void whomp_act_9(void) {
-    if (o->oTimer == 60)
-        stop_background_music(SEQUENCE_ARGS(4, SEQ_EVENT_BOSS));
+    if (o->oTimer == 60) {
+        r96_stop_music();
+        r96_cap_music_boss_fix();
+    }
 }
 
 void (*sWhompActions[])(void) = {
@@ -246,14 +253,12 @@ void bhv_whomp_loop(void) {
     cur_obj_call_action_function(sWhompActions);
     cur_obj_move_standard(-20);
     if (o->oAction != 9) {
-#ifndef NODRAWINGDISTANCE
         // o->oBehParams2ndByte here seems to be a flag
         // indicating whether this is a normal or king whomp
         if (o->oBehParams2ndByte != 0)
-            cur_obj_hide_if_mario_far_away_y(2000.0f);
+            cur_obj_hide_if_mario_far_away_y(20 * configDrawDistance);
         else
-            cur_obj_hide_if_mario_far_away_y(1000.0f);
-#endif
+            cur_obj_hide_if_mario_far_away_y(10 * configDrawDistance);
         load_object_collision_model();
     }
 }

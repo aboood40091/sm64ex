@@ -3,8 +3,13 @@
 
 #include "types.h"
 
+#include "blargg/geo_header.h"
+
+#include "blargg_friendly/geo_header.h"
+
 // blargg
 extern const GeoLayout blargg_geo[];
+extern const GeoLayout friendly_blargg_geo[];
 extern const Gfx blargg_seg5_dl_050058D0[];
 extern const Gfx blargg_seg5_dl_05005A60[];
 extern const Gfx blargg_seg5_dl_05005D00[];
@@ -28,5 +33,10 @@ extern const Gfx bully_seg5_dl_05003EA8[];
 extern const Gfx bully_seg5_dl_05003F80[];
 extern const Gfx bully_seg5_dl_05003FC8[];
 extern const struct Animation *const bully_seg5_anims_0500470C[];
+
+#include "motos/geo_header.h"
+
+
+#include "motos/anim_header.h"
 
 #endif

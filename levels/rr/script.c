@@ -132,7 +132,8 @@ const LevelScript level_rr_entry[] = {
         JUMP_LINK(script_func_local_3),
         TERRAIN(/*terrainData*/ rr_seg7_collision_level),
         MACRO_OBJECTS(/*objList*/ rr_seg7_macro_objs),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0000, /*seq*/ SEQ_LEVEL_SLIDE),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0000, /*seq*/ SEQ_LEVEL_SLIDE),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_slide),
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_STONE),
     END_AREA(),
 

@@ -7,6 +7,10 @@
 #include "macros.h"
 #include "types.h"
 
+void bhv_blargg_init(void);
+void bhv_friendly_blargg_init(void);
+void bhv_blargg_loop(void);
+void bhv_blargg_friendly_loop(void);
 void set_yoshi_as_not_dead(void);
 s32 coin_step(s16 *collisionFlagsPtr);
 void moving_coin_flicker(void);

@@ -98,7 +98,7 @@ void bully_act_knockback(void) {
         o->oMoveAngleYaw = o->oFaceAngleYaw;
         obj_turn_toward_object(o, gMarioObject, 16, 1280);
     } else
-        o->header.gfx.unk38.animFrame = 0;
+        o->header.gfx.curAnim.animFrame = 0;
 
     if (o->oBullyKBTimerAndMinionKOCounter == 18) {
         o->oAction = BULLY_ACT_CHASE_MARIO;
@@ -139,7 +139,7 @@ void bully_backup_check(s16 collisionFlags) {
 }
 
 void bully_play_stomping_sound(void) {
-    s16 sp26 = o->header.gfx.unk38.animFrame;
+    s16 sp26 = o->header.gfx.curAnim.animFrame;
     switch (o->oAction) {
         case BULLY_ACT_PATROL:
             if (sp26 == 0 || sp26 == 12) {
@@ -177,13 +177,7 @@ void bully_step(void) {
 
 void bully_spawn_coin(void) {
     struct Object *coin = spawn_object(o, MODEL_YELLOW_COIN, bhvMovingYellowCoin);
-#ifdef VERSION_JP //TODO: maybe move this ifdef logic to the header?
-    cur_obj_play_sound_2(SOUND_GENERAL_COIN_SPURT);
-#elif VERSION_EU
-    cur_obj_play_sound_2(SOUND_GENERAL_COIN_SPURT_EU);
-#else
     cur_obj_play_sound_2(SOUND_GENERAL_COIN_SPURT_2);
-#endif
     coin->oForwardVel = 10.0f;
     coin->oVelY = 100.0f;
     coin->oPosY = o->oPosY + 310.0f;
@@ -337,7 +331,7 @@ void bhv_big_bully_with_minions_loop(void) {
             //  the knockback timer is at 3 instead of 0. So the bully knockback time will
             //  be reduced by 3 frames (16.67%) on the first hit.
             if (o->oBullyKBTimerAndMinionKOCounter == 3) {
-                play_puzzle_jingle();
+                r96_play_jingle(R96_EVENT_SOLVE_PUZZLE);
 
                 if (o->oTimer >= 91)
                     o->oAction = BULLY_ACT_ACTIVATE_AND_FALL;

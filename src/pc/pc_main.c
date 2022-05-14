@@ -39,6 +39,12 @@
 #include "pc/discord/discordrpc.h"
 #endif
 
+#ifdef TARGET_SWITCH
+#include "nx/m_nx.h"
+#endif
+
+#include "text/text-loader.h"
+
 OSMesg D_80339BEC;
 OSMesgQueue gSIEventMesgQueue;
 
@@ -83,16 +89,39 @@ void send_display_list(struct SPTask *spTask) {
 #define SAMPLES_LOW 528
 #endif
 
+static inline void patch_interpolations(void) {
+    extern void mtx_patch_interpolated(void);
+    extern void patch_screen_transition_interpolated(void);
+    extern void patch_title_screen_scales(void);
+    extern void patch_interpolated_dialog(void);
+    extern void patch_interpolated_hud(void);
+    extern void patch_interpolated_paintings(void);
+    extern void patch_interpolated_bubble_particles(void);
+    extern void patch_interpolated_snow_particles(void);
+    mtx_patch_interpolated();
+    patch_screen_transition_interpolated();
+    patch_title_screen_scales();
+    patch_interpolated_dialog();
+    patch_interpolated_hud();
+    patch_interpolated_paintings();
+    patch_interpolated_bubble_particles();
+    patch_interpolated_snow_particles();
+}
+
 void produce_one_frame(void) {
     gfx_start_frame();
 
     const f32 master_mod = (f32)configMasterVolume / 127.0f;
-    set_sequence_player_volume(SEQ_PLAYER_LEVEL, (f32)configMusicVolume / 127.0f * master_mod);
-    set_sequence_player_volume(SEQ_PLAYER_SFX, (f32)configSfxVolume / 127.0f * master_mod);
-    set_sequence_player_volume(SEQ_PLAYER_ENV, (f32)configEnvVolume / 127.0f * master_mod);
+    set_sequence_player_volume(SEQ_PLAYER_LEVEL, ((f32)configMusicVolume / 127.0f * master_mod) * !configMusicMute);
+    set_sequence_player_volume(SEQ_PLAYER_SFX, ((f32)configSfxVolume / 127.0f * master_mod) * !configSfxMute);
+    set_sequence_player_volume(SEQ_PLAYER_ENV, ((f32)configEnvVolume / 127.0f * master_mod) * !configEnvMute);
 
     game_loop_one_iteration();
     thread6_rumble_loop(NULL);
+
+#ifdef TARGET_SWITCH
+    controller_nx_rumble_loop();
+#endif
 
     int samples_left = audio_api->buffered();
     u32 num_audio_samples = samples_left < audio_api->get_desired_buffered() ? SAMPLES_HIGH : SAMPLES_LOW;
@@ -109,6 +138,12 @@ void produce_one_frame(void) {
 
     audio_api->play((u8 *)audio_buffer, 2 * num_audio_samples * 4);
 
+    gfx_end_frame();
+    gfx_start_frame();
+    if (config60FPS) {
+        patch_interpolations();
+    }
+    send_display_list(gGfxSPTask);
     gfx_end_frame();
 }
 
@@ -127,6 +162,7 @@ void game_deinit(void) {
     controller_shutdown();
     audio_shutdown();
     gfx_shutdown();
+    dealloc_dialog_pool();
     inited = false;
 }
 
@@ -171,16 +207,17 @@ static void on_anim_frame(double time) {
 }
 #endif
 
-void main_func(void) {
+void main_func(char *argv[]) {
     static u64 pool[0x165000/8 / 4 * sizeof(void *)];
     main_pool_init(pool, pool + sizeof(pool) / sizeof(pool[0]));
     gEffectsMemoryPool = mem_pool_init(0x4000, MEMORY_POOL_LEFT);
 
     const char *gamedir = gCLIOpts.GameDir[0] ? gCLIOpts.GameDir : FS_BASEDIR;
-    const char *userpath = gCLIOpts.SavePath[0] ? gCLIOpts.SavePath : sys_user_path();
+    const char *userpath = gCLIOpts.SavePath[0] ? gCLIOpts.SavePath : sys_user_path();    
     fs_init(sys_ropaths, gamedir, userpath);
-
     configfile_load(configfile_name());
+
+    alloc_dialog_pool(argv[0], gamedir);
 
     if (gCLIOpts.FullScreen == 1)
         configWindow.fullscreen = true;
@@ -213,9 +250,11 @@ void main_func(void) {
     #endif
 
     char window_title[96] =
-    "Super Mario 64 EX (" RAPI_NAME ")"
+    "Super Mario 64 Render96ex (" RAPI_NAME ")"
     #ifdef NIGHTLY
     " nightly " GIT_HASH
+    #else
+    " " GIT_HASH
     #endif
     ;
 
@@ -232,18 +271,15 @@ void main_func(void) {
     audio_init();
     sound_init();
 
-    thread5_game_loop(NULL);
-
+    thread5_game_loop(NULL);    
     inited = true;
 
-#ifdef EXTERNAL_DATA
     // precache data if needed
     if (configPrecacheRes) {
         fprintf(stdout, "precaching data\n");
         fflush(stdout);
         gfx_precache_textures();
     }
-#endif
 
 #ifdef DISCORDRPC
     discord_init();
@@ -263,7 +299,12 @@ void main_func(void) {
 }
 
 int main(int argc, char *argv[]) {
+#ifdef TARGET_SWITCH
+    initNX();
+#endif
     parse_cli_opts(argc, argv);
-    main_func();
-    return 0;
+    main_func(argv);
+#ifdef TARGET_SWITCH
+    exitNX();
+#endif
 }

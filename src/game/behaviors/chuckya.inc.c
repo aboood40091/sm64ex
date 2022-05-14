@@ -207,4 +207,23 @@ void bhv_chuckya_loop(void) {
     }
     o->oInteractStatus = 0;
     print_debug_bottom_up("md %d", o->oAction);
+    if (obj_check_if_collided_with_object(o, gMarioObject) == 1 && gMarioState->milk == 1) {
+        moto_spawn_coin();
+        obj_mark_for_deletion(o);
+        spawn_mist_particles_with_sound(SOUND_GENERAL_BREAK_BOX);
+        create_respawner(MODEL_CHUCKYA, bhvChuckya, 1000);
+        if(gMarioState->milk == 1) {
+                if(gMarioState->defeatEnemy != 5) {
+                    gMarioState->defeatEnemy++;
+                    spawn_orange_number(gMarioState->defeatEnemy, 0, 0, 0);
+                }
+                else  {
+                    spawn_orange_number(10, 0, 0, 0);
+                    gMarioState->numLives++;
+                    play_sound(SOUND_GENERAL_COLLECT_1UP, gDefaultSoundArgs);
+                    //1up
+                }
+            }
+        o->activeFlags = ACTIVE_FLAG_DEACTIVATED;
+    }
 }

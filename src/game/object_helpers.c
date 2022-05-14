@@ -133,6 +133,22 @@ Gfx *geo_update_layer_transparency(s32 callContext, struct GraphNode *node, UNUS
  * declare it. This is undefined behavior, but harmless in practice due to the
  * o32 calling convention.
  */
+  Gfx *geo_rotate_coin(s32 callContext, struct GraphNode *node, UNUSED Mat4 *c) {
+    struct Object *obj;
+
+    if (callContext == GEO_CONTEXT_RENDER) {
+        obj = (struct Object *) gCurGraphNodeObject; // TODO: change global type to Object pointer
+
+        struct GraphNodeRotation *rotNode = (struct GraphNodeRotation *) node->next;
+        vec3s_set(rotNode->rotation, 0, obj->oAnimState, 0);
+
+		obj->oAnimState += 0x0800;
+        if (obj->oAnimState > 0xFFFF) {
+            obj->oAnimState = 0;
+        }
+    }
+    return NULL;
+}
 #ifdef AVOID_UB
 Gfx *geo_switch_anim_state(s32 callContext, struct GraphNode *node, UNUSED void *context) {
 #else
@@ -967,22 +983,22 @@ void cur_obj_set_vel_from_mario_vel(f32 f12, f32 f14) {
 }
 
 BAD_RETURN(s16) cur_obj_reverse_animation(void) {
-    if (o->header.gfx.unk38.animFrame >= 0) {
-        o->header.gfx.unk38.animFrame--;
+    if (o->header.gfx.curAnim.animFrame >= 0) {
+        o->header.gfx.curAnim.animFrame--;
     }
 }
 
 BAD_RETURN(s32) cur_obj_extend_animation_if_at_end(void) {
-    s32 sp4 = o->header.gfx.unk38.animFrame;
-    s32 sp0 = o->header.gfx.unk38.curAnim->unk08 - 2;
+    s32 sp4 = o->header.gfx.curAnim.animFrame;
+    s32 sp0 = o->header.gfx.curAnim.curAnim->unk08 - 2;
 
-    if (sp4 == sp0) o->header.gfx.unk38.animFrame--;
+    if (sp4 == sp0) o->header.gfx.curAnim.animFrame--;
 }
 
 s32 cur_obj_check_if_near_animation_end(void) {
-    u32 spC = (s32) o->header.gfx.unk38.curAnim->flags;
-    s32 sp8 = o->header.gfx.unk38.animFrame;
-    s32 sp4 = o->header.gfx.unk38.curAnim->unk08 - 2;
+    u32 spC = (s32) o->header.gfx.curAnim.curAnim->flags;
+    s32 sp8 = o->header.gfx.curAnim.animFrame;
+    s32 sp4 = o->header.gfx.curAnim.curAnim->unk08 - 2;
     s32 sp0 = FALSE;
 
     if (spC & 0x01) {
@@ -999,8 +1015,8 @@ s32 cur_obj_check_if_near_animation_end(void) {
 }
 
 s32 cur_obj_check_if_at_animation_end(void) {
-    s32 sp4 = o->header.gfx.unk38.animFrame;
-    s32 sp0 = o->header.gfx.unk38.curAnim->unk08 - 1;
+    s32 sp4 = o->header.gfx.curAnim.animFrame;
+    s32 sp0 = o->header.gfx.curAnim.curAnim->unk08 - 1;
 
     if (sp4 == sp0) {
         return TRUE;
@@ -1010,7 +1026,7 @@ s32 cur_obj_check_if_at_animation_end(void) {
 }
 
 s32 cur_obj_check_anim_frame(s32 frame) {
-    s32 animFrame = o->header.gfx.unk38.animFrame;
+    s32 animFrame = o->header.gfx.curAnim.animFrame;
 
     if (animFrame == frame) {
         return TRUE;
@@ -1020,7 +1036,7 @@ s32 cur_obj_check_anim_frame(s32 frame) {
 }
 
 s32 cur_obj_check_anim_frame_in_range(s32 startFrame, s32 rangeLength) {
-    s32 animFrame = o->header.gfx.unk38.animFrame;
+    s32 animFrame = o->header.gfx.curAnim.animFrame;
 
     if (animFrame >= startFrame && animFrame < startFrame + rangeLength) {
         return TRUE;
@@ -1030,7 +1046,7 @@ s32 cur_obj_check_anim_frame_in_range(s32 startFrame, s32 rangeLength) {
 }
 
 s32 cur_obj_check_frame_prior_current_frame(s16 *a0) {
-    s16 sp6 = o->header.gfx.unk38.animFrame;
+    s16 sp6 = o->header.gfx.curAnim.animFrame;
 
     while (*a0 != -1) {
         if (*a0 == sp6) {
@@ -1554,6 +1570,7 @@ void cur_obj_set_pos_to_home(void) {
     o->oPosX = o->oHomeX;
     o->oPosY = o->oHomeY;
     o->oPosZ = o->oHomeZ;
+    o->header.gfx.skipInterpolationTimestamp = gGlobalTimer;
 }
 
 void cur_obj_set_pos_to_home_and_stop(void) {
@@ -1623,6 +1640,13 @@ static void obj_spawn_loot_coins(struct Object *obj, s32 numCoins, f32 sp30,
 
         coin = spawn_object(obj, model, coinBehavior);
         obj_translate_xz_random(coin, posJitter);
+		coin->header.gfx.angle[0] = 0;
+        coin->header.gfx.angle[1] = 0;
+        coin->header.gfx.angle[2] = 0;
+        coin->oFaceAnglePitch = 0;
+        coin->oFaceAngleYaw = 0;
+        coin->oFaceAngleRoll = 0;
+		
         coin->oPosY = spawnHeight;
         coin->oCoinUnk110 = sp30;
     }
@@ -1646,6 +1670,13 @@ void cur_obj_spawn_loot_coin_at_mario_pos(void) {
 
     coin = spawn_object(o, MODEL_YELLOW_COIN, bhvSingleCoinGetsSpawned);
     coin->oVelY = 30.0f;
+	
+	coin->header.gfx.angle[0] = 0;
+    coin->header.gfx.angle[1] = 0;
+    coin->header.gfx.angle[2] = 0;
+    coin->oFaceAnglePitch = 0;
+    coin->oFaceAngleYaw = 0;
+    coin->oFaceAngleRoll = 0;
 
     obj_copy_pos(coin, gMarioObject);
 }
@@ -1661,8 +1692,8 @@ f32 cur_obj_abs_y_dist_to_home(void) {
 }
 
 s32 cur_obj_advance_looping_anim(void) {
-    s32 spC = o->header.gfx.unk38.animFrame;
-    s32 sp8 = o->header.gfx.unk38.curAnim->unk08;
+    s32 spC = o->header.gfx.curAnim.animFrame;
+    s32 sp8 = o->header.gfx.curAnim.curAnim->unk08;
     s32 sp4;
 
     if (spC < 0) {
@@ -1747,12 +1778,10 @@ static void cur_obj_update_floor(void) {
         if (floor->type == SURFACE_BURNING) {
             o->oMoveFlags |= OBJ_MOVE_ABOVE_LAVA;
         }
-#ifndef VERSION_JP
         else if (floor->type == SURFACE_DEATH_PLANE) {
             //! This misses SURFACE_VERTICAL_WIND (and maybe SURFACE_WARP)
             o->oMoveFlags |= OBJ_MOVE_ABOVE_DEATH_BARRIER;
         }
-#endif
 
         o->oFloorType = floor->type;
         o->oFloorRoom = floor->room;
@@ -1763,11 +1792,7 @@ static void cur_obj_update_floor(void) {
 }
 
 static void cur_obj_update_floor_and_resolve_wall_collisions(s16 steepSlopeDegrees) {
-#ifdef VERSION_JP
-    o->oMoveFlags &= ~OBJ_MOVE_ABOVE_LAVA;
-#else
     o->oMoveFlags &= ~(OBJ_MOVE_ABOVE_LAVA | OBJ_MOVE_ABOVE_DEATH_BARRIER);
-#endif
 
     if (o->activeFlags & (ACTIVE_FLAG_FAR_AWAY | ACTIVE_FLAG_IN_DIFFERENT_ROOM)) {
         cur_obj_update_floor();
@@ -1855,12 +1880,10 @@ static s32 cur_obj_within_12k_bounds(void) {
 }
 
 void cur_obj_move_using_vel_and_gravity(void) {
-    if (cur_obj_within_12k_bounds()) {
         o->oPosX += o->oVelX;
         o->oPosZ += o->oVelZ;
         o->oVelY += o->oGravity; //! No terminal velocity
         o->oPosY += o->oVelY;
-    }
 }
 
 void cur_obj_move_using_fvel_and_gravity(void) {
@@ -2743,6 +2766,8 @@ s32 cur_obj_update_dialog_with_cutscene(s32 actionArg, s32 dialogFlags, s32 cuts
 s32 cur_obj_has_model(u16 modelID) {
     if (o->header.gfx.sharedChild == gLoadedGraphNodes[modelID]) {
         return TRUE;
+    } else if (o->header.gfx.sharedChild && gLoadedGraphNodes[modelID] && o->header.gfx.sharedChild->georef == gLoadedGraphNodes[modelID]->georef) {
+        return TRUE;
     } else {
         return FALSE;
     }
@@ -2826,7 +2851,7 @@ void obj_copy_behavior_params(struct Object *dst, struct Object *src) {
 
 void cur_obj_init_animation_and_anim_frame(s32 animIndex, s32 animFrame) {
     cur_obj_init_animation_with_sound(animIndex);
-    o->header.gfx.unk38.animFrame = animFrame;
+    o->header.gfx.curAnim.animFrame = animFrame;
 }
 
 s32 cur_obj_init_animation_and_check_if_near_end(s32 animIndex) {
@@ -2901,11 +2926,9 @@ void cur_obj_spawn_loot_blue_coin(void) {
     }
 }
 
-#ifndef VERSION_JP
 void cur_obj_spawn_star_at_y_offset(f32 targetX, f32 targetY, f32 targetZ, f32 offsetY) {
     f32 objectPosY = o->oPosY;
     o->oPosY += offsetY + gDebugInfo[5][0];
     spawn_default_star(targetX, targetY, targetZ);
     o->oPosY = objectPosY;
 }
-#endif

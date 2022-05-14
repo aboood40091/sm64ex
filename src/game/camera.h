@@ -86,6 +86,10 @@
 #define AREA_BOWSER_2           LEVEL_AREA_INDEX(LEVEL_BOWSER_2, 1)
 #define AREA_BOWSER_3           LEVEL_AREA_INDEX(LEVEL_BOWSER_3, 1)
 #define AREA_TTM_OUTSIDE        LEVEL_AREA_INDEX(LEVEL_TTM, 1)
+#define AREA_TTM_SLIDE          LEVEL_AREA_INDEX(LEVEL_TTM, 2)
+#define AREA_TTM_SLIDE_2        LEVEL_AREA_INDEX(LEVEL_TTM, 3)
+#define AREA_TTM_SLIDE_3        LEVEL_AREA_INDEX(LEVEL_TTM, 4)
+#define AREA_CHARACTER_SWAP     LEVEL_AREA_INDEX(LEVEL_FOURTH_FLOOR, 1)
 
 #define CAM_MODE_MARIO_ACTIVE           0x01
 #define CAM_MODE_LAKITU_WAS_ZOOMED_OUT  0x02
@@ -112,9 +116,7 @@
 #define CAMERA_MODE_8_DIRECTIONS      0x0E // AKA Parallel Camera, Bowser Courses & Rainbow Ride
 #define CAMERA_MODE_FREE_ROAM         0x10
 #define CAMERA_MODE_SPIRAL_STAIRS     0x11
-#ifdef BETTERCAMERA
 #define CAMERA_MODE_NEWCAM            0x12
-#endif
 
 #define CAM_MOVE_RETURN_TO_MIDDLE       0x0001
 #define CAM_MOVE_ZOOMED_OUT             0x0002
@@ -657,6 +659,7 @@ struct LakituState
     /// Mario's action from the previous frame. Only used to determine if Mario just finished a dive.
     /*0xB8*/ u32 lastFrameAction;
     /*0xBC*/ s16 unused;
+    u32 skipCameraInterpolationTimestamp;
 };
 
 // bss order hack to not affect BSS order. if possible, remove me, but it will be hard to match otherwise

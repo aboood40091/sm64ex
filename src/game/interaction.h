@@ -38,7 +38,6 @@
 #define INTERACT_IGLOO_BARRIER  /* 0x40000000 */ (1 << 30)
 #define INTERACT_UNKNOWN_31     /* 0x80000000 */ (1 << 31)
 
-
 // INTERACT_WARP
 #define INT_SUBTYPE_FADING_WARP 0x00000001
 
@@ -77,6 +76,7 @@
 #define ATTACK_GROUND_POUND_OR_TWIRL 4
 #define ATTACK_FAST_ATTACK           5
 #define ATTACK_FROM_BELOW            6
+#define ATTACK_WARIO_SPIN            7
 
 #define INT_STATUS_ATTACK_MASK 0x000000FF
 
@@ -96,7 +96,6 @@
 #define INT_STATUS_HIT_MINE              (1 << 21) /* 0x00200000 */
 #define INT_STATUS_STOP_RIDING           (1 << 22) /* 0x00400000 */
 #define INT_STATUS_TOUCHED_BOB_OMB       (1 << 23) /* 0x00800000 */
-
 
 s16 mario_obj_angle_to_object(struct MarioState *m, struct Object *o);
 void mario_stop_riding_object(struct MarioState *m);

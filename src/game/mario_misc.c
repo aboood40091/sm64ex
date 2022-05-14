@@ -1,6 +1,7 @@
 #include <PR/ultratypes.h>
 
 #include "sm64.h"
+#include "pc/cheats.h"
 #include "area.h"
 #include "audio/external.h"
 #include "behavior_actions.h"
@@ -23,6 +24,7 @@
 #include "save_file.h"
 #include "skybox.h"
 #include "sound_init.h"
+#include "data/r96/r96_c_includes.h"
 
 #define TOAD_STAR_1_REQUIREMENT 12
 #define TOAD_STAR_2_REQUIREMENT 25
@@ -106,6 +108,9 @@ static void toad_message_faded(void) {
     if (gCurrentObject->oToadMessageRecentlyTalked == 0 && gCurrentObject->oDistanceToMario < 600.0f) {
         gCurrentObject->oToadMessageState = TOAD_MESSAGE_OPACIFYING;
     }
+    if (cheats_jukebox(gMarioState) == -1) {
+        r96_stop_jingle();
+    }
 }
 
 static void toad_message_opaque(void) {
@@ -117,7 +122,7 @@ static void toad_message_opaque(void) {
             if (gCurrentObject->oInteractStatus & INT_STATUS_INTERACTED) {
                 gCurrentObject->oInteractStatus = 0;
                 gCurrentObject->oToadMessageState = TOAD_MESSAGE_TALKING;
-                play_toads_jingle();
+                r96_play_jingle(R96_EVENT_TOAD_MESSAGE);
             }
         }
     }
@@ -232,7 +237,17 @@ void bhv_unlock_door_star_init(void) {
     gCurrentObject->oUnlockDoorStarTimer = 0;
     gCurrentObject->oUnlockDoorStarYawVel = 0x1000;
     gCurrentObject->oPosX += 30.0f * sins(gMarioState->faceAngle[1] - 0x4000);
-    gCurrentObject->oPosY += 160.0f;
+    s32 playAsIndex;
+    if (Cheats.ChaosMode) {
+        playAsIndex = Cheats.ChaosPlayAs;
+    } else {
+        playAsIndex = Cheats.PlayAs;
+    }
+    if (Cheats.EnableCheats && playAsIndex > 0) {
+        gCurrentObject->oPosY += 120.0f;
+    } else {
+        gCurrentObject->oPosY += 160.0f;
+    }
     gCurrentObject->oPosZ += 30.0f * coss(gMarioState->faceAngle[1] - 0x4000);
     gCurrentObject->oMoveAngleYaw = 0x7800;
     obj_scale(gCurrentObject, 0.5f);
@@ -390,9 +405,13 @@ Gfx *geo_mario_tilt_torso(s32 callContext, struct GraphNode *node, UNUSED Mat4 *
             && action != ACT_RIDING_SHELL_GROUND) {
             vec3s_copy(bodyState->torsoAngle, gVec3sZero);
         }
-        rotNode->rotation[0] = bodyState->torsoAngle[1];
-        rotNode->rotation[1] = bodyState->torsoAngle[2];
-        rotNode->rotation[2] = bodyState->torsoAngle[0];
+        if (isLuigi() || isWario()){
+        }
+        else {
+            rotNode->rotation[0] = bodyState->torsoAngle[1];
+            rotNode->rotation[1] = bodyState->torsoAngle[2];
+            rotNode->rotation[2] = bodyState->torsoAngle[0];
+        }
     }
     return NULL;
 }
@@ -556,16 +575,40 @@ Gfx *geo_switch_mario_hand_grab_pos(s32 callContext, struct GraphNode *b, Mat4 *
             switch (marioState->marioBodyState->grabPos) {
                 case GRAB_POS_LIGHT_OBJ:
                     if (marioState->action & ACT_FLAG_THROWING) {
-                        vec3s_set(asHeldObj->translation, 50, 0, 0);
+                        if(isWario())
+                            vec3s_set(asHeldObj->translation, -60, 80, 0);
+                        else
+                            vec3s_set(asHeldObj->translation, 50, 0, 0);
                     } else {
-                        vec3s_set(asHeldObj->translation, 50, 0, 110);
+                        if(isWario())
+                            vec3s_set(asHeldObj->translation, -60, 80, -30);
+                        else
+                            vec3s_set(asHeldObj->translation, 50, 0, 110);
                     }
                     break;
                 case GRAB_POS_HEAVY_OBJ:
-                    vec3s_set(asHeldObj->translation, 145, -173, 180);
+                    if(isWario()) {
+                        if (marioState->action & ACT_FLAG_THROWING)
+                            vec3s_set(asHeldObj->translation, 145, -173, 180);
+                        else
+                            vec3s_set(asHeldObj->translation, 145, -70, -100);
+                    }
+                    else {
+                        vec3s_set(asHeldObj->translation, 145, -173, 180);
+                    }
                     break;
                 case GRAB_POS_BOWSER:
                     vec3s_set(asHeldObj->translation, 80, -270, 1260);
+                    break;
+                case GRAB_POS_LIGHT_OBJ_SPIN:
+                    vec3s_set(asHeldObj->translation, 80, -270, 250);
+                    break;
+
+                case GRAB_POS_MOTOS_OBJ:
+                    if(isWario())
+                        vec3s_set(asHeldObj->translation, 145, 50, 180);
+                    else
+                        vec3s_set(asHeldObj->translation, 145, -50, 180);
                     break;
             }
         }
@@ -608,9 +651,9 @@ Gfx *geo_render_mirror_mario(s32 callContext, struct GraphNode *node, UNUSED Mat
                 vec3s_copy(gMirrorMario.angle, mario->header.gfx.angle);
                 vec3f_copy(gMirrorMario.pos, mario->header.gfx.pos);
                 vec3f_copy(gMirrorMario.scale, mario->header.gfx.scale);
-                // FIXME: why does this set unk38, an inline struct, to a ptr to another one? wrong
+                // FIXME: why does this set curAnim, an inline struct, to a ptr to another one? wrong
                 // GraphNode types again?
-                gMirrorMario.unk38 = *(struct GraphNodeObject_sub *) &mario->header.gfx.unk38.animID;
+                gMirrorMario.curAnim = *(struct GraphNodeObject_sub *) &mario->header.gfx.curAnim.animID;
                 mirroredX = MIRROR_X - gMirrorMario.pos[0];
                 gMirrorMario.pos[0] = mirroredX + MIRROR_X;
                 gMirrorMario.angle[1] = -gMirrorMario.angle[1];

@@ -18,6 +18,8 @@
 
 static const LevelScript script_func_local_1[] = {
     OBJECT(/*model*/ MODEL_CAP_SWITCH, /*pos*/   0, -2047, 10, /*angle*/ 0, 0, 0, /*behParam*/ 0x00000000, /*beh*/ bhvCapSwitch),
+    OBJECT(/*model*/ MODEL_WARIO_COIN_PUMPKIN, /*pos*/ 4045,  490,  5154, /*angle*/ 0, 0, 0, /*behParam*/ 0, /*beh*/ bhvWarioCoin),
+    OBJECT(/*model*/ MODEL_WARIO_COIN_HOUSE, /*pos*/ -698,  1799,  0, /*angle*/ 0, 0, 0, /*behParam*/ 1, /*beh*/ bhvWarioCoin),
     RETURN(),
 };
 
@@ -52,7 +54,8 @@ const LevelScript level_totwc_entry[] = {
         TERRAIN(/*terrainData*/ totwc_seg7_collision),
         MACRO_OBJECTS(/*objList*/ totwc_seg7_macro_objs),
         SHOW_DIALOG(/*index*/ 0x00, DIALOG_131),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0000, /*seq*/ SEQ_LEVEL_SLIDE),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0000, /*seq*/ SEQ_LEVEL_SLIDE),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_slide),
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_STONE),
     END_AREA(),
 

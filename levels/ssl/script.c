@@ -29,6 +29,7 @@ static const LevelScript script_func_local_2[] = {
     OBJECT_WITH_ACTS(/*model*/ MODEL_TWEESTER,        /*pos*/  3066, -200,   400, /*angle*/ 0, 0, 0, /*behParam*/ 0x00190000, /*beh*/ bhvTweester, /*acts*/ ACT_4 | ACT_5 | ACT_6),
     OBJECT_WITH_ACTS(/*model*/ MODEL_KLEPTO,          /*pos*/  2200, 1174, -2820, /*angle*/ 0, 0, 0, /*behParam*/ 0x00010000, /*beh*/ bhvKlepto,   /*acts*/ ACT_1),
     OBJECT_WITH_ACTS(/*model*/ MODEL_KLEPTO,          /*pos*/ -5963,  573, -4784, /*angle*/ 0, 0, 0, /*behParam*/ 0x00000000, /*beh*/ bhvKlepto,   /*acts*/ ACT_2 | ACT_3 | ACT_4 | ACT_5 | ACT_6),
+    OBJECT(/*model*/ MODEL_BETA_BOO_KEY, /*pos*/ -5989,  343,  -4850, /*angle*/ 0, 0, 0, /*behParam*/ 7, /*beh*/ bhvBetaBooKey),
     RETURN(),
 };
 
@@ -108,7 +109,8 @@ const LevelScript level_ssl_entry[] = {
         JUMP_LINK(script_func_local_3),
         TERRAIN(/*terrainData*/ ssl_seg7_area_1_collision),
         MACRO_OBJECTS(/*objList*/ ssl_seg7_area_1_macro_objs),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0000, /*seq*/ SEQ_LEVEL_HOT),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0000, /*seq*/ SEQ_LEVEL_HOT),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_hot),
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_SAND),
     END_AREA(),
 
@@ -128,7 +130,8 @@ const LevelScript level_ssl_entry[] = {
         INSTANT_WARP(/*index*/ 3, /*destArea*/ 3, /*displace*/ 0, 0, 0),
         TERRAIN(/*terrainData*/ ssl_seg7_area_2_collision),
         MACRO_OBJECTS(/*objList*/ ssl_seg7_area_2_macro_objs),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0004, /*seq*/ SEQ_LEVEL_UNDERGROUND),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0004, /*seq*/ SEQ_LEVEL_UNDERGROUND),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_underground),
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_STONE),
     END_AREA(),
 
@@ -139,7 +142,8 @@ const LevelScript level_ssl_entry[] = {
         TERRAIN(/*terrainData*/ ssl_seg7_area_3_collision),
         MACRO_OBJECTS(/*objList*/ ssl_seg7_area_3_macro_objs),
         INSTANT_WARP(/*index*/ 2, /*destArea*/ 2, /*displace*/ 0, 0, 0),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0004, /*seq*/ SEQ_LEVEL_UNDERGROUND),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0004, /*seq*/ SEQ_LEVEL_UNDERGROUND),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_underground),
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_STONE),
     END_AREA(),
 

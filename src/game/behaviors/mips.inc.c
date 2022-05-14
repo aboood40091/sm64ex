@@ -14,17 +14,13 @@ void bhv_mips_init(void) {
     // If the player has >= 15 stars and hasn't collected first MIPS star...
     if (save_file_get_total_star_count(gCurrSaveFileNum - 1, 0, 24) >= 15 && (starFlags & 0x08) == 0) {
         o->oBehParams2ndByte = 0;
-#ifndef VERSION_JP
         o->oMipsForwardVelocity = 40.0f;
-#endif
     }
     // If the player has >= 50 stars and hasn't collected second MIPS star...
     else if (save_file_get_total_star_count(gCurrSaveFileNum - 1, 0, 24) >= 50
              && (starFlags & 0x10) == 0) {
         o->oBehParams2ndByte = 1;
-#ifndef VERSION_JP
         o->oMipsForwardVelocity = 45.0f;
-#endif
     } else {
         // No MIPS stars are available, hide MIPS.
         o->activeFlags = ACTIVE_FLAG_DEACTIVATED;
@@ -32,11 +28,7 @@ void bhv_mips_init(void) {
 
     o->oInteractionSubtype = INT_SUBTYPE_HOLDABLE_NPC;
 
-#ifndef VERSION_JP
     o->oGravity = 15.0f;
-#else
-    o->oGravity = 2.5f;
-#endif
     o->oFriction = 0.89f;
     o->oBuoyancy = 1.2f;
 
@@ -123,11 +115,7 @@ void bhv_mips_act_follow_path(void) {
     followStatus = cur_obj_follow_path(followStatus);
 
     // Update velocity and angle and do movement.
-#ifndef VERSION_JP
     o->oForwardVel = o->oMipsForwardVelocity;
-#else
-    o->oForwardVel = 45.0f;
-#endif
     o->oMoveAngleYaw = o->oPathedTargetYaw;
     collisionFlags = object_step();
 
@@ -164,7 +152,7 @@ void bhv_mips_act_fall_down(void) {
     s16 collisionFlags = 0;
 
     collisionFlags = object_step();
-    o->header.gfx.unk38.animFrame = 0;
+    o->header.gfx.curAnim.animFrame = 0;
 
     if ((collisionFlags & OBJ_COL_FLAG_GROUNDED) == 1) {
         o->oAction = MIPS_ACT_WAIT_FOR_ANIMATION_DONE;

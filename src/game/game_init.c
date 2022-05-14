@@ -21,9 +21,7 @@
 #include "segment_symbols.h"
 #include "thread6.h"
 #include <prevent_bss_reordering.h>
-#ifdef BETTERCAMERA
 #include "bettercamera.h"
-#endif
 
 // FIXME: I'm not sure all of these variables belong in this file, but I don't
 // know of a good way to split them
@@ -45,7 +43,9 @@ uintptr_t gPhysicalFrameBuffers[3];
 uintptr_t gPhysicalZBuffer;
 void *D_80339CF0;
 void *D_80339CF4;
-struct MarioAnimation D_80339D10;
+struct MarioAnimation Data_MarioAnims;
+struct LuigiAnimation Data_LuigiAnims;
+struct WarioAnimation Data_WarioAnims;
 struct MarioAnimation gDemo;
 UNUSED u8 filler80339D30[0x90];
 
@@ -168,8 +168,10 @@ void clear_viewport(Vp *viewport, s32 color) {
     s16 vpLrx = (viewport->vp.vtrans[0] + viewport->vp.vscale[0]) / 4 - 2;
     s16 vpLry = (viewport->vp.vtrans[1] + viewport->vp.vscale[1]) / 4 - 2;
 
-    vpUlx = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(vpUlx);
-    vpLrx = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(SCREEN_WIDTH - vpLrx);
+    if (!configForce4by3) {
+        vpUlx = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(vpUlx);
+        vpLrx = GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(SCREEN_WIDTH - vpLrx);
+    }
 
     gDPPipeSync(gDisplayListHead++);
 
@@ -384,9 +386,6 @@ void adjust_analog_stick(struct Controller *controller) {
 // if a demo sequence exists, this will run the demo
 // input list until it is complete. called every frame.
 void run_demo_inputs(void) {
-    // eliminate the unused bits.
-    gControllers[0].controllerData->button &= VALID_BUTTONS;
-
     /*
         Check if a demo inputs list
         exists and if so, run the
@@ -455,6 +454,7 @@ void read_controller_inputs(void) {
     if (gControllerBits) {
         osRecvMesg(&gSIEventMesgQueue, &D_80339BEC, OS_MESG_BLOCK);
         osContGetReadData(&gControllerPads[0]);
+        dynos_update_opt((void *) &gControllerPads[0]);
     }
     run_demo_inputs();
 
@@ -530,11 +530,8 @@ void init_controllers(void) {
             gControllers[cont++].controllerData = &gControllerPads[port];
         }
     }
-
-#ifdef BETTERCAMERA
     // load bettercam settings from the config file
     newcam_init_settings();
-#endif
 }
 
 void setup_game_memory(void) {
@@ -549,7 +546,9 @@ void setup_game_memory(void) {
     gPhysicalFrameBuffers[2] = VIRTUAL_TO_PHYSICAL(gFrameBuffer2);
     D_80339CF0 = main_pool_alloc(0x4000, MEMORY_POOL_LEFT);
     set_segment_base_addr(17, (void *) D_80339CF0);
-    func_80278A78(&D_80339D10, gMarioAnims, D_80339CF0);
+    func_80278A78((struct MarioAnimation *) &Data_MarioAnims, gMarioAnims, D_80339CF0);
+    func_80278A78((struct MarioAnimation *) &Data_LuigiAnims, gLuigiAnims, D_80339CF0);
+    func_80278A78((struct MarioAnimation *) &Data_WarioAnims, gWarioAnims, D_80339CF0);
     D_80339CF4 = main_pool_alloc(2048, MEMORY_POOL_LEFT);
     set_segment_base_addr(24, (void *) D_80339CF4);
     func_80278A78(&gDemo, gDemoInputs, D_80339CF4);

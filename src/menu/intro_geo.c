@@ -8,7 +8,7 @@
 #include "textures.h"
 #include "types.h"
 #include "prevent_bss_reordering.h"
-
+#include "engine/math_util.h"
 #include "gfx_dimensions.h"
 
 // frame counts for the zoom in, hold, and zoom out of title model
@@ -19,6 +19,9 @@
 // background types
 #define INTRO_BACKGROUND_SUPER_MARIO 0
 #define INTRO_BACKGROUND_GAME_OVER 1
+
+#define TILE_SIZE 80
+#define BACKGROUND_ROWS 3
 
 struct GraphNodeMore {
     /*0x00*/ struct GraphNode node;
@@ -70,6 +73,18 @@ s8 gameOverBackgroundTable[] = {
 s8 gameOverBackgroundFlipOrder[] = { 0x00, 0x01, 0x02, 0x03, 0x07, 0x0B,
                                      0x0a, 0x09, 0x08, 0x04, 0x05, 0x06 };
 
+static Gfx *sIntroScalePos;
+static Vec3f sIntroScale;
+
+void patch_title_screen_scales(void) {
+    if (sIntroScalePos != NULL) {
+        Mtx *scaleMat = alloc_display_list(sizeof(*scaleMat));
+        guScale(scaleMat, sIntroScale[0], sIntroScale[1], sIntroScale[2]);
+        gSPMatrix(sIntroScalePos, scaleMat, G_MTX_MODELVIEW | G_MTX_MUL | G_MTX_PUSH);
+        sIntroScalePos = NULL;
+    }
+}
+
 Gfx *geo_title_screen(s32 sp50, struct GraphNode *sp54, UNUSED void *context) {
     struct GraphNode *graphNode; // sp4c
     Gfx *displayList;            // sp48
@@ -80,6 +95,8 @@ Gfx *geo_title_screen(s32 sp50, struct GraphNode *sp54, UNUSED void *context) {
     f32 scaleX;                  // sp34
     f32 scaleY;                  // sp30
     f32 scaleZ;                  // sp2c
+    Vec3f scale;
+    Vec3f scaleInterpolated;
     graphNode = sp54;
     displayList = NULL;
     displayListIter = NULL;
@@ -111,8 +128,13 @@ Gfx *geo_title_screen(s32 sp50, struct GraphNode *sp54, UNUSED void *context) {
             scaleZ = 0.0f;
         }
         guScale(scaleMat, scaleX, scaleY, scaleZ);
+        vec3f_set(scale, scaleX, scaleY, scaleZ);
+        interpolate_vectors(scaleInterpolated, sIntroScale, scale);
+        vec3f_set(sIntroScale, scaleX, scaleY, scaleZ);
+        guScale(scaleMat, scaleInterpolated[0], scaleInterpolated[1], scaleInterpolated[2]);
+        sIntroScalePos = displayListIter;
         gSPMatrix(displayListIter++, scaleMat, G_MTX_MODELVIEW | G_MTX_MUL | G_MTX_PUSH);
-        gSPDisplayList(displayListIter++, &intro_seg7_dl_0700B3A0);
+        gSPDisplayList(displayListIter++, &titletest_logo_r96_mesh);
         gSPPopMatrix(displayListIter++, G_MTX_MODELVIEW);
         gSPEndDisplayList(displayListIter);
         gTitleZoomCounter++;
@@ -142,7 +164,7 @@ Gfx *geo_fade_transition(s32 sp40, struct GraphNode *sp44, UNUSED void *context)
             if (0) {
             }
         }
-        gSPDisplayList(displayListIter++, &intro_seg7_dl_0700C6A0);
+        //gSPDisplayList(displayListIter++, &intro_seg7_dl_0700C6A0);
         gSPEndDisplayList(displayListIter);
         if (gTitleZoomCounter >= 0x13) {
             gTitleFadeCounter += 0x1a;
@@ -160,15 +182,23 @@ Gfx *intro_backdrop_one_image(s32 index, s8 *backgroundTable) {
     Gfx *displayListIter;             // sp54
     const u8 *const *vIntroBgTable;   // sp50
     s32 i;                            // sp4c
-    f32 aspect = GFX_DIMENSIONS_ASPECT_RATIO;
-	int num_tiles_h = (((aspect*SCREEN_HEIGHT)+79)/80);
-	float x_ofs = (SCREEN_WIDTH/2)-(aspect*SCREEN_HEIGHT/2);
-	
     mtx = alloc_display_list(sizeof(*mtx));
     displayList = alloc_display_list(36 * sizeof(*displayList));
     displayListIter = displayList;
-    vIntroBgTable = segmented_to_virtual(introBackgroundTextureType[backgroundTable[0]]);
-    guTranslate(mtx, ((index%num_tiles_h)*80)+x_ofs, (index/num_tiles_h)*80, 0.0f);
+
+    f32 aspect = GFX_DIMENSIONS_ASPECT_RATIO;
+	int num_tiles_h = (((aspect*SCREEN_HEIGHT)+79)/80);
+	float x_ofs = (SCREEN_WIDTH/2)-(aspect*SCREEN_HEIGHT/2);
+
+    if (configForce4by3) {
+        vIntroBgTable = segmented_to_virtual(introBackgroundTextureType[backgroundTable[index]]);
+        guTranslate(mtx, introBackgroundOffsetX[index], introBackgroundOffsetY[index], 0.0f);
+    }
+    else {
+        vIntroBgTable = segmented_to_virtual(introBackgroundTextureType[backgroundTable[0]]);
+        guTranslate(mtx, ((index%num_tiles_h)*80)+x_ofs, (index/num_tiles_h)*80, 0.0f);
+    }
+	
     gSPMatrix(displayListIter++, mtx, G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_PUSH);
     gSPDisplayList(displayListIter++, &title_screen_bg_dl_0A000118);
     for (i = 0; i < 4; ++i) {
@@ -188,21 +218,30 @@ Gfx *geo_intro_backdrop(s32 sp48, struct GraphNode *sp4c, UNUSED void *context) 
     Gfx *displayList;                // sp38
     Gfx *displayListIter;            // sp34
     s32 i;                           // sp30
+
+    s32 size;
+
     graphNode = (struct GraphNodeMore *) sp4c;
     index = graphNode->unk18 & 0xff; // TODO: word at offset 0x18 of struct GraphNode
     backgroundTable = introBackgroundTables[index];
     displayList = NULL;
     displayListIter = NULL;
-    f32 aspect = GFX_DIMENSIONS_ASPECT_RATIO;
-	int num_tiles_h = (((aspect*SCREEN_HEIGHT)+79)/80);
+	int num_tiles_h = ((GFX_DIMENSIONS_ASPECT_RATIO*SCREEN_HEIGHT)+TILE_SIZE)/TILE_SIZE;
 	
     if (sp48 == 1) {
-        displayList = alloc_display_list(((num_tiles_h*3)+4) * sizeof(*displayList));
+        if (configForce4by3) {
+            displayList = alloc_display_list(16 * sizeof(*displayList));
+            size = 12;
+        }
+        else {
+            size = num_tiles_h * BACKGROUND_ROWS;
+            displayList = alloc_display_list(((size)+4) * sizeof(*displayList));
+        }
         displayListIter = displayList;
         graphNode->node.flags = (graphNode->node.flags & 0xFF) | 0x100;
         gSPDisplayList(displayListIter++, &dl_proj_mtx_fullscreen);
         gSPDisplayList(displayListIter++, &title_screen_bg_dl_0A000100);
-        for (i = 0; i < num_tiles_h*3; ++i) {
+        for (i = 0; i < size; ++i) {
             gSPDisplayList(displayListIter++, intro_backdrop_one_image(i, backgroundTable));
         }
         gSPDisplayList(displayListIter++, &title_screen_bg_dl_0A000190);
@@ -217,11 +256,13 @@ Gfx *geo_game_over_tile(s32 sp40, struct GraphNode *sp44, UNUSED void *context) 
     Gfx *displayListIter;        // sp34
     s32 j;                       // sp30
     s32 i;                       // sp2c
+
+    s32 size;
+
     graphNode = sp44;
     displayList = NULL;
     displayListIter = NULL;
-    f32 aspect = GFX_DIMENSIONS_ASPECT_RATIO;
-	int num_tiles_h = (((aspect*SCREEN_HEIGHT)+79)/80);
+	int num_tiles_h = (((GFX_DIMENSIONS_ASPECT_RATIO*SCREEN_HEIGHT)+TILE_SIZE)/TILE_SIZE);
 	
     if (sp40 != 1) {
         gGameOverFrameCounter = 0;
@@ -230,6 +271,15 @@ Gfx *geo_game_over_tile(s32 sp40, struct GraphNode *sp44, UNUSED void *context) 
             gameOverBackgroundTable[i] = INTRO_BACKGROUND_GAME_OVER;
         }
     } else {
+        if (configForce4by3) {
+            displayList = alloc_display_list(16 * sizeof(*displayList));
+            size = (s32) sizeof(gameOverBackgroundTable);
+        }
+        else {
+            size = num_tiles_h * BACKGROUND_ROWS;
+            displayList = alloc_display_list(((size)+4) * sizeof(*displayList));
+        }
+
         displayList = alloc_display_list(((num_tiles_h*3)+4) * sizeof(*displayList));
         displayListIter = displayList;
         if (gGameOverTableIndex == -2) {
@@ -251,7 +301,7 @@ Gfx *geo_game_over_tile(s32 sp40, struct GraphNode *sp44, UNUSED void *context) 
         graphNode->flags = (graphNode->flags & 0xFF) | 0x100;
         gSPDisplayList(displayListIter++, &dl_proj_mtx_fullscreen);
         gSPDisplayList(displayListIter++, &title_screen_bg_dl_0A000100);
-        for (j = 0; j < (s32) num_tiles_h*3; ++j) {
+        for (j = 0; j < size; ++j) {
             gSPDisplayList(displayListIter++, intro_backdrop_one_image(j, gameOverBackgroundTable));
         }
         gSPDisplayList(displayListIter++, &title_screen_bg_dl_0A000190);

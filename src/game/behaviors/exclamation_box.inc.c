@@ -1,3 +1,4 @@
+#include "../../../data/r96/r96_c_includes.h"
 // exclamation_box.c.inc
 
 struct ObjectHitbox sExclamationBoxHitbox = {
@@ -15,6 +16,42 @@ struct ObjectHitbox sExclamationBoxHitbox = {
 struct Struct802C0DF0 sExclamationBoxContents[] = { { 0, 0, 0, MODEL_MARIOS_WING_CAP, bhvWingCap },
                                                     { 1, 0, 0, MODEL_MARIOS_METAL_CAP, bhvMetalCap },
                                                     { 2, 0, 0, MODEL_MARIOS_CAP, bhvVanishCap },
+                                                    { 3, 0, 0, MODEL_KOOPA_SHELL, bhvKoopaShell },
+                                                    { 4, 0, 0, MODEL_YELLOW_COIN,
+                                                      bhvSingleCoinGetsSpawned },
+                                                    { 5, 0, 0, MODEL_NONE, bhvThreeCoinsSpawn },
+                                                    { 6, 0, 0, MODEL_NONE, bhvTenCoinsSpawn },
+                                                    { 7, 0, 0, MODEL_1UP, bhv1upWalking },
+                                                    { 8, 0, 0, MODEL_STAR, bhvSpawnedStar },
+                                                    { 9, 0, 0, MODEL_1UP, bhv1upRunningAway },
+                                                    { 10, 0, 1, MODEL_STAR, bhvSpawnedStar },
+                                                    { 11, 0, 2, MODEL_STAR, bhvSpawnedStar },
+                                                    { 12, 0, 3, MODEL_STAR, bhvSpawnedStar },
+                                                    { 13, 0, 4, MODEL_STAR, bhvSpawnedStar },
+                                                    { 14, 0, 5, MODEL_STAR, bhvSpawnedStar },
+                                                    { 99, 0, 0, 0, NULL } };
+													
+struct Struct802C0DF0 sExclamationBoxContentsLuigi[] = { { 0, 0, 0, MODEL_LUIGIS_WING_CAP, bhvWingCap },
+                                                    { 1, 0, 0, MODEL_LUIGIS_METAL_CAP, bhvMetalCap },
+                                                    { 2, 0, 0, MODEL_LUIGIS_CAP, bhvVanishCap },
+                                                    { 3, 0, 0, MODEL_KOOPA_SHELL, bhvKoopaShell },
+                                                    { 4, 0, 0, MODEL_YELLOW_COIN,
+                                                      bhvSingleCoinGetsSpawned },
+                                                    { 5, 0, 0, MODEL_NONE, bhvThreeCoinsSpawn },
+                                                    { 6, 0, 0, MODEL_NONE, bhvTenCoinsSpawn },
+                                                    { 7, 0, 0, MODEL_1UP, bhv1upWalking },
+                                                    { 8, 0, 0, MODEL_STAR, bhvSpawnedStar },
+                                                    { 9, 0, 0, MODEL_1UP, bhv1upRunningAway },
+                                                    { 10, 0, 1, MODEL_STAR, bhvSpawnedStar },
+                                                    { 11, 0, 2, MODEL_STAR, bhvSpawnedStar },
+                                                    { 12, 0, 3, MODEL_STAR, bhvSpawnedStar },
+                                                    { 13, 0, 4, MODEL_STAR, bhvSpawnedStar },
+                                                    { 14, 0, 5, MODEL_STAR, bhvSpawnedStar },
+                                                    { 99, 0, 0, 0, NULL } };
+
+struct Struct802C0DF0 sExclamationBoxContentsWario[] = { { 0, 0, 0, MODEL_WARIOS_WING_CAP, bhvWingCap },
+                                                    { 1, 0, 0, MODEL_WARIOS_METAL_CAP, bhvMetalCap },
+                                                    { 2, 0, 0, MODEL_WARIOS_CAP, bhvVanishCap },
                                                     { 3, 0, 0, MODEL_KOOPA_SHELL, bhvKoopaShell },
                                                     { 4, 0, 0, MODEL_YELLOW_COIN,
                                                       bhvSingleCoinGetsSpawned },
@@ -120,7 +157,15 @@ void exclamation_box_spawn_contents(struct Struct802C0DF0 *a0, u8 a1) {
 }
 
 void exclamation_box_act_4(void) {
-    exclamation_box_spawn_contents(sExclamationBoxContents, o->oBehParams2ndByte);
+	if(isLuigi()) {
+		exclamation_box_spawn_contents(sExclamationBoxContentsLuigi, o->oBehParams2ndByte);
+	}
+	else if(isWario()) {
+		exclamation_box_spawn_contents(sExclamationBoxContentsWario, o->oBehParams2ndByte);
+	}
+	else if(!isLuigi() && !isWario()) { 
+		exclamation_box_spawn_contents(sExclamationBoxContents, o->oBehParams2ndByte);
+	}
     spawn_mist_particles_variable(0, 0, 46.0f);
     spawn_triangle_break_particles(20, 139, 0.3f, o->oAnimState);
     create_sound_spawner(SOUND_GENERAL_BREAK_BOX);

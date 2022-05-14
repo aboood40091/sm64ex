@@ -7,6 +7,7 @@
 #include <ctype.h>
 
 #include "platform.h"
+#include "cheats.h"
 #include "configfile.h"
 #include "cliopts.h"
 #include "gfx/gfx_screen_config.h"
@@ -43,17 +44,30 @@ ConfigWindow configWindow       = {
     .y = WAPI_WIN_CENTERPOS,
     .w = DESIRED_SCREEN_WIDTH,
     .h = DESIRED_SCREEN_HEIGHT,
-    .vsync = 1,
+    .vsync = false,
     .reset = false,
     .fullscreen = false,
     .exiting_fullscreen = false,
     .settings_changed = false,
 };
-unsigned int configFiltering    = 1;          // 0=force nearest, 1=linear, (TODO) 2=three-point
-unsigned int configMasterVolume = MAX_VOLUME; // 0 - MAX_VOLUME
-unsigned int configMusicVolume = MAX_VOLUME;
-unsigned int configSfxVolume = MAX_VOLUME;
-unsigned int configEnvVolume = MAX_VOLUME;
+
+unsigned int configLanguage     = 0;
+#ifdef TARGET_SWITCH
+bool configSwitchHud            = true;
+bool configPrecacheRes          = false;
+#else
+bool configPrecacheRes          = true;
+#endif
+bool configBillboard            = 0;
+
+unsigned int configFiltering        = 1;          // 0=force nearest, 1=linear, (TODO) 2=three-point
+unsigned int configMasterVolume     = MAX_VOLUME; // 0 - MAX_VOLUME
+unsigned int configMusicVolume      = MAX_VOLUME;
+unsigned int configSfxVolume        = MAX_VOLUME;
+unsigned int configEnvVolume        = MAX_VOLUME;
+bool         configMusicMute        = 0;
+bool         configSfxMute          = 0;
+bool         configEnvMute          = 0;
 
 // Keyboard mappings (VK_ values, by default keyboard/gamepad/mouse)
 unsigned int configKeyA[MAX_BINDS]          = { 0x0026,   0x1000,     0x1103     };
@@ -66,16 +80,17 @@ unsigned int configKeyCUp[MAX_BINDS]        = { 0x0148,   VK_INVALID, VK_INVALID
 unsigned int configKeyCDown[MAX_BINDS]      = { 0x0150,   VK_INVALID, VK_INVALID };
 unsigned int configKeyCLeft[MAX_BINDS]      = { 0x014B,   VK_INVALID, VK_INVALID };
 unsigned int configKeyCRight[MAX_BINDS]     = { 0x014D,   VK_INVALID, VK_INVALID };
+unsigned int configKeyDUp[MAX_BINDS]        = { 0x000C,   0x100B,     VK_INVALID };
+unsigned int configKeyDDown[MAX_BINDS]      = { 0x001A,   0x100C,     VK_INVALID };
+unsigned int configKeyDLeft[MAX_BINDS]      = { 0x0019,   0x100D,     VK_INVALID };
+unsigned int configKeyDRight[MAX_BINDS]     = { 0x001B,   0x100E,     VK_INVALID };
 unsigned int configKeyStickUp[MAX_BINDS]    = { 0x0011,   VK_INVALID, VK_INVALID };
 unsigned int configKeyStickDown[MAX_BINDS]  = { 0x001F,   VK_INVALID, VK_INVALID };
 unsigned int configKeyStickLeft[MAX_BINDS]  = { 0x001E,   VK_INVALID, VK_INVALID };
 unsigned int configKeyStickRight[MAX_BINDS] = { 0x0020,   VK_INVALID, VK_INVALID };
 unsigned int configStickDeadzone = 16; // 16*DEADZONE_STEP=4960 (the original default deadzone)
 unsigned int configRumbleStrength = 50;
-#ifdef EXTERNAL_DATA
-bool configPrecacheRes = true;
-#endif
-#ifdef BETTERCAMERA
+
 // BetterCamera settings
 unsigned int configCameraXSens   = 50;
 unsigned int configCameraYSens   = 50;
@@ -87,12 +102,24 @@ bool         configCameraInvertY = false;
 bool         configEnableCamera  = false;
 bool         configCameraAnalog  = true;
 bool         configCameraMouse   = false;
-#endif
 bool         configSkipIntro     = 0;
 bool         configHUD           = true;
+unsigned int configDrawDistance  = 100;
 #ifdef DISCORDRPC
 bool         configDiscordRPC    = true;
 #endif
+
+// 60fps init
+bool         config60FPS         = true; 
+
+// Resolution settings, thanks to Mors!
+bool         configInternalResolutionBool       = true;
+unsigned int configCustomInternalResolution     = 1;
+unsigned int configInternalResolutionWidth;
+unsigned int configInternalResolutionHeight;
+//unsigned int configCustomWindowResolution       = 2;
+bool         configForce4by3                    = false;
+
 
 static const struct ConfigOption options[] = {
     {.name = "fullscreen",           .type = CONFIG_TYPE_BOOL, .boolValue = &configWindow.fullscreen},
@@ -101,7 +128,15 @@ static const struct ConfigOption options[] = {
     {.name = "window_w",             .type = CONFIG_TYPE_UINT, .uintValue = &configWindow.w},
     {.name = "window_h",             .type = CONFIG_TYPE_UINT, .uintValue = &configWindow.h},
     {.name = "vsync",                .type = CONFIG_TYPE_BOOL, .boolValue = &configWindow.vsync},
+    {.name = "60fps",                .type = CONFIG_TYPE_BOOL, .boolValue = &config60FPS },
+    {.name = "internal_bool",        .type = CONFIG_TYPE_BOOL, .boolValue = &configInternalResolutionBool},
+    {.name = "internal_swap",        .type = CONFIG_TYPE_UINT, .uintValue = &configCustomInternalResolution},
+    {.name = "internal_w",           .type = CONFIG_TYPE_UINT, .uintValue = &configInternalResolutionWidth},
+    {.name = "internal_h",           .type = CONFIG_TYPE_UINT, .uintValue = &configInternalResolutionHeight},
+//    {.name = "window_swap",          .type = CONFIG_TYPE_UINT, .uintValue = &configCustomWindowResolution},
+    {.name = "force4by3",            .type = CONFIG_TYPE_BOOL, .boolValue = &configForce4by3},
     {.name = "texture_filtering",    .type = CONFIG_TYPE_UINT, .uintValue = &configFiltering},
+    {.name = "drawing_distance",     .type = CONFIG_TYPE_UINT, .uintValue = &configDrawDistance},
     {.name = "master_volume",        .type = CONFIG_TYPE_UINT, .uintValue = &configMasterVolume},
     {.name = "music_volume",         .type = CONFIG_TYPE_UINT, .uintValue = &configMusicVolume},
     {.name = "sfx_volume",           .type = CONFIG_TYPE_UINT, .uintValue = &configSfxVolume},
@@ -116,16 +151,22 @@ static const struct ConfigOption options[] = {
     {.name = "key_cdown",            .type = CONFIG_TYPE_BIND, .uintValue = configKeyCDown},
     {.name = "key_cleft",            .type = CONFIG_TYPE_BIND, .uintValue = configKeyCLeft},
     {.name = "key_cright",           .type = CONFIG_TYPE_BIND, .uintValue = configKeyCRight},
+    {.name = "key_dup",              .type = CONFIG_TYPE_BIND, .uintValue = configKeyDUp},
+    {.name = "key_ddown",            .type = CONFIG_TYPE_BIND, .uintValue = configKeyDDown},
+    {.name = "key_dleft",            .type = CONFIG_TYPE_BIND, .uintValue = configKeyDLeft},
+    {.name = "key_dright",           .type = CONFIG_TYPE_BIND, .uintValue = configKeyDRight},
     {.name = "key_stickup",          .type = CONFIG_TYPE_BIND, .uintValue = configKeyStickUp},
     {.name = "key_stickdown",        .type = CONFIG_TYPE_BIND, .uintValue = configKeyStickDown},
     {.name = "key_stickleft",        .type = CONFIG_TYPE_BIND, .uintValue = configKeyStickLeft},
     {.name = "key_stickright",       .type = CONFIG_TYPE_BIND, .uintValue = configKeyStickRight},
     {.name = "stick_deadzone",       .type = CONFIG_TYPE_UINT, .uintValue = &configStickDeadzone},
     {.name = "rumble_strength",      .type = CONFIG_TYPE_UINT, .uintValue = &configRumbleStrength},
-    #ifdef EXTERNAL_DATA
     {.name = "precache",             .type = CONFIG_TYPE_BOOL, .boolValue = &configPrecacheRes},
+    {.name = "language",             .type = CONFIG_TYPE_UINT, .uintValue = &configLanguage},
+    #ifdef TARGET_SWITCH
+    {.name = "nx_hud",               .type = CONFIG_TYPE_BOOL, .boolValue = &configSwitchHud},
     #endif
-    #ifdef BETTERCAMERA
+    {.name = "disable_billboard",    .type = CONFIG_TYPE_BOOL, .boolValue = &configBillboard},
     {.name = "bettercam_enable",     .type = CONFIG_TYPE_BOOL, .boolValue = &configEnableCamera},
     {.name = "bettercam_analog",     .type = CONFIG_TYPE_BOOL, .boolValue = &configCameraAnalog},
     {.name = "bettercam_mouse_look", .type = CONFIG_TYPE_BOOL, .boolValue = &configCameraMouse},
@@ -136,8 +177,43 @@ static const struct ConfigOption options[] = {
     {.name = "bettercam_aggression", .type = CONFIG_TYPE_UINT, .uintValue = &configCameraAggr},
     {.name = "bettercam_pan_level",  .type = CONFIG_TYPE_UINT, .uintValue = &configCameraPan},
     {.name = "bettercam_degrade",    .type = CONFIG_TYPE_UINT, .uintValue = &configCameraDegrade},
-    #endif
     {.name = "skip_intro",           .type = CONFIG_TYPE_BOOL, .boolValue = &configSkipIntro},
+    {.name = "cheats_enable",               .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.EnableCheats},
+    {.name = "cheats_moon_jump",            .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.MoonJump},
+    {.name = "cheats_god_mode",             .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.GodMode},
+    {.name = "cheats_infinite_lives",       .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.InfiniteLives},
+    {.name = "cheats_responsive",           .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.Responsive},
+    {.name = "cheats_moon_gravity",         .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.MoonGravity},
+    // {.name = "cheats_debug_move",           .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.DebugMove},
+    {.name = "cheats_super_copter",         .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.SuperCopter},
+    {.name = "cheats_auto_wall_kick",       .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.AutoWallKick},
+    {.name = "cheats_no_hold_heavy",        .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.NoHoldHeavy},
+    {.name = "cheats_speed_modifier",       .type = CONFIG_TYPE_UINT, .uintValue = &Cheats.SpeedModifier},
+    {.name = "cheats_jump_modifier",        .type = CONFIG_TYPE_UINT, .uintValue = &Cheats.JumpModifier},
+    {.name = "cheats_swim_modifier",        .type = CONFIG_TYPE_UINT, .uintValue = &Cheats.SwimModifier},
+    {.name = "cheats_size_modifier",        .type = CONFIG_TYPE_UINT, .uintValue = &Cheats.SizeModifier},
+    {.name = "cheats_cap_modifier",         .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.CapModifier},
+    {.name = "cheats_super_wing_cap",       .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.SuperWingCap},
+    // {.name = "cheats_play_as",              .type = CONFIG_TYPE_UINT, .uintValue = &Cheats.PlayAs},
+    // {.name = "cheats_jukebox",              .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.Jukebox},
+    // {.name = "cheats_jukebox_music",        .type = CONFIG_TYPE_UINT, .uintValue = &Cheats.JukeboxMusic},
+    {.name = "cheats_speed_display",        .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.SpeedDisplay},
+    {.name = "cheats_blj_anywhere",         .type = CONFIG_TYPE_UINT, .uintValue = &Cheats.BLJAnywhere},
+    {.name = "cheats_swim_anywhere",        .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.SwimAnywhere},
+    {.name = "cheats_exit_anywhere",        .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.ExitAnywhere},
+    {.name = "cheats_walk_on_hazards",      .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.WalkOnHazards},
+    {.name = "cheats_no_death_barrier",     .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.NoDeathBarrier},
+    {.name = "cheats_no_bounds",            .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.NoBounds},
+    {.name = "cheats_water_level",          .type = CONFIG_TYPE_UINT, .uintValue = &Cheats.WaterLevel},
+    {.name = "cheats_coins_magnet",         .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.CoinsMagnet},
+    // {.name = "cheats_time_stop",            .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.TimeStop},
+    // {.name = "cheats_quick_ending",         .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.QuickEnding},
+    {.name = "cheats_hurt_mario",           .type = CONFIG_TYPE_UINT, .uintValue = &Cheats.HurtMario},
+    {.name = "cheats_spamba",               .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.Spamba},
+    {.name = "cheats_spamba_index",         .type = CONFIG_TYPE_UINT, .uintValue = &Cheats.SpambaIndex},
+    // {.name = "cheats_chaos_mode",           .type = CONFIG_TYPE_BOOL, .boolValue = &Cheats.ChaosMode},
+    {.name = "cheats_key_time_stop",        .type = CONFIG_TYPE_BIND, .uintValue = CheatsControls.TimeStopButton},
+    {.name = "cheats_key_spamba_controls",  .type = CONFIG_TYPE_BIND, .uintValue = CheatsControls.SpambaControls},
     #ifdef DISCORDRPC
     {.name = "discordrpc_enable",    .type = CONFIG_TYPE_BOOL, .boolValue = &configDiscordRPC},
     #endif 

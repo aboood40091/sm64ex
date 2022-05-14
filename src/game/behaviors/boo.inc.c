@@ -280,13 +280,9 @@ static s32 boo_update_during_death(void) {
             if (o->oBooParentBigBoo != NULL) {
                 parentBigBoo = o->oBooParentBigBoo;
 
-#ifndef VERSION_JP
                 if (!cur_obj_has_behavior(bhvBoo)) {
                     parentBigBoo->oBigBooNumMinionBoosKilled++;
                 }
-#else
-                parentBigBoo->oBigBooNumMinionBoosKilled++;
-#endif
             }
 
             return TRUE;
@@ -469,7 +465,7 @@ static void boo_act_4(void) {
         obj_mark_for_deletion(o);
 
         if (dialogID == DIALOG_108) { // If the Big Boo should spawn, play the jingle
-            play_puzzle_jingle();
+            r96_play_jingle(R96_EVENT_SOLVE_PUZZLE);
         }
     }
 }
@@ -510,11 +506,7 @@ static void big_boo_act_0(void) {
 
     o->oBooParentBigBoo = NULL;
 
-#ifndef VERSION_JP
     if (boo_should_be_active() && gDebugInfo[5][0] + 5 <= o->oBigBooNumMinionBoosKilled) {
-#else
-    if (boo_should_be_active() && o->oBigBooNumMinionBoosKilled >= 5) {
-#endif
         o->oAction = 1;
 
         cur_obj_set_pos_to_home();
@@ -634,9 +626,7 @@ static void big_boo_act_3(void) {
 }
 
 static void big_boo_act_4(void) {
-#ifndef VERSION_JP
     boo_stop();
-#endif
 
     if (o->oBehParams2ndByte == 0) {
         obj_set_pos(o, 973, 0, 626);
@@ -774,11 +764,7 @@ void bhv_merry_go_round_boo_manager_loop(void) {
 
                     o->oAction = 2;
 
-#ifndef VERSION_JP
-                    play_puzzle_jingle();
-#else
-                    play_sound(SOUND_GENERAL2_RIGHT_ANSWER, gDefaultSoundArgs);
-#endif
+                    r96_play_jingle(R96_EVENT_SOLVE_PUZZLE);
                 }
             }
 
@@ -905,7 +891,7 @@ void bhv_boo_boss_spawned_bridge_loop(void) {
             break;
         case 3:
             if (o->oTimer == 0 && o->oBehParams2ndByte == 1) {
-                play_puzzle_jingle();
+                r96_play_jingle(R96_EVENT_SOLVE_PUZZLE);
             }
 
             break;

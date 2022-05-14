@@ -52,7 +52,10 @@ void bhv_mr_i_body_loop(void) {
         obj_copy_scale(o, o->parentObj);
         obj_set_parent_relative_pos(o, 0, 0, o->header.gfx.scale[1] * 100.0f);
         obj_build_transform_from_pos_and_angle(o, 44, 15);
-        obj_translate_local(o, 6, 44);
+
+        if (!configBillboard)
+            obj_translate_local(o, 6, 44);
+
         o->oFaceAnglePitch = o->oMoveAnglePitch;
         o->oGraphYOffset = o->header.gfx.scale[1] * 100.f;
     }
@@ -216,13 +219,7 @@ void mr_i_act_1(void) {
 }
 
 void mr_i_act_0(void) {
-#ifndef VERSION_JP
     obj_set_angle(o, 0, 0, 0);
-#else
-    o->oMoveAnglePitch = 0;
-    o->oMoveAngleYaw = 0;
-    o->oMoveAngleRoll = 0;
-#endif
     cur_obj_scale(o->oBehParams2ndByte + 1);
     if (o->oTimer == 0)
         cur_obj_set_pos_to_home();

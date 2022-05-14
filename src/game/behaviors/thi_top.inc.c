@@ -32,7 +32,7 @@ void bhv_thi_tiny_island_top_loop(void) {
                 cur_obj_play_sound_1(SOUND_ENV_WATER_DRAIN);
             } else {
                 gTHIWaterDrained |= 1;
-                play_puzzle_jingle();
+                r96_play_jingle(R96_EVENT_SOLVE_PUZZLE);
                 o->oAction += 1;
             }
         }

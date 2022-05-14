@@ -13,6 +13,8 @@
 #include "game/object_list_processor.h"
 #include "graph_node.h"
 #include "surface_collision.h"
+#include "pc/configfile.h"
+#include "pc/cheats.h"
 
 // Macros for retrieving arguments from behavior scripts.
 #define BHV_CMD_GET_1ST_U8(index)  (u8)((gCurBhvCommand[index] >> 24) & 0xFF) // unused
@@ -148,6 +150,19 @@ static s32 bhv_cmd_cylboard(void) {
     return BHV_PROC_CONTINUE;
 }
 
+// Command 0x39: Disable / Enable Billboard for the current object
+// Usage: MODELPACK()
+static s32 bhv_cmd_modelpackbillboard(void) {
+    if (!configBillboard)
+        gCurrentObject->header.gfx.node.flags |= GRAPH_RENDER_BILLBOARD;
+
+    if (configBillboard)
+        gCurrentObject->header.gfx.node.flags &= ~GRAPH_RENDER_BILLBOARD;
+
+    gCurBhvCommand++;
+    return BHV_PROC_CONTINUE;
+}
+
 // Command 0x1B: Sets the current model ID of the object.
 // Usage: SET_MODEL(modelID)
 static s32 bhv_cmd_set_model(void) {
@@ -186,6 +201,30 @@ static s32 bhv_cmd_spawn_obj(void) {
     gCurBhvCommand += 3;
     return BHV_PROC_CONTINUE;
 }
+
+// Render96 fix for Mr I using dynos
+// Usage: SPAWN_MR_I()
+static s32 bhv_cmd_mr_i_fix(void) {
+    u32 model;
+    if (!configBillboard) {
+        model = 102;
+        gCurrentObject->header.gfx.sharedChild = gLoadedGraphNodes[103];
+    }
+    else {
+        model = 103;
+    }
+        const BehaviorScript *behavior = bhvMrIBody;
+        struct Object *child = spawn_object_at_origin(gCurrentObject, 0, model, behavior);
+        obj_copy_pos_and_angle(child, gCurrentObject);
+
+    if (configBillboard) {
+        gCurrentObject->prevObj = child;
+    }
+
+    gCurBhvCommand += 3;
+    return BHV_PROC_CONTINUE;
+}
+
 
 // Command 0x29: Spawns a child object with the specified model and behavior, plus a behavior param.
 // Usage: SPAWN_CHILD_WITH_PARAM(bhvParam, modelID, behavior)
@@ -908,12 +947,20 @@ static BhvCommandProc BehaviorCmdTable[] = {
     bhv_cmd_disable_rendering, //35
     bhv_cmd_set_int_unused, //36
     bhv_cmd_spawn_water_droplet, //37
-    bhv_cmd_cylboard //38
+    bhv_cmd_cylboard, //38
+    bhv_cmd_modelpackbillboard, //39
+    bhv_cmd_mr_i_fix //3A
 };
 
 // Execute the behavior script of the current object, process the object flags, and other miscellaneous code for updating objects.
 void cur_obj_update(void) {
     UNUSED u32 unused;
+    if (gCurrentObject != gMarioObject && Cheats.EnableCheats && Cheats.ChaosSlowTime && (gGlobalTimer & 1)) {
+        if (gCurrentObject->collisionData) {
+            load_object_collision_model();
+        }
+        return;
+    }
 
     s16 objFlags = gCurrentObject->oFlags;
     f32 distanceFromMario;
@@ -998,15 +1045,11 @@ void cur_obj_update(void) {
     } else if ((objFlags & OBJ_FLAG_COMPUTE_DIST_TO_MARIO) && gCurrentObject->collisionData == NULL) {
         if (!(objFlags & OBJ_FLAG_ACTIVE_FROM_AFAR)) {
             // If the object has a render distance, check if it should be shown.
-#ifndef NODRAWINGDISTANCE
-            if (distanceFromMario > gCurrentObject->oDrawingDistance) {
+            if (distanceFromMario > gCurrentObject->oDrawingDistance * configDrawDistance / 100.0f) {
                 // Out of render distance, hide the object.
                 gCurrentObject->header.gfx.node.flags &= ~GRAPH_RENDER_ACTIVE;
                 gCurrentObject->activeFlags |= ACTIVE_FLAG_FAR_AWAY;
             } else if (gCurrentObject->oHeldState == HELD_FREE) {
-#else
-            if (distanceFromMario <= gCurrentObject->oDrawingDistance && gCurrentObject->oHeldState == HELD_FREE) {
-#endif
                 // In render distance (and not being held), show the object.
                 gCurrentObject->header.gfx.node.flags |= GRAPH_RENDER_ACTIVE;
                 gCurrentObject->activeFlags &= ~ACTIVE_FLAG_FAR_AWAY;

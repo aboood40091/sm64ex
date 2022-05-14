@@ -30,6 +30,7 @@
 
 #include "../platform.h"
 #include "../configfile.h"
+#include "../cheats.h"
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
 
@@ -522,7 +523,7 @@ static void gfx_opengl_select_texture(int tile, GLuint texture_id) {
      gfx_opengl_set_texture_uniforms(opengl_prg, tile);
 }
 
-static void gfx_opengl_upload_texture(uint8_t *rgba32_buf, int width, int height) {
+static void gfx_opengl_upload_texture(const uint8_t *rgba32_buf, int width, int height) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba32_buf);
     opengl_tex[opengl_curtex]->size[0] = width;
     opengl_tex[opengl_curtex]->size[1] = height;
@@ -645,6 +646,11 @@ static void gfx_opengl_start_frame(void) {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_SCISSOR_TEST);
+    if (Cheats.EnableCheats && Cheats.ChaosWireframe) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    } else {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
 }
 
 static void gfx_opengl_end_frame(void) {

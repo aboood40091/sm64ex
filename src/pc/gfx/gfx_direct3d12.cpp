@@ -39,6 +39,8 @@
 
 #include "gfx_screen_config.h"
 
+#include "../configfile.h"
+
 #define DEBUG_D3D 0
 
 using namespace Microsoft::WRL; // For ComPtr
@@ -671,7 +673,13 @@ static void gfx_direct3d12_on_resize(void) {
     if (d3d.render_targets[0].Get() != nullptr) {
         d3d.render_targets[0].Reset();
         d3d.render_targets[1].Reset();
-        ThrowIfFailed(d3d.swap_chain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT));
+        if (configInternalResolutionBool) {
+            ThrowIfFailed(d3d.swap_chain->ResizeBuffers(0, configInternalResolutionWidth, configInternalResolutionHeight, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT));
+        }
+        else {
+            ThrowIfFailed(d3d.swap_chain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT));
+        }
+        
         d3d.frame_index = d3d.swap_chain->GetCurrentBackBufferIndex();
         create_render_target_views();
         create_depth_buffer();

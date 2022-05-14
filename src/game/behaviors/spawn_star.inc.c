@@ -70,7 +70,7 @@ void bhv_star_spawn_loop(void) {
             if (o->oTimer == 30) {
                 o->oAction = 2;
                 o->oForwardVel = 0;
-                play_power_star_jingle(TRUE);
+                r96_play_jingle(R96_EVENT_STAR_APPEAR);
             }
             break;
 
@@ -86,7 +86,7 @@ void bhv_star_spawn_loop(void) {
             cur_obj_play_sound_1(SOUND_ENV_STAR);
 
             if (o->oPosY < o->oHomeY) {
-                cur_obj_play_sound_2(SOUND_GENERAL_STAR_APPEARS);
+                r96_play_jingle(R96_EVENT_STAR_APPEAR);
                 cur_obj_become_tangible();
                 o->oPosY = o->oHomeY;
                 o->oAction = 3;

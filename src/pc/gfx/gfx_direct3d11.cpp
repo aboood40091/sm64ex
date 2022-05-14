@@ -27,6 +27,9 @@
 
 #include "gfx_screen_config.h"
 
+#include "../configfile.h"
+#include "../cheats.h"
+
 #define THREE_POINT_FILTERING 0
 #define DEBUG_D3D 0
 
@@ -143,8 +146,14 @@ static void create_render_target_views(bool is_resize) {
         // Resize swap chain buffers
 
         ThrowIfFailed(d3d.swap_chain->GetDesc1(&desc1));
-        ThrowIfFailed(d3d.swap_chain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, desc1.Flags),
-                      gfx_dxgi_get_h_wnd(), "Failed to resize IDXGISwapChain buffers.");
+        if (configInternalResolutionBool) {
+            ThrowIfFailed(d3d.swap_chain->ResizeBuffers(0, configInternalResolutionWidth, configInternalResolutionHeight, DXGI_FORMAT_UNKNOWN, desc1.Flags),
+                    gfx_dxgi_get_h_wnd(), "Failed to resize IDXGISwapChain buffers.");
+        }
+        else {
+            ThrowIfFailed(d3d.swap_chain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, desc1.Flags),
+                    gfx_dxgi_get_h_wnd(), "Failed to resize IDXGISwapChain buffers.");
+        }
     }
 
     // Get new size
@@ -446,13 +455,13 @@ static void gfx_d3d11_upload_texture(const uint8_t *rgba32_buf, int width, int h
 
     texture_desc.Width = width;
     texture_desc.Height = height;
-    texture_desc.Usage = D3D11_USAGE_IMMUTABLE;
-    texture_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    texture_desc.Usage = D3D11_USAGE_DEFAULT;
+    texture_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
     texture_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     texture_desc.CPUAccessFlags = 0;
-    texture_desc.MiscFlags = 0; // D3D11_RESOURCE_MISC_GENERATE_MIPS ?
+    texture_desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
     texture_desc.ArraySize = 1;
-    texture_desc.MipLevels = 1;
+    texture_desc.MipLevels = 0;
     texture_desc.SampleDesc.Count = 1;
     texture_desc.SampleDesc.Quality = 0;
 
@@ -462,7 +471,8 @@ static void gfx_d3d11_upload_texture(const uint8_t *rgba32_buf, int width, int h
     resource_data.SysMemSlicePitch = resource_data.SysMemPitch * height;
 
     ComPtr<ID3D11Texture2D> texture;
-    ThrowIfFailed(d3d.device->CreateTexture2D(&texture_desc, &resource_data, texture.GetAddressOf()));
+    ThrowIfFailed(d3d.device->CreateTexture2D(&texture_desc, nullptr, texture.GetAddressOf()));
+    d3d.context->UpdateSubresource(texture.Get(), 0, 0, rgba32_buf, resource_data.SysMemPitch, 0);
 
     // Create shader resource view from texture
 
@@ -484,6 +494,7 @@ static void gfx_d3d11_upload_texture(const uint8_t *rgba32_buf, int width, int h
     }
 
     ThrowIfFailed(d3d.device->CreateShaderResourceView(texture.Get(), &resource_view_desc, texture_data->resource_view.GetAddressOf()));
+    d3d.context->GenerateMips(texture_data->resource_view.Get());
 }
 
 static void gfx_d3d11_set_sampler_parameters(int tile, bool linear_filter, uint32_t cms, uint32_t cmt) {
@@ -578,7 +589,11 @@ static void gfx_d3d11_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
         D3D11_RASTERIZER_DESC rasterizer_desc;
         ZeroMemory(&rasterizer_desc, sizeof(D3D11_RASTERIZER_DESC));
 
-        rasterizer_desc.FillMode = D3D11_FILL_SOLID;
+        if (Cheats.EnableCheats && Cheats.ChaosWireframe) {
+            rasterizer_desc.FillMode = D3D11_FILL_WIREFRAME;
+        } else {
+            rasterizer_desc.FillMode = D3D11_FILL_SOLID;
+        }
         rasterizer_desc.CullMode = D3D11_CULL_NONE;
         rasterizer_desc.FrontCounterClockwise = true;
         rasterizer_desc.DepthBias = 0;

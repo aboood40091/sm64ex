@@ -409,7 +409,7 @@ void ukiki_act_go_to_cage(void) {
             }
 
             if (o->oMoveFlags & OBJ_MOVE_LANDED) {
-                play_puzzle_jingle();
+                r96_play_jingle(R96_EVENT_SOLVE_PUZZLE);
                 cur_obj_init_animation_with_sound(UKIKI_ANIM_JUMP_CLAP);
                 o->oSubAction++;
                 o->oUkikiCageSpinTimer = 32;
@@ -634,7 +634,15 @@ void bhv_ukiki_loop(void) {
     }
 
     if (o->oUkikiHasHat & UKIKI_HAT_ON) {
-        o->oAnimState = UKIKI_ANIM_STATE_HAT_ON;
+		if(isLuigi())
+			o->oAnimState = UKIKI_ANIM_STATE_HAT_ON_LUIGI;
+
+	    if(isWario())
+		    o->oAnimState = UKIKI_ANIM_STATE_HAT_ON_WARIO;
+
+        if(!isLuigi() && !isWario())
+			o->oAnimState = UKIKI_ANIM_STATE_HAT_ON;
+
     } else {
         o->oAnimState = UKIKI_ANIM_STATE_DEFAULT;
     }

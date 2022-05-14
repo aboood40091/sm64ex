@@ -97,6 +97,7 @@ struct HudDisplay {
     /*0x08*/ s16 keys;
     /*0x0A*/ s16 flags;
     /*0x0C*/ u16 timer;
+             s16 wario_coins;
 };
 
 extern struct HudDisplay gHudDisplay;
@@ -122,6 +123,7 @@ void fade_into_special_warp(u32 arg, u32 color);
 void load_level_init_text(u32 arg);
 s16 level_trigger_warp(struct MarioState *m, s32 warpOp);
 void level_set_transition(s16 length, void (*updateFunction)(s16 *));
+
 
 s32 lvl_init_or_update(s16 initOrUpdate, UNUSED s32 unused);
 s32 lvl_init_from_save_file(UNUSED s16 arg0, s32 levelNum);

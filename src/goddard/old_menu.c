@@ -114,7 +114,7 @@ struct ObjGadget *make_gadget(UNUSED s32 a0, s32 a1) {
     struct ObjGadget *gdgt = (struct ObjGadget *) make_object(OBJ_TYPE_GADGETS);
     gdgt->unk4C = NULL;
     gdgt->unk3C = 1.0f;
-    gdgt->unk38 = 0.0f;
+    gdgt->curAnim = 0.0f;
     gdgt->unk20 = a1;
     gdgt->unk5C = 0;
     gdgt->unk28 = 1.0f;
@@ -178,17 +178,17 @@ void adjust_gadget(struct ObjGadget *gdgt, s32 a1, s32 a2) {
         gdgt->unk28 = 1.0f;
     }
 
-    sp2C = gdgt->unk3C - gdgt->unk38;
+    sp2C = gdgt->unk3C - gdgt->curAnim;
 
     if (gdgt->unk4C != NULL) {
         vp = (struct ObjValPtrs *) gdgt->unk4C->link1C->obj;
 
         switch (vp->datatype) {
             case OBJ_VALUE_FLOAT:
-                gdgt->varval.f = gdgt->unk28 * sp2C + gdgt->unk38;
+                gdgt->varval.f = gdgt->unk28 * sp2C + gdgt->curAnim;
                 break;
             case OBJ_VALUE_INT:
-                gdgt->varval.i = ((s32)(gdgt->unk28 * sp2C)) + gdgt->unk38;
+                gdgt->varval.i = ((s32)(gdgt->unk28 * sp2C)) + gdgt->curAnim;
                 break;
             default:
                 fatal_printf("%s: Undefined ValueType", "adjust_gadget");
@@ -204,11 +204,11 @@ void reset_gadget(struct ObjGadget *gdgt) {
     f32 sp34;
     struct ObjValPtrs *vp;
 
-    if (gdgt->unk3C - gdgt->unk38 == 0.0f) {
-        fatal_printf("gadget has zero range (%f -> %f)\n", gdgt->unk38, gdgt->unk3C);
+    if (gdgt->unk3C - gdgt->curAnim == 0.0f) {
+        fatal_printf("gadget has zero range (%f -> %f)\n", gdgt->curAnim, gdgt->unk3C);
     }
 
-    sp34 = (f32)(1.0 / (gdgt->unk3C - gdgt->unk38));
+    sp34 = (f32)(1.0 / (gdgt->unk3C - gdgt->curAnim));
 
     if (gdgt->unk4C != NULL) {
         vp = (struct ObjValPtrs *) gdgt->unk4C->link1C->obj;
@@ -216,11 +216,11 @@ void reset_gadget(struct ObjGadget *gdgt) {
         switch (vp->datatype) {
             case OBJ_VALUE_FLOAT:
                 get_objvalue(&gdgt->varval, OBJ_VALUE_FLOAT, vp->obj, vp->offset);
-                gdgt->unk28 = (gdgt->varval.f - gdgt->unk38) * sp34;
+                gdgt->unk28 = (gdgt->varval.f - gdgt->curAnim) * sp34;
                 break;
             case OBJ_VALUE_INT:
                 get_objvalue(&gdgt->varval, OBJ_VALUE_INT, vp->obj, vp->offset);
-                gdgt->unk28 = (gdgt->varval.i - gdgt->unk38) * sp34;
+                gdgt->unk28 = (gdgt->varval.i - gdgt->curAnim) * sp34;
                 break;
             default:
                 fatal_printf("%s: Undefined ValueType", "reset_gadget");
