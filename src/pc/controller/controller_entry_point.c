@@ -7,6 +7,7 @@
 #include "controller_recorded_tas.h"
 #include "controller_keyboard.h"
 #include "controller_sdl.h"
+#include "controller_wiiu.h"
 #include "controller_rt64.h"
 
 // Analog camera movement by Pathétique (github.com/vrmiguel), y0shin and Mors
@@ -14,10 +15,14 @@
 
 static struct ControllerAPI *controller_implementations[] = {
     &controller_recorded_tas,
+#ifdef CAPI_WII_U
+    &controller_wiiu,
+#else
     &controller_sdl,
     &controller_keyboard,
 #ifdef RAPI_RT64
     &controller_rt64_api,
+#endif
 #endif
 };
 

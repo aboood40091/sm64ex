@@ -2,6 +2,10 @@
 // Everything that should be initialized at the start of the game must be here
 __attribute__((constructor))
 static void r96_system_init() {
+#ifdef TARGET_WII_U
+    return;
+#endif // TARGET_WII_U
+
     //R96_Effect_Init();
     dynos_audio_init();
     dynos_music_stop();

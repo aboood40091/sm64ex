@@ -8,7 +8,11 @@ void guScaleF(float mf[4][4], float x, float y, float z) {
     mf[3][3] = 1.0;
 }
 void guScale(Mtx *m, float x, float y, float z) {
+#if defined(NON_MATCHING) && defined(GBI_FLOATS)
+    guScaleF(m->m, x, y, z);
+#else
     float mf[4][4];
     guScaleF(mf, x, y, z);
     guMtxF2L(mf, m);
+#endif
 }

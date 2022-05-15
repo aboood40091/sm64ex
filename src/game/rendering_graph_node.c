@@ -220,7 +220,7 @@ void mtx_patch_interpolated(void) {
                     gMtxTbl[gMtxTblSize++].displayList = currList->displayList;
                 }
 #ifdef GFX_ENABLE_GRAPH_NODE_MODS
-                // The NoOp Tag method is used to indicate the current material mod being used for 
+                // The NoOp Tag method is used to indicate the current material mod being used for
                 // the next display lists that will be rendered.
                 gDPNoOpTag(gDisplayListHead++, &currList->gfxInfo);
 #endif
@@ -401,9 +401,26 @@ static void geo_process_switch(struct GraphNodeSwitchCase *node) {
 }
 
 void interpolate_vectors(Vec3f res, Vec3f a, Vec3f b) {
-    res[0] = (a[0] + b[0]) / 2.0f;
-    res[1] = (a[1] + b[1]) / 2.0f;
-    res[2] = (a[2] + b[2]) / 2.0f;
+    const f32 HALF = 0.5f;
+#ifdef TARGET_WII_U
+    f32*       const pDst = &(res[0]);
+    const f32* const pA   = &(a[0]);
+    const f32* const pB   = &(b[0]);
+
+    // Temporary variables
+    f32 v0;
+    f32 v1;
+
+    asm volatile ("psq_l    %[v0],  0(%[pA]),   0, 0" : [v0] "=f"(v0) : [pA] "b"(pA));
+    asm volatile ("psq_l    %[v1],  0(%[pB]),   0, 0" : [v1] "=f"(v1) : [pB] "b"(pB));
+    asm volatile ("ps_add   %[v0], %[v0], %[v1]"      : [v0] "+f"(v0) : [v1] "f"(v1));
+    asm volatile ("ps_muls0 %[v0], %[v0], %[HALF]"    : [v0] "+f"(v0) : [HALF] "f"(HALF));
+    asm volatile ("psq_st   %[v0],  0(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+#else
+    res[0] = (a[0] + b[0]) * HALF;
+    res[1] = (a[1] + b[1]) * HALF;
+#endif // TARGET_WII_U
+    res[2] = (a[2] + b[2]) * HALF;
 }
 
 void interpolate_vectors_s16(Vec3s res, Vec3s a, Vec3s b) {
@@ -558,7 +575,7 @@ static void geo_process_translation(struct GraphNodeTranslation *node) {
     }
     gMatStackIndex--;
 }
- 
+
 /**
  * Process a rotation node. A transformation matrix based on the node's
  * rotation is created and pushed on both the float and fixed point matrix stacks.
@@ -735,7 +752,7 @@ static void geo_process_background(struct GraphNodeBackground *node) {
     if (list != 0) {
         geo_append_display_list2((void *) VIRTUAL_TO_PHYSICAL(list),
                                  (void *) VIRTUAL_TO_PHYSICAL(listInterpolated), node->fnNode.node.flags >> 8);
-        
+
     } else if (gCurGraphNodeMasterList != NULL) {
 #ifndef F3DEX_GBI_2E
         Gfx *gfxStart = alloc_display_list(sizeof(Gfx) * 7);
@@ -1099,12 +1116,71 @@ static int obj_is_in_view(struct GraphNodeObject *node, Mat4 matrix) {
     return TRUE;
 }
 static void interpolate_matrix(Mat4 result, Mat4 a, Mat4 b) {
+    const f32 HALF = 0.5f;
+#ifdef TARGET_WII_U
+    f32*       const pDst = &(result[0][0]);
+    const f32* const pA   = &(a[0][0]);
+    const f32* const pB   = &(b[0][0]);
+
+    // Temporary variables
+    f32 v0;
+    f32 v1;
+
+    asm volatile ("psq_l    %[v0],  0(%[pA]),   0, 0" : [v0] "=f"(v0) : [pA] "b"(pA));
+    asm volatile ("psq_l    %[v1],  0(%[pB]),   0, 0" : [v1] "=f"(v1) : [pB] "b"(pB));
+    asm volatile ("ps_add   %[v0], %[v0], %[v1]"      : [v0] "+f"(v0) : [v1] "f"(v1));
+    asm volatile ("ps_muls0 %[v0], %[v0], %[HALF]"    : [v0] "+f"(v0) : [HALF] "f"(HALF));
+    asm volatile ("psq_st   %[v0],  0(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+
+    asm volatile ("psq_l    %[v0],  8(%[pA]),   0, 0" : [v0] "=f"(v0) : [pA] "b"(pA));
+    asm volatile ("psq_l    %[v1],  8(%[pB]),   0, 0" : [v1] "=f"(v1) : [pB] "b"(pB));
+    asm volatile ("ps_add   %[v0], %[v0], %[v1]"      : [v0] "+f"(v0) : [v1] "f"(v1));
+    asm volatile ("ps_muls0 %[v0], %[v0], %[HALF]"    : [v0] "+f"(v0) : [HALF] "f"(HALF));
+    asm volatile ("psq_st   %[v0],  8(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+
+    asm volatile ("psq_l    %[v0], 16(%[pA]),   0, 0" : [v0] "=f"(v0) : [pA] "b"(pA));
+    asm volatile ("psq_l    %[v1], 16(%[pB]),   0, 0" : [v1] "=f"(v1) : [pB] "b"(pB));
+    asm volatile ("ps_add   %[v0], %[v0], %[v1]"      : [v0] "+f"(v0) : [v1] "f"(v1));
+    asm volatile ("ps_muls0 %[v0], %[v0], %[HALF]"    : [v0] "+f"(v0) : [HALF] "f"(HALF));
+    asm volatile ("psq_st   %[v0], 16(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+
+    asm volatile ("psq_l    %[v0], 24(%[pA]),   0, 0" : [v0] "=f"(v0) : [pA] "b"(pA));
+    asm volatile ("psq_l    %[v1], 24(%[pB]),   0, 0" : [v1] "=f"(v1) : [pB] "b"(pB));
+    asm volatile ("ps_add   %[v0], %[v0], %[v1]"      : [v0] "+f"(v0) : [v1] "f"(v1));
+    asm volatile ("ps_muls0 %[v0], %[v0], %[HALF]"    : [v0] "+f"(v0) : [HALF] "f"(HALF));
+    asm volatile ("psq_st   %[v0], 24(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+
+    asm volatile ("psq_l    %[v0], 32(%[pA]),   0, 0" : [v0] "=f"(v0) : [pA] "b"(pA));
+    asm volatile ("psq_l    %[v1], 32(%[pB]),   0, 0" : [v1] "=f"(v1) : [pB] "b"(pB));
+    asm volatile ("ps_add   %[v0], %[v0], %[v1]"      : [v0] "+f"(v0) : [v1] "f"(v1));
+    asm volatile ("ps_muls0 %[v0], %[v0], %[HALF]"    : [v0] "+f"(v0) : [HALF] "f"(HALF));
+    asm volatile ("psq_st   %[v0], 32(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+
+    asm volatile ("psq_l    %[v0], 40(%[pA]),   0, 0" : [v0] "=f"(v0) : [pA] "b"(pA));
+    asm volatile ("psq_l    %[v1], 40(%[pB]),   0, 0" : [v1] "=f"(v1) : [pB] "b"(pB));
+    asm volatile ("ps_add   %[v0], %[v0], %[v1]"      : [v0] "+f"(v0) : [v1] "f"(v1));
+    asm volatile ("ps_muls0 %[v0], %[v0], %[HALF]"    : [v0] "+f"(v0) : [HALF] "f"(HALF));
+    asm volatile ("psq_st   %[v0], 40(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+
+    asm volatile ("psq_l    %[v0], 48(%[pA]),   0, 0" : [v0] "=f"(v0) : [pA] "b"(pA));
+    asm volatile ("psq_l    %[v1], 48(%[pB]),   0, 0" : [v1] "=f"(v1) : [pB] "b"(pB));
+    asm volatile ("ps_add   %[v0], %[v0], %[v1]"      : [v0] "+f"(v0) : [v1] "f"(v1));
+    asm volatile ("ps_muls0 %[v0], %[v0], %[HALF]"    : [v0] "+f"(v0) : [HALF] "f"(HALF));
+    asm volatile ("psq_st   %[v0], 48(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+
+    asm volatile ("psq_l    %[v0], 56(%[pA]),   0, 0" : [v0] "=f"(v0) : [pA] "b"(pA));
+    asm volatile ("psq_l    %[v1], 56(%[pB]),   0, 0" : [v1] "=f"(v1) : [pB] "b"(pB));
+    asm volatile ("ps_add   %[v0], %[v0], %[v1]"      : [v0] "+f"(v0) : [v1] "f"(v1));
+    asm volatile ("ps_muls0 %[v0], %[v0], %[HALF]"    : [v0] "+f"(v0) : [HALF] "f"(HALF));
+    asm volatile ("psq_st   %[v0], 56(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+#else
     s32 i, j;
     for (i = 0; i < 4; i++) {
         for (j = 0; j < 4; j++) {
-            result[i][j] = (a[i][j] + b[i][j]) / 2.0f;
+            result[i][j] = (a[i][j] + b[i][j]) * HALF;
         }
     }
+#endif // TARGET_WII_U
 }
 /**
  * Process an object node.

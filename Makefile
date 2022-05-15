@@ -25,6 +25,9 @@ TARGET_RPI ?= 0
 # Build for Emscripten/WebGL
 TARGET_WEB ?= 0
 
+# Build for the Wii U
+TARGET_WII_U ?= 1
+
 # Build for Nintendo Switch
 TARGET_SWITCH ?= 0
 
@@ -51,16 +54,27 @@ NO_LDIV ?= 0
 
 # Backend selection
 
-# Renderers: GL, GL_LEGACY, D3D11, D3D12
+# Renderers: GL, GL_LEGACY, D3D11, D3D12, GX2 (forced if the target is Wii U)
 RENDER_API ?= GL
-# Window managers: SDL2, DXGI (forced if D3D11 or D3D12 in RENDER_API)
+# Window managers: SDL2, DXGI (forced if D3D11 or D3D12 in RENDER_API), GX2 (forced if the target is Wii U)
 WINDOW_API ?= SDL2
-# Audio backends: SDL2
+# Audio backends: SDL2 (forced if the target is Wii U)
 AUDIO_API ?= SDL2
-# Controller backends (can have multiple, space separated): SDL2
+# Controller backends (can have multiple, space separated): SDL2, WII_U (forced if the target is Wii U)
 CONTROLLER_API ?= SDL2
 
-BASEDIR ?= res
+ifeq ($(TARGET_WII_U),1)
+  RENDER_API := GX2
+  WINDOW_API := GX2
+  AUDIO_API := SDL2
+  CONTROLLER_API := WII_U
+endif
+
+ifeq ($(TARGET_WII_U),1)
+  BASEDIR ?= render96ex_res
+else
+  BASEDIR ?= res
+endif
 BASEPACK ?= based.zip
 
 # Copy assets to BASEDIR? (useful for iterative debugging)
@@ -82,7 +96,7 @@ else
   endif
 endif
 
-ifeq ($(TARGET_WEB)$(TARGET_RPI)$(TARGET_SWITCH),000)
+ifeq ($(TARGET_WEB)$(TARGET_RPI)$(TARGET_WII_U)$(TARGET_SWITCH),0000)
   ifeq ($(HOST_OS),Windows)
     WINDOWS_BUILD := 1
   endif
@@ -132,6 +146,33 @@ ifneq ($(TARGET_BITS),0)
   BITS := -m$(TARGET_BITS)
 endif
 
+# Set up WUT for Wii U
+ifeq ($(TARGET_WII_U),1)
+  ifeq ($(strip $(DEVKITPRO)),)
+  $(error "Please set DEVKITPRO in your environment. export DEVKITPRO=<path to>/devkitpro")
+  endif
+
+  ifeq ($(strip $(DEVKITPPC)),)
+  $(error "Please set DEVKITPPC in your environment. export DEVKITPPC=<path to>/devkitPro/devkitPPC")
+  endif
+
+  include $(DEVKITPPC)/base_tools
+
+  PORTLIBS	:=	$(PORTLIBS_PATH)/wiiu $(PORTLIBS_PATH)/ppc
+
+  export PATH := $(PORTLIBS_PATH)/wiiu/bin:$(PORTLIBS_PATH)/ppc/bin:$(PATH)
+
+  WUT_ROOT	?=	$(DEVKITPRO)/wut
+
+  RPXSPECS	:=	-specs=$(WUT_ROOT)/share/wut.specs
+
+  MACHDEP	= -DESPRESSO -mcpu=750 -meabi -mhard-float
+
+  LIBDIRS	    := $(PORTLIBS) $(WUT_ROOT)
+  INCLUDE	    := $(foreach dir,$(LIBDIRS),-I$(dir)/include)
+  LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
+endif
+
 # Release (version) flag defs
 VERSION_DEF := VERSION_US
 
@@ -160,9 +201,12 @@ ifeq ($(TARGET_RPI),1) # Define RPi to change SDL2 title & GLES2 hints
       VERSION_CFLAGS += -DUSE_GLES
 endif
 
-ifeq ($(TARGET_SWITCH),1)
-      VERSION_CFLAGS += -DTARGET_SWITCH -DUSE_GLES -DMA_NO_RUNTIME_LINKING -DMA_ENABLE_ONLY_SPECIFIC_BACKENDS -DMA_NO_PTHREAD_IN_HEADER
+ifeq ($(TARGET_WII_U),1)
+  VERSION_CFLAGS += -DTARGET_WII_U -DDYNOS_NO_AUDIO
+else ifeq ($(TARGET_SWITCH),1)
+  VERSION_CFLAGS += -DTARGET_SWITCH -DUSE_GLES -DMA_NO_RUNTIME_LINKING -DMA_ENABLE_ONLY_SPECIFIC_BACKENDS -DMA_NO_PTHREAD_IN_HEADER
 endif
+
 ifeq ($(OSX_BUILD),1) # Modify GFX & SDL2 for OSX GL
      VERSION_CFLAGS += -DOSX_BUILD
 endif
@@ -209,7 +253,11 @@ endif
 endif
 
 # Make tools if out of date
+ifeq ($(TARGET_WII_U),0)
 DUMMY != CC=$(CC) CXX=$(CXX) $(MAKE) -C tools >&2 || echo FAIL
+else
+DUMMY != make -C tools >&2 || echo FAIL
+endif
 ifeq ($(DUMMY),FAIL)
   $(error Failed to build tools)
 endif
@@ -225,6 +273,8 @@ BUILD_DIR_BASE := build
 
 ifeq ($(TARGET_WEB),1)
   BUILD_DIR := $(BUILD_DIR_BASE)/$(VERSION)_web
+else ifeq ($(TARGET_WII_U),1)
+  BUILD_DIR := $(BUILD_DIR_BASE)/$(VERSION)_wiiu
 else ifeq ($(TARGET_SWITCH),1)
   BUILD_DIR := $(BUILD_DIR_BASE)/$(VERSION)_nx
 else
@@ -234,18 +284,15 @@ endif
 LIBULTRA := $(BUILD_DIR)/libultra.a
 
 ifeq ($(TARGET_WEB),1)
-EXE := $(BUILD_DIR)/$(TARGET).html
-	else
-	ifeq ($(WINDOWS_BUILD),1)
-		EXE := $(BUILD_DIR)/$(TARGET).exe
-
-		else # Linux builds/binary namer
-		ifeq ($(TARGET_RPI),1)
-			EXE := $(BUILD_DIR)/$(TARGET).arm
-		else
-			EXE := $(BUILD_DIR)/$(TARGET)
-		endif
-	endif
+  EXE := $(BUILD_DIR)/$(TARGET).html
+else ifeq ($(TARGET_WII_U),1)
+  EXE := $(BUILD_DIR)/$(TARGET).rpx
+else ifeq ($(WINDOWS_BUILD),1)
+  EXE := $(BUILD_DIR)/$(TARGET).exe
+else ifeq ($(TARGET_RPI),1)
+  EXE := $(BUILD_DIR)/$(TARGET).arm
+else
+  EXE := $(BUILD_DIR)/$(TARGET)
 endif
 
 ELF := $(BUILD_DIR)/$(TARGET).elf
@@ -262,7 +309,7 @@ LEVEL_DIRS := $(patsubst levels/%,%,$(dir $(wildcard levels/*/header.h)))
 SRC_DIRS := src src/engine src/game src/audio src/menu src/buffers actors levels bin data assets src/text src/text/libs src/pc src/pc/gfx src/pc/audio src/pc/controller src/pc/fs src/pc/fs/packtypes src/sgi src/sgi/utils src/nx data/r96 data/r96/system
 
 ifeq ($(DISCORDRPC),1)
-  ifneq ($(TARGET_SWITCH)$(TARGET_WEB)$(TARGET_RPI),000)
+  ifneq ($(TARGET_WII_U)$(TARGET_SWITCH)$(TARGET_WEB)$(TARGET_RPI),0000)
     $(error Discord RPC does not work on this target)
   endif
   SRC_DIRS += src/pc/discord
@@ -428,6 +475,15 @@ include Makefile_dynos
 
 # Huge deleted N64 section was here
 
+ifeq ($(TARGET_WII_U),1)
+
+LD := $(CXX)
+CPP := powerpc-eabi-cpp -P
+OBJDUMP := powerpc-eabi-objdump
+SDLCONFIG :=
+
+else
+
 ifeq ($(TARGET_SWITCH),1)
   ifeq ($(strip $(DEVKITPRO)),)
     $(error "Please set DEVKITPRO in your environment. export DEVKITPRO=<path to>/devkitpro")
@@ -498,8 +554,11 @@ else # Linux & other builds
   OBJDUMP := $(CROSS)objdump
 endif
 
-PYTHON := python3
 SDLCONFIG := $(SDLCROSS)sdl2-config
+
+endif
+
+PYTHON := python3
 
 # configure backend flags
 
@@ -509,7 +568,7 @@ BACKEND_CFLAGS += $(foreach capi,$(CONTROLLER_API),-DCAPI_$(capi)=1)
 BACKEND_LDFLAGS :=
 SDL2_USED := 0
 
-# for now, it's either SDL+GL or DXGI+DirectX, so choose based on WAPI
+# for now, it's either SDL+GL, DXGI+DirectX or GX2, so choose based on WAPI
 ifeq ($(WINDOW_API),DXGI)
   DXBITS := `cat $(ENDIAN_BITWIDTH) | tr ' ' '\n' | tail -1`
   ifeq ($(RENDER_API),D3D12)
@@ -528,6 +587,8 @@ else ifeq ($(WINDOW_API),SDL2)
     BACKEND_LDFLAGS += -lGL
   endif
   SDL_USED := 2
+else ifeq ($(WINDOW_API),GX2)
+  BACKEND_LDFLAGS += -lSDL2 -lwut
 endif
 
 ifeq ($(AUDIO_API),SDL2)
@@ -538,13 +599,15 @@ ifneq (,$(findstring SDL,$(CONTROLLER_API)))
   SDL_USED := 2
 endif
 
-# SDL can be used by different systems, so we consolidate all of that shit into this
-ifeq ($(SDL_USED),2)
-  BACKEND_CFLAGS += -DHAVE_SDL2=1 $(shell $(SDLCONFIG) --cflags)
-  ifeq ($(WINDOWS_BUILD),1)
-    BACKEND_LDFLAGS += $(shell $(SDLCONFIG) --static-libs) -lsetupapi -luser32 -limm32 -lole32 -loleaut32 -lshell32 -lwinmm -lversion
-  else
-    BACKEND_LDFLAGS += $(shell $(SDLCONFIG) --libs)
+ifeq ($(TARGET_WII_U),0)
+  # SDL can be used by different systems, so we consolidate all of that shit into this
+  ifeq ($(SDL_USED),2)
+    BACKEND_CFLAGS += -DHAVE_SDL2=1 $(shell $(SDLCONFIG) --cflags)
+    ifeq ($(WINDOWS_BUILD),1)
+      BACKEND_LDFLAGS += $(shell $(SDLCONFIG) --static-libs) -lsetupapi -luser32 -limm32 -lole32 -loleaut32 -lshell32 -lwinmm -lversion
+    else
+      BACKEND_LDFLAGS += $(shell $(SDLCONFIG) --libs)
+    endif
   endif
 endif
 
@@ -559,11 +622,16 @@ else ifeq ($(TARGET_WEB),1)
 else ifeq ($(TARGET_SWITCH),1)
   CC_CHECK := $(CC) $(NXARCH) -fsyntax-only -fsigned-char $(BACKEND_CFLAGS) $(INCLUDE_CFLAGS) -Wall -Wextra -Wno-format-security $(VERSION_CFLAGS) $(GRUCODE_CFLAGS) -D__SWITCH__=1
   CFLAGS := $(NXARCH) $(OPT_FLAGS) $(INCLUDE_CFLAGS) $(BACKEND_CFLAGS) $(VERSION_CFLAGS) $(GRUCODE_CFLAGS) -fno-strict-aliasing -ftls-model=local-exec -fPIC -fwrapv -D__SWITCH__=1
-  
+
 # Linux / Other builds below
 else
   CC_CHECK := $(CC) -fsyntax-only -fsigned-char $(BACKEND_CFLAGS) $(INCLUDE_CFLAGS) -Wall -Wextra -Wno-format-security $(VERSION_CFLAGS) $(GRUCODE_CFLAGS)
   CFLAGS := $(OPT_FLAGS) $(INCLUDE_CFLAGS) $(BACKEND_CFLAGS) $(VERSION_CFLAGS) $(GRUCODE_CFLAGS) -fno-strict-aliasing -fwrapv
+
+  ifeq ($(TARGET_WII_U),1)
+    CC_CHECK += -ffunction-sections $(MACHDEP) -ffast-math -D__WIIU__ -D__WUT__ $(INCLUDE)
+    CFLAGS += -ffunction-sections $(MACHDEP) -ffast-math -D__WIIU__ -D__WUT__ $(INCLUDE)
+  endif
 
 endif
 
@@ -622,7 +690,10 @@ SKYTILE_DIR := $(BUILD_DIR)/textures/skybox_tiles
 ASFLAGS := -I include -I $(BUILD_DIR) $(VERSION_ASFLAGS)
 
 ifeq ($(TARGET_WEB),1)
-LDFLAGS := -lm -lGL -lSDL2 -no-pie -s TOTAL_MEMORY=20MB -g4 --source-map-base http://localhost:8080/ -s "EXTRA_EXPORTED_RUNTIME_METHODS=['callMain']"
+  LDFLAGS := -lm -lGL -lSDL2 -no-pie -s TOTAL_MEMORY=20MB -g4 --source-map-base http://localhost:8080/ -s "EXTRA_EXPORTED_RUNTIME_METHODS=['callMain']"
+
+else ifeq ($(TARGET_WII_U),1)
+  LDFLAGS := -lm -no-pie $(BACKEND_LDFLAGS) $(MACHDEP) $(RPXSPECS) $(LIBPATHS)
 
 else ifeq ($(WINDOWS_BUILD),1)
   LDFLAGS := $(BITS) -march=$(TARGET_ARCH) -Llib -lpthread $(BACKEND_LDFLAGS) -static
@@ -638,7 +709,7 @@ else ifeq ($(TARGET_RPI),1)
 
 else ifeq ($(OSX_BUILD),1)
   LDFLAGS := -lm $(PLATFORM_LDFLAGS) $(BACKEND_LDFLAGS) -lpthread
-  
+
 else ifeq ($(TARGET_SWITCH),1)
   LDFLAGS := -specs=$(LIBNX)/switch.specs $(NXARCH) $(OPT_FLAGS) -no-pie -L$(LIBNX)/lib $(BACKEND_LDFLAGS) -lnx -lm ` $(NXPATH)/curl-config --libs`
 
@@ -714,7 +785,7 @@ endif
 # prepares the resource ZIP with base data
 $(BASEPACK_PATH): $(BASEPACK_LST)
 	@$(PYTHON) $(TOOLS_DIR)/mkzip.py $(BASEPACK_LST) $(BASEPACK_PATH)
-  
+
 endif
 endif
 
@@ -846,6 +917,20 @@ $(BUILD_DIR)/%.o: $(BUILD_DIR)/%.c
 $(BUILD_DIR)/%.o: %.s
 	$(AS) $(ASFLAGS) -MD $(BUILD_DIR)/$*.d -o $@ $<
 
+ifeq ($(TARGET_WII_U),1)
+
+$(ELF): $(O_FILES) $(MIO0_FILES:.mio0=.o) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(BUILD_DIR)/$(RPC_LIBS)
+	$(LD) -L $(BUILD_DIR) -o $@ $(O_FILES) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(LDFLAGS) -lstdc++
+
+$(EXE): $(ELF)
+	@cp $< $*.strip.elf
+	$(SILENTCMD)$(STRIP) -g $*.strip.elf $(ERROR_FILTER)
+	$(SILENTCMD)elf2rpl $*.strip.elf $@ $(ERROR_FILTER)
+	@rm $*.strip.elf
+	@echo built ... $(notdir $@)
+
+else
+
 $(EXE): $(O_FILES) $(MIO0_FILES:.mio0=.o) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(BUILD_DIR)/$(RPC_LIBS)
 	$(LD) -L $(BUILD_DIR) -o $@ $(O_FILES) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(LDFLAGS) -lstdc++
 
@@ -864,6 +949,8 @@ ifeq ($(TARGET_SWITCH), 1)
 %.stripped: %
 	@$(STRIP) -o $@ $<
 	@echo stripped ... $(notdir $<)
+
+endif
 
 endif
 

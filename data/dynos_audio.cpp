@@ -1,7 +1,12 @@
 #include "dynos.cpp.h"
-#include <SDL2/SDL.h>
 extern "C" {
 #include "game/area.h"
+}
+
+#ifndef DYNOS_NO_AUDIO
+
+#include <SDL2/SDL.h>
+extern "C" {
 #include "r96/r96_miniaudio.h"
 #include "r96/system/r96_system.h"
 }
@@ -17,11 +22,11 @@ extern "C" {
 #define AUDIO_SAMPLES_MUSIC     44100
 #define AUDIO_CHANNELS          2
 
-int R96_SoundCount[LEVEL_MAX+1] = { 0, 0, 0, 0, 3, 3, 4, 3, 
-                                   4, 2, 3, 3, 5, 4, 2, 
-                                   2, 2, 2, 2, 2, 2, 2, 
-                                   3, 4, 2, 0, 2, 2, 2, 
-                                   2, 2, 2, 0, 2, 2, 0, 
+int R96_SoundCount[LEVEL_MAX+1] = { 0, 0, 0, 0, 3, 3, 4, 3,
+                                   4, 2, 3, 3, 5, 4, 2,
+                                   2, 2, 2, 2, 2, 2, 2,
+                                   3, 4, 2, 0, 2, 2, 2,
+                                   2, 2, 2, 0, 2, 2, 0,
                                    5, 0, 0, 2 };
 
 
@@ -565,7 +570,7 @@ void DynOS_Sound_Play(const String& aName, f32 *aPos) {
     }
     ma_result result;
     if (!_SoundData->mAudio.ownsDataSource) {
-        /* Now load our sound. */ 
+        /* Now load our sound. */
         result = ma_sound_init_from_file(&AudioEngine[0], _SoundData->mFileName.c_str(), MA_SOUND_FLAG_NO_DEFAULT_ATTACHMENT | MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC, NULL, NULL, &_SoundData->mAudio);
         if (result != MA_SUCCESS) {
             sys_fatal("Failed to initialize sound.");
@@ -747,3 +752,106 @@ bool DynOS_Jingle_IsPlaying(const String& aName) {
     }
     return 0;
 }
+
+#else
+
+int R96_SoundCount[LEVEL_MAX+1] = { 0, 0, 0, 0, 3, 3, 4, 3,
+                                   4, 2, 3, 3, 5, 4, 2,
+                                   2, 2, 2, 2, 2, 2, 2,
+                                   3, 4, 2, 0, 2, 2, 2,
+                                   2, 2, 2, 0, 2, 2, 0,
+                                   5, 0, 0, 2 };
+
+
+void DynOS_Audio_Init() {
+}
+
+unsigned long long mCurrentMultiTrack = 0;
+bool MultiTrackBool = 0;
+bool EndMusic = 0;
+
+bool EndJingle = 0;
+
+bool DynOS_Music_Load(const String &aName, const SysPath &aFilename, s32 aLoop, f32 aVolume) {
+    return false;
+}
+
+bool DynOS_Music_LoadPresets(const SysPath &aFilename, const SysPath &aFolder) {
+    return false;
+}
+
+void DynOS_Music_Play(const String& aName, float aVolumeBegin, float aVolumeEnd, s32 aDelaytime) {
+}
+
+void DynOS_Music_Multi_Play(const String& aName, float aVolumeBegin, float aVolumeEnd, s32 aDelaytime) {
+}
+
+void DynOS_Music_Stop() {
+    mCurrentMultiTrack = 0;
+    MultiTrackBool = 0;
+}
+
+void DynOS_Music_Pause() {
+}
+
+void DynOS_Music_Resume() {
+}
+
+void DynOS_Music_Fade(bool aEnd, float aVolumeBegin, float aVolumeEnd, s32 aDelaytime) {
+}
+
+bool DynOS_Music_IsPlaying(const String& aName) {
+    return 0;
+}
+
+bool DynOS_Sound_Load(const String& aName, u8 aBank, const SysPath& aFilename, f32 aVolume, u8 aPriority) {
+   return false;
+}
+
+bool DynOS_Sound_LoadPresets(const SysPath &aFilename, const SysPath &aFolder) {
+   return false;
+}
+
+void DynOS_Sound_Play(const String& aName, f32 *aPos) {
+}
+
+void DynOS_Sound_Stop(u8 aBank) {
+}
+
+bool DynOS_Sound_IsPlaying(const String& aName) {
+    return 0;
+}
+
+bool DynOS_Sound_IsPlaying(u8 aBank) {
+    return 0;
+}
+
+bool DynOS_Jingle_Load(const String &aName, const SysPath &aFilename, s32 aLoop, f32 aVolume) {
+    return false;
+}
+
+bool DynOS_Jingle_LoadPresets(const SysPath &aFilename, const SysPath &aFolder) {
+    return false;
+}
+
+
+void DynOS_Jingle_Play(const String& aName, float aVolumeBegin, float aVolumeEnd, s32 aDelaytime)  {
+}
+
+void DynOS_Jingle_Stop() {
+}
+
+void DynOS_Jingle_Pause() {
+}
+
+void DynOS_Jingle_Resume() {
+}
+
+void DynOS_Jingle_Fade(bool aEnd, float aVolumeBegin, float aVolumeEnd, s32 aDelaytime) {
+}
+
+bool DynOS_Jingle_IsPlaying(const String& aName) {
+    return 0;
+}
+
+#endif

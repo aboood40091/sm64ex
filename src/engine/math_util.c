@@ -15,7 +15,14 @@ int gSplineState;
 // These functions have bogus return values.
 // Disable the compiler warning.
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wreturn-local-addr"
+
+#ifdef __GNUC__
+#if defined(__clang__)
+  #pragma GCC diagnostic ignored "-Wreturn-stack-address"
+#else
+  #pragma GCC diagnostic ignored "-Wreturn-local-addr"
+#endif
+#endif
 
 /// Copy vector 'src' to 'dest'
 void *vec3f_copy(Vec3f dest, Vec3f src) {
@@ -35,10 +42,14 @@ void *vec3f_set(Vec3f dest, f32 x, f32 y, f32 z) {
 
 /// Add vector 'a' to 'dest'
 void *vec3f_add(Vec3f dest, Vec3f a) {
+#ifdef NON_MATCHING
+    return vec3f_sum(dest, dest, a);
+#else
     dest[0] += a[0];
     dest[1] += a[1];
     dest[2] += a[2];
     return &dest; //! warning: function returns address of local variable
+#endif // NON_MATCHING
 }
 
 /// Make 'dest' the sum of vectors a and b.
@@ -100,9 +111,22 @@ void *vec3f_dif(Vec3f dest, Vec3f a, Vec3f b) {
 
 /// Convert short vector a to float vector 'dest'
 void *vec3s_to_vec3f(Vec3f dest, Vec3s a) {
+#ifdef TARGET_WII_U
+    f32*       const pDst = &(dest[0]);
+    const s16* const pSrc = &(a[0]);
+
+    // Temporary variable
+    f32 v0;
+
+    asm volatile ("psq_l %[v0], 0(%[pSrc]), 0, 5" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("psq_st %[v0], 0(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_l %[v0], 4(%[pSrc]), 1, 5" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("psq_st %[v0], 8(%[pDst]), 1, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+#else
     dest[0] = a[0];
     dest[1] = a[1];
     dest[2] = a[2];
+#endif // TARGET_WII_U
     return &dest; //! warning: function returns address of local variable
 }
 
@@ -111,10 +135,25 @@ void *vec3s_to_vec3f(Vec3f dest, Vec3s a) {
  * to the nearest integer.
  */
 void *vec3f_to_vec3s(Vec3s dest, Vec3f a) {
+#ifdef TARGET_WII_U
+    s16*       const pDst = &(dest[0]);
+    const f32* const pSrc = &(a[0]);
+
+    // Temporary variable
+    f32 v0;
+
+    // TODO: Rounding
+
+    asm volatile ("psq_l %[v0], 0(%[pSrc]), 0, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("psq_st %[v0], 0(%[pDst]), 0, 5" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_l %[v0], 8(%[pSrc]), 1, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("psq_st %[v0], 4(%[pDst]), 1, 5" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+#else
     // add/subtract 0.5 in order to round to the nearest s32 instead of truncating
     dest[0] = a[0] + ((a[0] > 0) ? 0.5f : -0.5f);
     dest[1] = a[1] + ((a[1] > 0) ? 0.5f : -0.5f);
     dest[2] = a[2] + ((a[2] > 0) ? 0.5f : -0.5f);
+#endif // TARGET_WII_U
     return &dest; //! warning: function returns address of local variable
 }
 
@@ -124,9 +163,52 @@ void *vec3f_to_vec3s(Vec3s dest, Vec3f a) {
  * at the same time.
  */
 void *find_vector_perpendicular_to_plane(Vec3f dest, Vec3f a, Vec3f b, Vec3f c) {
+#ifdef TARGET_WII_U
+    f32*       const pDst = &(dest[0]);
+    const f32* const pA   = &(a[0]);
+    const f32* const pB   = &(b[0]);
+    const f32* const pC   = &(c[0]);
+
+    // Temporary variables
+    register f32 v0;
+    register f32 v1;
+    register f32 v2;
+    register f32 v3;
+    register f32 v4;
+    register f32 v5;
+    register f32 v6;
+    register f32 v7;
+    register f32 v8;
+    register f32 v9;
+    register f32 v10;
+
+    asm volatile ("psq_l      %[v0],  0(%[pA]), 0, 0     " : [v0 ] "=f"(v0 ) : [pA] "b"(pA));
+    asm volatile ("psq_l      %[v1],  0(%[pB]), 0, 0     " : [v1 ] "=f"(v1 ) : [pB] "b"(pB));
+    asm volatile ("psq_l      %[v4],  0(%[pC]), 0, 0     " : [v4 ] "=f"(v4 ) : [pC] "b"(pC));
+    asm volatile ("lfs        %[v2],  8(%[pA])           " : [v2 ] "=f"(v2 ) : [pA] "b"(pA));
+    asm volatile ("lfs        %[v3],  8(%[pB])           " : [v3 ] "=f"(v3 ) : [pB] "b"(pB));
+    asm volatile ("lfs        %[v5],  8(%[pC])           " : [v5 ] "=f"(v5 ) : [pC] "b"(pC));
+
+    asm volatile ("ps_sub     %[v0],  %[v1], %[v0]       " : [v0 ] "+f"(v0 ) : [v1] "f"(v1));
+    asm volatile ("ps_sub     %[v1],  %[v4], %[v1]       " : [v1 ] "+f"(v1 ) : [v4] "f"(v4));
+    asm volatile ("fsubs      %[v2],  %[v3], %[v2]       " : [v2 ] "+f"(v2 ) : [v3] "f"(v3));
+    asm volatile ("fsubs      %[v3],  %[v5], %[v3]       " : [v3 ] "+f"(v3 ) : [v5] "f"(v5));
+    asm volatile ("ps_mul     %[v4],  %[v1], %[v2]       " : [v4 ] "=f"(v4 ) : [v1] "f"(v1), [v2] "f"(v2));
+    asm volatile ("ps_msub    %[v5],  %[v0], %[v3], %[v4]" : [v5 ] "=f"(v5 ) : [v0] "f"(v0), [v3] "f"(v3), [v4] "f"(v4));
+    asm volatile ("ps_merge10 %[v6],  %[v1], %[v1]       " : [v6 ] "=f"(v6 ) : [v1] "f"(v1));
+    asm volatile ("ps_muls0   %[v7],  %[v1], %[v0]       " : [v7 ] "=f"(v7 ) : [v1] "f"(v1), [v0] "f"(v0));
+    asm volatile ("ps_msub    %[v8],  %[v0], %[v6], %[v7]" : [v8 ] "=f"(v8 ) : [v0] "f"(v0), [v6] "f"(v6), [v7] "f"(v7));
+    asm volatile ("ps_merge11 %[v9],  %[v5], %[v5]       " : [v9 ] "=f"(v9 ) : [v5] "f"(v5));
+    asm volatile ("ps_merge01 %[v10], %[v5], %[v8]       " : [v10] "=f"(v10) : [v5] "f"(v5), [v8] "f"(v8));
+    asm volatile ("ps_neg     %[v10], %[v10]             " : [v10] "+f"(v10) : );
+
+    asm volatile ("psq_st     %[v9],  0(%[pDst]), 1, 0   " : : [v9 ] "f"(v9 ), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_st     %[v10], 4(%[pDst]), 0, 0   " : : [v10] "f"(v10), [pDst] "b"(pDst) : "memory");
+#else
     dest[0] = (b[1] - a[1]) * (c[2] - b[2]) - (c[1] - b[1]) * (b[2] - a[2]);
     dest[1] = (b[2] - a[2]) * (c[0] - b[0]) - (c[2] - b[2]) * (b[0] - a[0]);
     dest[2] = (b[0] - a[0]) * (c[1] - b[1]) - (c[0] - b[0]) * (b[1] - a[1]);
+#endif // TARGET_WII_U
     return &dest; //! warning: function returns address of local variable
 }
 
@@ -141,7 +223,7 @@ void *vec3f_cross(Vec3f dest, Vec3f a, Vec3f b) {
 /// Scale vector 'dest' so it has length 1
 void *vec3f_normalize(Vec3f dest) {
     //! Possible division by zero
-    f32 invsqrt = 1.0f / sqrtf(dest[0] * dest[0] + dest[1] * dest[1] + dest[2] * dest[2]);
+    f32 invsqrt = rsqrtf(dest[0] * dest[0] + dest[1] * dest[1] + dest[2] * dest[2]);
 
     dest[0] *= invsqrt;
     dest[1] *= invsqrt;
@@ -163,8 +245,38 @@ f32 vec3f_dot(Vec3f a, Vec3f b)
 
 #pragma GCC diagnostic pop
 
+#if !defined(TARGET_WII_U) && defined(NON_MATCHING)
+extern void* memcpy(void*, const void*, size_t);
+#endif
+
 /// Copy matrix 'src' to 'dest'
 void mtxf_copy(Mat4 dest, Mat4 src) {
+#ifdef TARGET_WII_U
+    f32*       const pDst = &(dest[0][0]);
+    const f32* const pSrc = &(src[0][0]);
+
+    // Temporary variable
+    f32 v0;
+
+    asm volatile ("psq_l  %[v0],  0(%[pSrc]), 0, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("psq_st %[v0],  0(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_l  %[v0],  8(%[pSrc]), 0, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("psq_st %[v0],  8(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_l  %[v0], 16(%[pSrc]), 0, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("psq_st %[v0], 16(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_l  %[v0], 24(%[pSrc]), 0, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("psq_st %[v0], 24(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_l  %[v0], 32(%[pSrc]), 0, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("psq_st %[v0], 32(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_l  %[v0], 40(%[pSrc]), 0, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("psq_st %[v0], 40(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_l  %[v0], 48(%[pSrc]), 0, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("psq_st %[v0], 48(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_l  %[v0], 56(%[pSrc]), 0, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("psq_st %[v0], 56(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+#elif defined(NON_MATCHING)
+    memcpy(dest, src, sizeof(Mat4));
+#else
     register s32 i;
     register u32 *d = (u32 *) dest;
     register u32 *s = (u32 *) src;
@@ -172,12 +284,34 @@ void mtxf_copy(Mat4 dest, Mat4 src) {
     for (i = 0; i < 16; i++) {
         *d++ = *s++;
     }
+#endif
 }
 
 /**
  * Set mtx to the identity matrix
  */
 void mtxf_identity(Mat4 mtx) {
+#ifdef TARGET_WII_U
+    f32* const pDst = &(mtx[0][0]);
+
+    // Constants
+    register const f32 v00 = 0.0f;
+    register const f32 v11 = 1.0f;
+    register       f32 v01;
+    register       f32 v10;
+
+    asm volatile ("ps_merge00 %[v01], %[v00], %[v11]" : [v01] "=f"(v01) : [v00] "f"(v00), [v11] "f"(v11));
+    asm volatile ("ps_merge00 %[v10], %[v11], %[v00]" : [v10] "=f"(v10) : [v00] "f"(v00), [v11] "f"(v11));
+
+    asm volatile ("psq_st %[v10],  0(%[pDst]), 0, 0" : : [v10] "f"(v10), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_st %[v00],  8(%[pDst]), 0, 0" : : [v00] "f"(v00), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_st %[v01], 16(%[pDst]), 0, 0" : : [v01] "f"(v01), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_st %[v00], 24(%[pDst]), 0, 0" : : [v00] "f"(v00), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_st %[v00], 32(%[pDst]), 0, 0" : : [v00] "f"(v00), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_st %[v10], 40(%[pDst]), 0, 0" : : [v10] "f"(v10), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_st %[v00], 48(%[pDst]), 0, 0" : : [v00] "f"(v00), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_st %[v01], 56(%[pDst]), 0, 0" : : [v01] "f"(v01), [pDst] "b"(pDst) : "memory");
+#else
     register s32 i;
     register f32 *dest;
     // Note: These loops need to be on one line to match on PAL
@@ -186,6 +320,7 @@ void mtxf_identity(Mat4 mtx) {
 
     // initialize the diagonal cells to 1
     for (dest = (f32 *) mtx, i = 0; i < 4; dest += 5, i++) *dest = 1;
+#endif // TARGET_WII_U
 }
 
 /**
@@ -193,9 +328,13 @@ void mtxf_identity(Mat4 mtx) {
  */
 void mtxf_translate(Mat4 dest, Vec3f b) {
     mtxf_identity(dest);
+#ifdef NON_MATCHING
+    (void)vec3f_copy(dest[3], b);
+#else
     dest[3][0] = b[0];
     dest[3][1] = b[1];
     dest[3][2] = b[2];
+#endif // NON_MATCHING
 }
 
 /**
@@ -221,7 +360,7 @@ void mtxf_lookat(Mat4 mtx, Vec3f from, Vec3f to, s16 roll) {
     dx = to[0] - from[0];
     dz = to[2] - from[2];
 
-    invLength = -1.0 / sqrtf(dx * dx + dz * dz);
+    invLength = -rsqrtf(dx * dx + dz * dz);
     dx *= invLength;
     dz *= invLength;
 
@@ -233,7 +372,7 @@ void mtxf_lookat(Mat4 mtx, Vec3f from, Vec3f to, s16 roll) {
     yColZ = to[1] - from[1];
     zColZ = to[2] - from[2];
 
-    invLength = -1.0 / sqrtf(xColZ * xColZ + yColZ * yColZ + zColZ * zColZ);
+    invLength = -rsqrtf(xColZ * xColZ + yColZ * yColZ + zColZ * zColZ);
     xColZ *= invLength;
     yColZ *= invLength;
     zColZ *= invLength;
@@ -242,7 +381,7 @@ void mtxf_lookat(Mat4 mtx, Vec3f from, Vec3f to, s16 roll) {
     yColX = zColY * xColZ - xColY * zColZ;
     zColX = xColY * yColZ - yColY * xColZ;
 
-    invLength = 1.0 / sqrtf(xColX * xColX + yColX * yColX + zColX * zColX);
+    invLength = rsqrtf(xColX * xColX + yColX * yColX + zColX * zColX);
 
     xColX *= invLength;
     yColX *= invLength;
@@ -252,7 +391,7 @@ void mtxf_lookat(Mat4 mtx, Vec3f from, Vec3f to, s16 roll) {
     yColY = zColZ * xColX - xColZ * zColX;
     zColY = xColZ * yColX - yColZ * xColX;
 
-    invLength = 1.0 / sqrtf(xColY * xColY + yColY * yColY + zColY * zColY);
+    invLength = rsqrtf(xColY * xColY + yColY * yColY + zColY * zColY);
     xColY *= invLength;
     yColY *= invLength;
     zColY *= invLength;
@@ -424,6 +563,12 @@ void mtxf_align_terrain_normal(Mat4 dest, Vec3f upDir, Vec3f pos, s16 yaw) {
     vec3f_cross(forwardDir, leftDir, upDir);
     vec3f_normalize(forwardDir);
 
+#ifdef NON_MATCHING
+    (void)vec3f_copy(dest[0], leftDir);
+    (void)vec3f_copy(dest[1], upDir);
+    (void)vec3f_copy(dest[2], forwardDir);
+    (void)vec3f_copy(dest[3], pos);
+#else
     dest[0][0] = leftDir[0];
     dest[0][1] = leftDir[1];
     dest[0][2] = leftDir[2];
@@ -438,6 +583,7 @@ void mtxf_align_terrain_normal(Mat4 dest, Vec3f upDir, Vec3f pos, s16 yaw) {
     dest[2][1] = forwardDir[1];
     dest[2][2] = forwardDir[2];
     dest[3][2] = pos[2];
+#endif // NON_MATCHING
 
     dest[0][3] = 0.0f;
     dest[1][3] = 0.0f;
@@ -498,6 +644,21 @@ void mtxf_align_terrain_triangle(Mat4 mtx, Vec3f pos, s16 yaw, f32 radius) {
     vec3f_cross(zColumn, xColumn, yColumn);
     vec3f_normalize(zColumn);
 
+#ifdef NON_MATCHING
+    (void)vec3f_copy(mtx[0], xColumn);
+    (void)vec3f_copy(mtx[1], yColumn);
+    (void)vec3f_copy(mtx[2], zColumn);
+
+    if (avgY < pos[1])
+        (void)vec3f_copy(mtx[3], pos);
+
+    else
+    {
+        mtx[3][0] = pos[0];
+        mtx[3][1] = avgY;
+        mtx[3][2] = pos[2];
+    }
+#else
     mtx[0][0] = xColumn[0];
     mtx[0][1] = xColumn[1];
     mtx[0][2] = xColumn[2];
@@ -512,6 +673,7 @@ void mtxf_align_terrain_triangle(Mat4 mtx, Vec3f pos, s16 yaw, f32 radius) {
     mtx[2][1] = zColumn[1];
     mtx[2][2] = zColumn[2];
     mtx[3][2] = pos[2];
+#endif // NON_MATCHING
 
     mtx[0][3] = 0;
     mtx[1][3] = 0;
@@ -528,6 +690,112 @@ void mtxf_align_terrain_triangle(Mat4 mtx, Vec3f pos, s16 yaw, f32 radius) {
  * then a.
  */
 void mtxf_mul(Mat4 dest, Mat4 a, Mat4 b) {
+#ifdef TARGET_WII_U
+    f32*       const pDst = &(dest[0][0]);
+    const f32* const pA   = &(a[0][0]);
+    const f32* const pB   = &(b[0][0]);
+
+    // Temporary variables
+    register f32 v0;
+    register f32 v1;
+    register f32 v2;
+    register f32 v3;
+    register f32 v4;
+    register f32 v5;
+    register f32 v6;
+    register f32 v7;
+    register f32 v8;
+    register f32 v9;
+    register f32 v10;
+    register f32 v11;
+    register f32 v12;
+    register f32 v13;
+
+    asm volatile (
+        "psq_l %[v0],  0(%[pA]), 0, 0           \n\t"
+        "psq_l %[v2],  0(%[pB]), 0, 0           \n\t"
+        "ps_muls0 %[v6], %[v2], %[v0]           \n\t"
+        "psq_l %[v3], 16(%[pB]), 0, 0           \n\t"
+        "psq_l %[v4], 32(%[pB]), 0, 0           \n\t"
+        "ps_madds1 %[v6], %[v3], %[v0], %[v6]   \n\t"
+        "psq_l %[v1],  8(%[pA]), 0, 0           \n\t"
+        "psq_l %[v5], 48(%[pB]), 0, 0           \n\t"
+        "ps_madds0 %[v6], %[v4], %[v1], %[v6]   \n\t"
+        "psq_l %[v0], 16(%[pA]), 0, 0           \n\t"
+        "ps_madds1 %[v6], %[v5], %[v1], %[v6]   \n\t"
+        "psq_l %[v1], 24(%[pA]), 0, 0           \n\t"
+        "ps_muls0 %[v8], %[v2], %[v0]           \n\t"
+        "ps_madds1 %[v8], %[v3], %[v0], %[v8]   \n\t"
+        "psq_l %[v0], 32(%[pA]), 0, 0           \n\t"
+        "ps_madds0 %[v8], %[v4], %[v1], %[v8]   \n\t"
+        "ps_madds1 %[v8], %[v5], %[v1], %[v8]   \n\t"
+        "psq_l %[v1], 40(%[pA]), 0, 0           \n\t"
+        "ps_muls0 %[v10], %[v2], %[v0]          \n\t"
+        "ps_madds1 %[v10], %[v3], %[v0], %[v10] \n\t"
+        "psq_l %[v0], 48(%[pA]), 0, 0           \n\t"
+        "ps_madds0 %[v10], %[v4], %[v1], %[v10] \n\t"
+        "ps_madds1 %[v10], %[v5], %[v1], %[v10] \n\t"
+        "psq_l %[v1], 56(%[pA]), 0, 0           \n\t"
+        "ps_muls0 %[v12], %[v2], %[v0]          \n\t"
+        "psq_l %[v2],  8(%[pB]), 0, 0           \n\t"
+        "ps_madds1 %[v12], %[v3], %[v0], %[v12] \n\t"
+        "psq_l %[v0],  0(%[pA]), 0, 0           \n\t"
+        "ps_madds0 %[v12], %[v4], %[v1], %[v12] \n\t"
+        "psq_l %[v3], 24(%[pB]), 0, 0           \n\t"
+        "ps_madds1 %[v12], %[v5], %[v1], %[v12] \n\t"
+        "psq_l %[v1],  8(%[pA]), 0, 0           \n\t"
+        "ps_muls0 %[v7], %[v2], %[v0]           \n\t"
+        "psq_l %[v4], 40(%[pB]), 0, 0           \n\t"
+        "ps_madds1 %[v7], %[v3], %[v0], %[v7]   \n\t"
+        "psq_l %[v5], 56(%[pB]), 0, 0           \n\t"
+        "ps_madds0 %[v7], %[v4], %[v1], %[v7]   \n\t"
+        "psq_l %[v0], 16(%[pA]), 0, 0           \n\t"
+        "ps_madds1 %[v7], %[v5], %[v1], %[v7]   \n\t"
+        "psq_l %[v1], 24(%[pA]), 0, 0           \n\t"
+        "ps_muls0 %[v9], %[v2], %[v0]           \n\t"
+        "psq_st  %[v6],  0(%[pDst]), 0, 0       \n\t"
+        "ps_madds1 %[v9], %[v3], %[v0], %[v9]   \n\t"
+        "psq_l %[v0], 32(%[pA]), 0, 0           \n\t"
+        "ps_madds0 %[v9], %[v4], %[v1], %[v9]   \n\t"
+        "psq_st  %[v8], 16(%[pDst]), 0, 0       \n\t"
+        "ps_madds1 %[v9], %[v5], %[v1], %[v9]   \n\t"
+        "psq_l %[v1], 40(%[pA]), 0, 0           \n\t"
+        "ps_muls0 %[v11], %[v2], %[v0]          \n\t"
+        "psq_st %[v10], 32(%[pDst]), 0, 0       \n\t"
+        "ps_madds1 %[v11], %[v3], %[v0], %[v11] \n\t"
+        "psq_l %[v0], 48(%[pA]), 0, 0           \n\t"
+        "ps_madds0 %[v11], %[v4], %[v1], %[v11] \n\t"
+        "psq_st %[v12], 48(%[pDst]), 0, 0       \n\t"
+        "ps_madds1 %[v11], %[v5], %[v1], %[v11] \n\t"
+        "psq_l %[v1], 56(%[pA]), 0, 0           \n\t"
+        "ps_muls0 %[v13], %[v2], %[v0]          \n\t"
+        "psq_st  %[v7],  8(%[pDst]), 0, 0       \n\t"
+        "ps_madds1 %[v13], %[v3], %[v0], %[v13] \n\t"
+        "psq_st  %[v9], 24(%[pDst]), 0, 0       \n\t"
+        "ps_madds0 %[v13], %[v4], %[v1], %[v13] \n\t"
+        "psq_st %[v11], 40(%[pDst]), 0, 0       \n\t"
+        "ps_madds1 %[v13], %[v5], %[v1], %[v13] \n\t"
+        "psq_st %[v13], 56(%[pDst]), 0, 0       \n\t"
+        : [v0 ] "=f"(v0 ),
+          [v1 ] "=f"(v1 ),
+          [v2 ] "=f"(v2 ),
+          [v3 ] "=f"(v3 ),
+          [v4 ] "=f"(v4 ),
+          [v5 ] "=f"(v5 ),
+          [v6 ] "=f"(v6 ),
+          [v7 ] "=f"(v7 ),
+          [v8 ] "=f"(v8 ),
+          [v9 ] "=f"(v9 ),
+          [v10] "=f"(v10),
+          [v11] "=f"(v11),
+          [v12] "=f"(v12),
+          [v13] "=f"(v13)
+        : [pA ]  "b"(pA ),
+          [pB ]  "b"(pB ),
+          [pDst] "b"(pDst)
+        : "memory"
+    );
+#else
     Mat4 temp;
     register f32 entry0;
     register f32 entry1;
@@ -569,12 +837,54 @@ void mtxf_mul(Mat4 dest, Mat4 a, Mat4 b) {
     temp[3][3] = 1;
 
     mtxf_copy(dest, temp);
+#endif // TARGET_WII_U
 }
 
 /**
  * Set matrix 'dest' to 'mtx' scaled by vector s
  */
 void mtxf_scale_vec3f(Mat4 dest, Mat4 mtx, Vec3f s) {
+#ifdef TARGET_WII_U
+    f32*       const pDst = &(dest[0][0]);
+    const f32* const pSrc = &(mtx[0][0]);
+    const f32* const pS   = &(s[0]);
+
+    // Temporary variable
+    f32 v0;
+    f32 v1;
+    f32 v2;
+
+    asm volatile ("psq_l %[v1], 0(%[pS]), 0, 0" : [v1] "=f"(v1) : [pS] "b"(pS));
+    asm volatile ("psq_l %[v2], 8(%[pS]), 1, 0" : [v2] "=f"(v2) : [pS] "b"(pS));
+
+    asm volatile ("psq_l  %[v0],  0(%[pSrc]), 0, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("ps_muls0 %[v0], %[v0], %[v1]" : [v0] "+f"(v0) : [v1] "f"(v1));
+    asm volatile ("psq_st %[v0],  0(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_l  %[v0],  8(%[pSrc]), 0, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("ps_muls0 %[v0], %[v0], %[v1]" : [v0] "+f"(v0) : [v1] "f"(v1));
+    asm volatile ("psq_st %[v0],  8(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+
+    asm volatile ("psq_l  %[v0], 16(%[pSrc]), 0, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("ps_muls1 %[v0], %[v0], %[v1]" : [v0] "+f"(v0) : [v1] "f"(v1));
+    asm volatile ("psq_st %[v0], 16(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_l  %[v0], 24(%[pSrc]), 0, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("ps_muls1 %[v0], %[v0], %[v1]" : [v0] "+f"(v0) : [v1] "f"(v1));
+    asm volatile ("psq_st %[v0], 24(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+
+    asm volatile ("psq_l  %[v0], 32(%[pSrc]), 0, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("ps_muls0 %[v0], %[v0], %[v2]" : [v0] "+f"(v0) : [v2] "f"(v2));
+    asm volatile ("psq_st %[v0], 32(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_l  %[v0], 40(%[pSrc]), 0, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+    asm volatile ("ps_muls0 %[v0], %[v0], %[v2]" : [v0] "+f"(v0) : [v2] "f"(v2));
+    asm volatile ("psq_st %[v0], 40(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+
+    asm volatile ("psq_l  %[v0], 48(%[pSrc]), 0, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+  //asm volatile ("ps_muls1 %[v0], %[v0], %[v2]" : [v0] "+f"(v0) : [v2] "f"(v2));
+    asm volatile ("psq_st %[v0], 48(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+    asm volatile ("psq_l  %[v0], 56(%[pSrc]), 0, 0" : [v0] "=f"(v0) : [pSrc] "b"(pSrc));
+  //asm volatile ("ps_muls1 %[v0], %[v0], %[v2]" : [v0] "+f"(v0) : [v2] "f"(v2));
+    asm volatile ("psq_st %[v0], 56(%[pDst]), 0, 0" : : [v0] "f"(v0), [pDst] "b"(pDst) : "memory");
+#else
     register s32 i;
 
     for (i = 0; i < 4; i++) {
@@ -583,6 +893,7 @@ void mtxf_scale_vec3f(Mat4 dest, Mat4 mtx, Vec3f s) {
         dest[2][i] = mtx[2][i] * s[2];
         dest[3][i] = mtx[3][i];
     }
+#endif // TARGET_WII_U
 }
 
 /**
@@ -610,7 +921,9 @@ void mtxf_mul_vec3s(Mat4 mtx, Vec3s b) {
  * and no crashes occur.
  */
 void mtxf_to_mtx(Mtx *dest, Mat4 src) {
-#ifdef AVOID_UB
+#if defined(NON_MATCHING) && defined(GBI_FLOATS)
+    mtxf_copy(dest->m, src);
+#elif defined(AVOID_UB)
     // Avoid type-casting which is technically UB by calling the equivalent
     // guMtxF2L function. This helps little-endian systems, as well.
     guMtxF2L(src, dest);

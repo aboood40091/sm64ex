@@ -1,6 +1,10 @@
 #ifndef CONFIGFILE_H
 #define CONFIGFILE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 
 #define CONFIGFILE_DEFAULT "sm64config.txt"
@@ -9,12 +13,17 @@
 #define MAX_VOLUME 127
 
 typedef struct {
+#ifdef TARGET_WII_U
+    bool reset;
+    bool settings_changed;
+#else
     unsigned int x, y, w, h;
     bool vsync;
     bool reset;
     bool fullscreen;
     bool exiting_fullscreen;
     bool settings_changed;
+#endif
 } ConfigWindow;
 
 extern ConfigWindow configWindow;
@@ -90,5 +99,9 @@ extern bool         configRT64StaticMeshCache;
 void configfile_load(const char *filename);
 void configfile_save(const char *filename);
 const char *configfile_name(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
