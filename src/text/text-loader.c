@@ -195,20 +195,14 @@ static void load_language(char *jsonTxt) {
     cJSON_Delete(json);
 }
 
-static void alloc_languages(char *exePath, char *gameDir) {
+static void alloc_languages(void) {
     if (!languages) {
         languages = (struct LanguageEntry **) calloc(32, sizeof(struct LanguageEntry *));
     }
 
-    // Executable directory
-    char exeDir[FILENAME_MAX];
-    snprintf(exeDir, FILENAME_MAX, "%s", exePath);
-    char *lastSlash = MAX(strrchr(exeDir, '\\'), strrchr(exeDir, '/'));
-    if (lastSlash) *lastSlash = 0;
-
     // Languages directory
     char languagesDir[FILENAME_MAX];
-    snprintf(languagesDir, FILENAME_MAX, "%s/%s/texts/", exeDir, gameDir);
+    snprintf(languagesDir, FILENAME_MAX, "%s/%s/texts/", sys_exe_path(), fs_gamedir);
 
     // Scan directory for JSON files
     DIR *dir = opendir(languagesDir);
@@ -310,8 +304,8 @@ void load_language_file(const char *filename) {
     }
 }
 
-void alloc_dialog_pool(char *exePath, char *gamedir) {
-    alloc_languages(exePath, gamedir);
+void alloc_dialog_pool(void) {
+    alloc_languages();
     if ((int) configLanguage >= get_num_languages()) {
         printf("Loading File: Configured language doesn't exist, resetting to defaults.\n");
         configLanguage = 0;
@@ -323,7 +317,7 @@ void dealloc_dialog_pool(void) {
     int numLanguages = get_num_languages();
     for (int l = 0; l < numLanguages; l++) {
         struct LanguageEntry *entry = languages[l];
-        
+
         // Strings
         for (int i = 0; i < entry->num_strings; i++) {
             free(entry->strings[i]);
@@ -353,7 +347,7 @@ void dealloc_dialog_pool(void) {
         // Language
         free(entry->logo);
         free(entry->name);
-        free(languages[l]); 
+        free(languages[l]);
     }
     free(languages);
 }

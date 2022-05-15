@@ -40,6 +40,10 @@ struct ConfigOption {
 
 // Video/audio stuff
 ConfigWindow configWindow       = {
+#ifdef TARGET_WII_U
+    .reset = false,
+    .settings_changed = false,
+#else
     .x = WAPI_WIN_CENTERPOS,
     .y = WAPI_WIN_CENTERPOS,
     .w = DESIRED_SCREEN_WIDTH,
@@ -49,6 +53,7 @@ ConfigWindow configWindow       = {
     .fullscreen = false,
     .exiting_fullscreen = false,
     .settings_changed = false,
+#endif
 };
 
 unsigned int configLanguage     = 0;
@@ -110,7 +115,7 @@ bool         configDiscordRPC    = true;
 #endif
 
 // 60fps init
-bool         config60FPS         = true; 
+bool         config60FPS         = true;
 
 // Resolution settings, thanks to Mors!
 bool         configInternalResolutionBool       = true;
@@ -122,12 +127,14 @@ bool         configForce4by3                    = false;
 
 
 static const struct ConfigOption options[] = {
+#ifndef TARGET_WII_U
     {.name = "fullscreen",           .type = CONFIG_TYPE_BOOL, .boolValue = &configWindow.fullscreen},
     {.name = "window_x",             .type = CONFIG_TYPE_UINT, .uintValue = &configWindow.x},
     {.name = "window_y",             .type = CONFIG_TYPE_UINT, .uintValue = &configWindow.y},
     {.name = "window_w",             .type = CONFIG_TYPE_UINT, .uintValue = &configWindow.w},
     {.name = "window_h",             .type = CONFIG_TYPE_UINT, .uintValue = &configWindow.h},
     {.name = "vsync",                .type = CONFIG_TYPE_BOOL, .boolValue = &configWindow.vsync},
+#endif
     {.name = "60fps",                .type = CONFIG_TYPE_BOOL, .boolValue = &config60FPS },
     {.name = "internal_bool",        .type = CONFIG_TYPE_BOOL, .boolValue = &configInternalResolutionBool},
     {.name = "internal_swap",        .type = CONFIG_TYPE_UINT, .uintValue = &configCustomInternalResolution},
@@ -141,6 +148,7 @@ static const struct ConfigOption options[] = {
     {.name = "music_volume",         .type = CONFIG_TYPE_UINT, .uintValue = &configMusicVolume},
     {.name = "sfx_volume",           .type = CONFIG_TYPE_UINT, .uintValue = &configSfxVolume},
     {.name = "env_volume",           .type = CONFIG_TYPE_UINT, .uintValue = &configEnvVolume},
+#ifndef TARGET_WII_U
     {.name = "key_a",                .type = CONFIG_TYPE_BIND, .uintValue = configKeyA},
     {.name = "key_b",                .type = CONFIG_TYPE_BIND, .uintValue = configKeyB},
     {.name = "key_start",            .type = CONFIG_TYPE_BIND, .uintValue = configKeyStart},
@@ -161,6 +169,7 @@ static const struct ConfigOption options[] = {
     {.name = "key_stickright",       .type = CONFIG_TYPE_BIND, .uintValue = configKeyStickRight},
     {.name = "stick_deadzone",       .type = CONFIG_TYPE_UINT, .uintValue = &configStickDeadzone},
     {.name = "rumble_strength",      .type = CONFIG_TYPE_UINT, .uintValue = &configRumbleStrength},
+#endif
     {.name = "precache",             .type = CONFIG_TYPE_BOOL, .boolValue = &configPrecacheRes},
     {.name = "language",             .type = CONFIG_TYPE_UINT, .uintValue = &configLanguage},
     #ifdef TARGET_SWITCH
@@ -216,7 +225,7 @@ static const struct ConfigOption options[] = {
     {.name = "cheats_key_spamba_controls",  .type = CONFIG_TYPE_BIND, .uintValue = CheatsControls.SpambaControls},
     #ifdef DISCORDRPC
     {.name = "discordrpc_enable",    .type = CONFIG_TYPE_BOOL, .boolValue = &configDiscordRPC},
-    #endif 
+    #endif
 };
 
 // Reads an entire line from a file (excluding the newline character) and returns an allocated string

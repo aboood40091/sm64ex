@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "game/ingame_menu.h"
+#include "pc/fs/fs.h"
 
 extern char* currentLanguage;
 
@@ -33,7 +34,7 @@ extern struct LanguageEntry* get_language_by_name(char* name);
 extern struct LanguageEntry* get_language();
 extern void set_language(struct LanguageEntry* new_language);
 extern void load_language_file(const char *filename);
-extern void alloc_dialog_pool(char *exePath, char *gamedir);
+extern void alloc_dialog_pool(void);
 extern void dealloc_dialog_pool(void);
 extern int get_num_languages();
 

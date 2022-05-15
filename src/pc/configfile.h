@@ -9,12 +9,17 @@
 #define MAX_VOLUME 127
 
 typedef struct {
+#ifdef TARGET_WII_U
+    bool reset;
+    bool settings_changed;
+#else
     unsigned int x, y, w, h;
     bool vsync;
     bool reset;
     bool fullscreen;
     bool exiting_fullscreen;
     bool settings_changed;
+#endif
 } ConfigWindow;
 
 extern ConfigWindow configWindow;

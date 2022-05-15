@@ -11,6 +11,13 @@ extern "C" {
 #define MUSIC_CHANNELS		2
 #define SOUND_CHANNELS		1
 
+#ifdef TARGET_WII_U
+#include <whb/log.h>
+#define PRINT_ERR(FMT, ARGS...) WHBLogPrintf(FMT, ## ARGS)
+#else
+#define PRINT_ERR(FMT, ARGS...) fprintf(stderr, FMT, ## ARGS)
+#endif
+
 static bool TokenizeBuffer(char *aBuffer, char **aTokens, s32 aTokenMax) {
     bool dq = false;
     for (char *p = NULL; *aBuffer != 0 && aTokenMax > 0; ++aBuffer) {
@@ -99,7 +106,7 @@ static void DynOS_Music_Callback(UNUSED void *, u8 *aStream, s32 aLength) {
         //        DynOS_Music_FadeIn();
         //    }
         //}
-        
+
     }
 }
 
@@ -126,7 +133,9 @@ static SDL_AudioDeviceID DynOS_Music_GetDevice() {
     _Want.userdata = NULL;
     sMusicDeviceId = SDL_OpenAudioDevice(NULL, 0, &_Want, &_Have, 0);
     if (sMusicDeviceId == 0) {
-        sys_fatal("DynOS_Music_GetDevice: Could not open music device.");
+        PRINT_ERR("SDL_OpenAudio error: %s\n", SDL_GetError());
+        PRINT_ERR("DynOS_Music_GetDevice: Could not open music device.");
+        return 0;
     }
     SDL_PauseAudioDevice(sMusicDeviceId, 0);
     return sMusicDeviceId;
@@ -220,7 +229,7 @@ bool DynOS_Music_LoadPresets(const SysPath &aFilename, const SysPath &aFolder) {
 
 void DynOS_Music_Play(const String& aName) {
     s32 _MusicDataIndex = sLoadedMusics.FindIf([&aName](const MusicData *aMusicData) { return aMusicData->mName == aName; });
-    if (_MusicDataIndex == -1) {
+    if (_MusicDataIndex == -1 || DynOS_Music_GetDevice() == 0) {
         return;
     }
     SDL_LockAudioDevice(DynOS_Music_GetDevice());
@@ -235,7 +244,7 @@ void DynOS_Music_Play(const String& aName) {
 
 void DynOS_Music_Multi_Play(const String& aName) {
     s32 _MusicDataIndex = sLoadedMusics.FindIf([&aName](const MusicData *aMusicData) { return aMusicData->mName == aName; });
-    if (_MusicDataIndex == -1) {
+    if (_MusicDataIndex == -1 || DynOS_Music_GetDevice() == 0) {
         return;
     }
 
@@ -250,6 +259,9 @@ void DynOS_Music_Multi_Play(const String& aName) {
 }
 
 void DynOS_Music_Stop() {
+    if (DynOS_Music_GetDevice() == 0)
+        return;
+
     SDL_LockAudioDevice(DynOS_Music_GetDevice());
     mCurrentMultiTrack = 0;
     sPlayingMusic = NULL;
@@ -258,10 +270,16 @@ void DynOS_Music_Stop() {
 }
 
 void DynOS_Music_Pause() {
+    if (DynOS_Music_GetDevice() == 0)
+        return;
+
     SDL_PauseAudioDevice(DynOS_Music_GetDevice(), TRUE);
 }
 
 void DynOS_Music_Resume() {
+    if (DynOS_Music_GetDevice() == 0)
+        return;
+
     SDL_PauseAudioDevice(DynOS_Music_GetDevice(), FALSE);
 }
 
@@ -323,7 +341,9 @@ static SDL_AudioDeviceID DynOS_Sound_GetDevice(u8 aBank) {
     _Want.userdata = NULL;
     sSoundDeviceId[aBank] = SDL_OpenAudioDevice(NULL, 0, &_Want, &_Have, 0);
     if (sSoundDeviceId == 0) {
-        sys_fatal("DynOS_Sound_GetDevice: Could not open sound device.");
+        PRINT_ERR("SDL_OpenAudio error: %s\n", SDL_GetError());
+        PRINT_ERR("DynOS_Sound_GetDevice: Could not open sound device.");
+        return 0;
     }
     SDL_PauseAudioDevice(sSoundDeviceId[aBank], 0);
     return sSoundDeviceId[aBank];
@@ -420,7 +440,7 @@ void DynOS_Sound_Play(const String& aName, f32 *aPos) {
 
     // Sound data
     SoundData *_SoundData = sLoadedSounds[_SoundDataIndex];
-    if (!_SoundData) {
+    if (!_SoundData || DynOS_Sound_GetDevice(_SoundData->mBank) == 0) {
         return;
     }
 
@@ -444,6 +464,9 @@ void DynOS_Sound_Play(const String& aName, f32 *aPos) {
 }
 
 void DynOS_Sound_Stop(u8 aBank) {
+    if (DynOS_Sound_GetDevice(aBank) == 0)
+        return;
+
     SDL_ClearQueuedAudio(DynOS_Sound_GetDevice(aBank));
     sPlayingSound = NULL;
 }
@@ -456,7 +479,7 @@ bool DynOS_Sound_IsPlaying(const String& aName) {
 
     // Sound data
     SoundData *_SoundData = sLoadedSounds[_SoundDataIndex];
-    if (!_SoundData) {
+    if (!_SoundData || DynOS_Sound_GetDevice(_SoundData->mBank) == 0) {
         return false;
     }
 
@@ -471,6 +494,9 @@ bool DynOS_Sound_IsPlaying(const String& aName) {
 }
 
 bool DynOS_Sound_IsPlaying(u8 aBank) {
+    if (DynOS_Sound_GetDevice(aBank) == 0)
+        return false;
+
     return SDL_GetQueuedAudioSize(DynOS_Sound_GetDevice(aBank)) != 0;
 }
 
@@ -548,7 +574,9 @@ static SDL_AudioDeviceID DynOS_Jingle_GetDevice() {
     _Want.userdata = NULL;
     sJingleDeviceId = SDL_OpenAudioDevice(NULL, 0, &_Want, &_Have, 0);
     if (sJingleDeviceId == 0) {
-        sys_fatal("DynOS_Jingle_GetDevice: Could not open jingle device.");
+        PRINT_ERR("SDL_OpenAudio error: %s\n", SDL_GetError());
+        PRINT_ERR("DynOS_Jingle_GetDevice: Could not open jingle device.");
+        return 0;
     }
     SDL_PauseAudioDevice(sJingleDeviceId, 0);
     return sJingleDeviceId;
@@ -642,7 +670,7 @@ bool DynOS_Jingle_LoadPresets(const SysPath &aFilename, const SysPath &aFolder) 
 
 void DynOS_Jingle_Play(const String& aName) {
     s32 _JingleDataIndex = sLoadedJingles.FindIf([&aName](const JingleData *aJingleData) { return aJingleData->mName == aName; });
-    if (_JingleDataIndex == -1) {
+    if (_JingleDataIndex == -1 || DynOS_Jingle_GetDevice() == 0) {
         return;
     }
 
@@ -657,6 +685,9 @@ void DynOS_Jingle_Play(const String& aName) {
 }
 
 void DynOS_Jingle_Stop() {
+    if (DynOS_Jingle_GetDevice() == 0)
+        return;
+
     SDL_LockAudioDevice(DynOS_Jingle_GetDevice());
     sPlayingJingle = NULL;
     SDL_UnlockAudioDevice(DynOS_Jingle_GetDevice());
@@ -664,10 +695,16 @@ void DynOS_Jingle_Stop() {
 }
 
 void DynOS_Jingle_Pause() {
+    if (DynOS_Jingle_GetDevice() == 0)
+        return;
+
     SDL_PauseAudioDevice(DynOS_Jingle_GetDevice(), TRUE);
 }
 
 void DynOS_Jingle_Resume() {
+    if (DynOS_Jingle_GetDevice() == 0)
+        return;
+
     SDL_PauseAudioDevice(DynOS_Jingle_GetDevice(), FALSE);
 }
 

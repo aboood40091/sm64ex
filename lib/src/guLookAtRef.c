@@ -25,7 +25,7 @@ void guLookAtReflectF(float mf[4][4], LookAt *l, float xEye, float yEye, float z
     zLook = zAt - zEye;
 
     /* Negate because positive Z is behind us: */
-    len = -1.0 / sqrtf(xLook * xLook + yLook * yLook + zLook * zLook);
+    len = -rsqrtf(xLook * xLook + yLook * yLook + zLook * zLook);
     xLook *= len;
     yLook *= len;
     zLook *= len;
@@ -35,7 +35,7 @@ void guLookAtReflectF(float mf[4][4], LookAt *l, float xEye, float yEye, float z
     xRight = yUp * zLook - zUp * yLook;
     yRight = zUp * xLook - xUp * zLook;
     zRight = xUp * yLook - yUp * xLook;
-    len = 1.0 / sqrtf(xRight * xRight + yRight * yRight + zRight * zRight);
+    len = rsqrtf(xRight * xRight + yRight * yRight + zRight * zRight);
     xRight *= len;
     yRight *= len;
     zRight *= len;
@@ -45,7 +45,7 @@ void guLookAtReflectF(float mf[4][4], LookAt *l, float xEye, float yEye, float z
     xUp = yLook * zRight - zLook * yRight;
     yUp = zLook * xRight - xLook * zRight;
     zUp = xLook * yRight - yLook * xRight;
-    len = 1.0 / sqrtf(xUp * xUp + yUp * yUp + zUp * zUp);
+    len = rsqrtf(xUp * xUp + yUp * yUp + zUp * zUp);
     xUp *= len;
     yUp *= len;
     zUp *= len;
@@ -98,9 +98,13 @@ void guLookAtReflectF(float mf[4][4], LookAt *l, float xEye, float yEye, float z
 
 void guLookAtReflect(Mtx *m, LookAt *l, float xEye, float yEye, float zEye, float xAt, float yAt,
                      float zAt, float xUp, float yUp, float zUp) {
+#if defined(NON_MATCHING) && defined(GBI_FLOATS)
+    guLookAtReflectF(m->m, l, xEye, yEye, zEye, xAt, yAt, zAt, xUp, yUp, zUp);
+#else
     float mf[4][4];
 
     guLookAtReflectF(mf, l, xEye, yEye, zEye, xAt, yAt, zAt, xUp, yUp, zUp);
 
     guMtxF2L(mf, m);
+#endif
 }

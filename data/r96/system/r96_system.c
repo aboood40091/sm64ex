@@ -3,6 +3,10 @@
 __attribute__((constructor))
 static void r96_system_init() {
 
+#ifdef TARGET_WII_U
+    return;
+#endif // TARGET_WII_U
+
     dynos_music_load_presets_from_dynos_folder("/music.txt", "levels");
     dynos_music_load_presets_from_dynos_folder("/music_other.txt", "jingles");
     dynos_jingle_load_presets_from_dynos_folder("/jingle.txt", "jingles");
