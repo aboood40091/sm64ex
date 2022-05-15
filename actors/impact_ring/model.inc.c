@@ -17,14 +17,10 @@ static const Vtx impact_ring_seg6_vertex_0601CA10[] = {
 };
 
 // 0x0601CA50
-ALIGNED8 static const u8 impact_ring_seg6_texture_0601CA50[] = {
-#include "actors/impact_ring/impact_ring_left_side.ia16.inc.c"
-};
+ALIGNED8 static const u8 impact_ring_seg6_texture_0601CA50[] = "actors/impact_ring/impact_ring_left_side.ia16";
 
 // 0x0601DA50
-ALIGNED8 static const u8 impact_ring_seg6_texture_0601DA50[] = {
-#include "actors/impact_ring/impact_ring_right_side.ia16.inc.c"
-};
+ALIGNED8 static const u8 impact_ring_seg6_texture_0601DA50[] = "actors/impact_ring/impact_ring_right_side.ia16";
 
 // 0x0601EA50 - 0x0601EA88
 const Gfx impact_ring_seg6_dl_0601EA50[] = {
@@ -50,6 +46,7 @@ const Gfx impact_ring_seg6_dl_0601EA88[] = {
 const Gfx impact_ring_seg6_dl_0601EAC0[] = {
     gsDPPipeSync(),
     gsDPSetCombineMode(G_CC_MODULATEIFADEA, G_CC_MODULATEIFADEA),
+    gsDPSetAlphaCompare(G_AC_THRESHOLD),
     gsSPClearGeometryMode(G_LIGHTING | G_CULL_BACK),
     gsDPSetTile(G_IM_FMT_IA, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE, 0, G_TX_WRAP | G_TX_NOMIRROR, G_TX_NOMASK, G_TX_NOLOD, G_TX_WRAP | G_TX_NOMIRROR, G_TX_NOMASK, G_TX_NOLOD),
     gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_ON),

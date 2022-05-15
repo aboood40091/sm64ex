@@ -26,10 +26,8 @@ static char gLevelSelect_StageNamesText[64][16] = {
 #undef DEFINE_LEVEL
 
 static u16 gDemoCountdown = 0;
-#ifndef VERSION_JP
 static s16 D_U_801A7C34 = 1;
 static s16 gameOverNotPlayed = 1;
-#endif
 
 // run the demo timer on the PRESS START screen.
 // this function will return a non-0 timer once
@@ -46,7 +44,8 @@ int run_press_start_demo_timer(s32 timer) {
             if ((++gDemoCountdown) == PRESS_START_DEMO_TIMER) {
                 // start the demo. 800 frames has passed while
                 // player is idle on PRESS START screen.
-
+//D_U_801A7C34 == 1;
+                D_U_801A7C34 = 1;
                 // start the Mario demo animation for the demo list.
                 load_patchable_table(&gDemo, gDemoInputListID);
 
@@ -54,6 +53,7 @@ int run_press_start_demo_timer(s32 timer) {
                 // the first sequence.
                 if (++gDemoInputListID == gDemo.animDmaTable->count) {
                     gDemoInputListID = 0;
+
                 }
 
                 // add 1 (+4) to the pointer to skip the demoID.
@@ -64,6 +64,8 @@ int run_press_start_demo_timer(s32 timer) {
             }
         } else { // activity was detected, so reset the demo countdown.
             gDemoCountdown = 0;
+
+
         }
     }
     return timer;
@@ -76,14 +78,17 @@ int start_demo(int timer)
 {
 	gCurrDemoInput = NULL;
 	gPressedStart = 0;
+
     // start the mario demo animation for the demo list.
     //func_80278AD4(&gDemo, gDemoInputListID_2);
 
     // if the next demo sequence ID is the count limit, reset it back to
     // the first sequence.
 
-    if((++gDemoInputListID_2) == gDemo.animDmaTable->count)
+    if((++gDemoInputListID_2) == (int) gDemo.animDmaTable->count)
         gDemoInputListID_2 = 0;
+
+
 
     gCurrDemoInput = ((struct DemoInput *) gDemo.targetAnim) + 1; // add 1 (+4) to the pointer to skip the demoID.
     timer = (s8)((struct DemoInput *) gDemo.targetAnim)->timer; // TODO: see if making timer s8 matches
@@ -161,42 +166,39 @@ s16 level_select_input_loop(void) {
 int intro_default(void) {
     s32 sp1C = 0;
 
-#ifndef VERSION_JP
     if (D_U_801A7C34 == 1) {
-        play_sound(SOUND_MARIO_HELLO, gDefaultSoundArgs);
+        if (gGlobalTimer < 0x81) {
+            r96_play_character_sound_no_arg(R96_MARIO_HELLO, R96_LUIGI_HELLO, R96_WARIO_HELLO);
+        } else {
+            r96_play_character_sound_no_arg(R96_MARIO_PRESS_START_TO_PLAY, R96_LUIGI_PRESS_START_TO_PLAY, R96_WARIO_PRESS_START_TO_PLAY);
+        }
         D_U_801A7C34 = 0;
     }
-#endif
     print_intro_text();
 
     if (gPlayer1Controller->buttonPressed & START_BUTTON) {
         play_sound(SOUND_MENU_STAR_SOUND, gDefaultSoundArgs);
         sp1C = 100 + gDebugLevelSelect;
-#ifndef VERSION_JP        
         D_U_801A7C34 = 1;
-#endif
     }
     return run_press_start_demo_timer(sp1C);
 }
 
+
 int intro_game_over(void) {
     s32 sp1C = 0;
 
-#ifndef VERSION_JP
     if (gameOverNotPlayed == 1) {
-        play_sound(SOUND_MARIO_GAME_OVER, gDefaultSoundArgs);
+        r96_play_character_sound_no_arg(R96_MARIO_GAME_OVER, R96_LUIGI_GAME_OVER, R96_WARIO_GAME_OVER);
         gameOverNotPlayed = 0;
     }
-#endif
 
     print_intro_text();
 
     if (gPlayer1Controller->buttonPressed & START_BUTTON) {
         play_sound(SOUND_MENU_STAR_SOUND, gDefaultSoundArgs);
         sp1C = 100 + gDebugLevelSelect;
-#ifndef VERSION_JP
         gameOverNotPlayed = 1;
-#endif
     }
     return run_press_start_demo_timer(sp1C);
 }
@@ -207,6 +209,15 @@ int intro_play_its_a_me_mario(void) {
     return 1;
 }
 
+s32 lvl_title_theme(){
+    r96_play_menu_jingle(R96_EVENT_TITLE_SCREEN, 1.0, 1.0, 1500);
+}
+
+s32 lvl_gameover_theme(){
+    r96_play_menu_jingle(R96_EVENT_GAME_OVER, 1.0, 1.0, 1500);
+}
+
+
 s32 lvl_intro_update(s16 arg1, UNUSED s32 arg2) {
     s32 retVar;
 
@@ -215,6 +226,7 @@ s32 lvl_intro_update(s16 arg1, UNUSED s32 arg2) {
             retVar = intro_play_its_a_me_mario();
             break;
         case 1:
+
             retVar = intro_default();
             break;
         case 2:

@@ -178,7 +178,7 @@ static void homing_amp_give_up_loop(void) {
  */
 static void amp_attack_cooldown_loop(void) {
     // Turn intangible and wait for 90 frames before chasing Mario again after hitting him.
-    o->header.gfx.unk38.animFrame += 2;
+    o->header.gfx.curAnim.animFrame += 2;
     o->oForwardVel = 0;
 
     cur_obj_become_intangible();

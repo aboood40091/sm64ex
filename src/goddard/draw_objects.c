@@ -291,7 +291,7 @@ void draw_light(struct ObjLight *light) {
         sp94.y = -light->unk80.y;
         sp94.z = -light->unk80.z;
         gd_create_origin_lookat(&sp54, &sp94, 0.0f);
-        uMultiplier = light->unk38 / 45.0;
+        uMultiplier = light->curAnim / 45.0;
         shape = D_801A82E4;
         uMatPtr = &sp54;
     } else {
@@ -777,7 +777,7 @@ void drawscene(enum SceneType process, struct ObjGroup *interactables, struct Ob
     sUpdateViewState.unreadCounter = 0;
     restart_timer("draw1");
     set_gd_mtx_parameters(G_MTX_PROJECTION | G_MTX_MUL | G_MTX_PUSH);
-    if (sUpdateViewState.view->unk38 == 1) {
+    if (sUpdateViewState.view->curAnim == 1) {
         gd_create_perspective_matrix(sUpdateViewState.view->clipping.z,
                       sUpdateViewState.view->lowerRight.x / sUpdateViewState.view->lowerRight.y,
                       sUpdateViewState.view->clipping.x, sUpdateViewState.view->clipping.y);
@@ -1039,7 +1039,7 @@ void Proc8017A980(struct ObjLight *light) {
     sp24 = light->unk30;
     if (light->flags & LIGHT_UNK02) {
         sp20 = -gd_dot_vec3f(&sLightPositionCache[light->id], &light->unk80);
-        sp1C = 1.0 - light->unk38 / 90.0;
+        sp1C = 1.0 - light->curAnim / 90.0;
         if (sp20 > sp1C) {
             sp20 = (sp20 - sp1C) * (1.0 / (1.0 - sp1C));
             if (sp20 > 1.0) {

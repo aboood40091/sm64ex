@@ -4,18 +4,25 @@ void bhv_spindel_init(void) {
     o->oHomeY = o->oPosY;
     o->oSpindelUnkF4 = 0;
     o->oSpindelUnkF8 = 0;
+    if (o->oBehParams2ndByte) {
+        o->oVelX = sins(o->oFaceAngleYaw);
+        o->oVelZ = coss(o->oFaceAngleYaw);
+    } else {
+        o->oVelX = 0.f;
+        o->oVelZ = 1.f;
+    }
 }
 
 void bhv_spindel_loop(void) {
     f32 sp1C;
     s32 sp18;
+    f32 velX, velZ;
 
     if (o->oSpindelUnkF4 == -1) {
         if (o->oTimer == 32) {
             o->oSpindelUnkF4 = 0;
             o->oTimer = 0;
         } else {
-            o->oVelZ = 0.0f;
             o->oAngleVelPitch = 0;
             return;
         }
@@ -53,14 +60,17 @@ void bhv_spindel_loop(void) {
 
     if (o->oTimer < sp18 * 8) {
         if (o->oSpindelUnkF8 == 0) {
-            o->oVelZ = 20 / sp18;
+            velX = o->oVelX * 20.f / sp18;
+            velZ = o->oVelZ * 20.f / sp18;
             o->oAngleVelPitch = 1024 / sp18;
         } else {
-            o->oVelZ = -20 / sp18;
+            velX = o->oVelX * -20.f / sp18;
+            velZ = o->oVelZ * -20.f / sp18;
             o->oAngleVelPitch = -1024 / sp18;
         }
 
-        o->oPosZ += o->oVelZ;
+        o->oPosX += velX;
+        o->oPosZ += velZ;
         o->oMoveAnglePitch += o->oAngleVelPitch;
 
         if (absf_2(o->oMoveAnglePitch & 0x1fff) < 800.0f && o->oAngleVelPitch != 0) {

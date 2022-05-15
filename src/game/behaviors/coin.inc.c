@@ -1,3 +1,5 @@
+#include "pc/configfile.h"
+
 // coin.c.inc
 
 struct ObjectHitbox sYellowCoinHitbox = {
@@ -85,23 +87,14 @@ void bhv_coin_loop(void) {
     if (o->oVelY < 0)
         cur_obj_become_tangible();
     if (o->oMoveFlags & OBJ_MOVE_LANDED) {
-#ifndef VERSION_JP
         if (o->oMoveFlags & (OBJ_MOVE_ABOVE_DEATH_BARRIER | OBJ_MOVE_ABOVE_LAVA))
-#else
-        if (o->oMoveFlags & OBJ_MOVE_ABOVE_LAVA)
-#endif
             obj_mark_for_deletion(o);
     }
-#ifndef VERSION_JP
     if (o->oMoveFlags & OBJ_MOVE_BOUNCE) {
         if (o->oCoinUnk1B0 < 5)
             cur_obj_play_sound_2(0x30364081);
         o->oCoinUnk1B0++;
     }
-#else
-    if (o->oMoveFlags & OBJ_MOVE_BOUNCE)
-        cur_obj_play_sound_2(SOUND_GENERAL_COIN_DROP);
-#endif
     if (cur_obj_wait_then_blink(400, 20))
         obj_mark_for_deletion(o);
     bhv_coin_sparkles_init();
@@ -184,23 +177,17 @@ void bhv_coin_formation_loop(void) {
     s32 bitIndex;
     switch (o->oAction) {
         case 0:
-#ifndef NODRAWINGDISTANCE
-            if (o->oDistanceToMario < 2000.0f) {
-#endif
+            if (o->oDistanceToMario < 20 * configDrawDistance) {
                 for (bitIndex = 0; bitIndex < 8; bitIndex++) {
                     if (!(o->oCoinUnkF4 & (1 << bitIndex)))
                         spawn_coin_in_formation(bitIndex, o->oBehParams2ndByte);
                 }
                 o->oAction++;
-#ifndef NODRAWINGDISTANCE
             }
-#endif
             break;
         case 1:
-#ifndef NODRAWINGDISTANCE
-            if (o->oDistanceToMario > 2100.0f)
+            if (o->oDistanceToMario > 21 * configDrawDistance)
                 o->oAction++;
-#endif
             break;
         case 2:
             o->oAction = 0;

@@ -622,7 +622,7 @@ struct ObjView *make_view(const char *name, s32 flags, s32 a2, s32 ulx, s32 uly,
     }
 
     newView->unk78 = 0;
-    newView->unk38 = a2;
+    newView->curAnim = a2;
 
     newView->clipping.x = 30.0f;
     newView->clipping.y = 5000.0f;
@@ -671,7 +671,7 @@ struct ObjWeight *make_weight(UNUSED s32 a0, s32 id, struct ObjVertex *vtx, f32 
     struct ObjWeight *newWeight = (struct ObjWeight *) make_object(OBJ_TYPE_WEIGHTS);
 
     newWeight->id = id;
-    newWeight->unk38 = weight;
+    newWeight->curAnim = weight;
     newWeight->unk3C = vtx;
 
     return newWeight;

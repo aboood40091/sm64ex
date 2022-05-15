@@ -9,6 +9,15 @@
 #include "game/area.h"
 #include "geo_layout.h"
 
+#include "pc/gfx/gfx_pc.h"
+
+#ifdef GFX_SEPARATE_PROJECTIONS
+extern u32 gCurGraphNodeSwitchUID[];
+extern s16 gCurGraphNodeSwitchIndex[];
+extern u32 gCurGraphNodeSwitchCount;
+extern u32 gCurGraphNodeUID;
+#endif
+
 // unused Mtx(s)
 s16 identityMtx[4][4] = { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 1 } };
 s16 zeroMtx[4][4] = { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } };
@@ -29,6 +38,13 @@ void init_scene_graph_node_links(struct GraphNode *graphNode, s32 type) {
     graphNode->next = graphNode;
     graphNode->parent = NULL;
     graphNode->children = NULL;
+#ifdef GFX_SEPARATE_PROJECTIONS
+    if ((gCurGraphNodeSwitchCount > 0) && (gCurGraphNodeSwitchIndex[gCurGraphNodeSwitchCount - 1] == gCurGraphNodeIndex)) {
+        gCurGraphNodeUID = gCurGraphNodeSwitchUID[gCurGraphNodeSwitchCount - 1];
+    }
+
+    graphNode->uid = gCurGraphNodeUID++;
+#endif
 }
 
 /**
@@ -314,12 +330,12 @@ struct GraphNodeObject *init_graph_node_object(struct AllocOnlyPool *pool,
         vec3s_copy(graphNode->angle, angle);
         graphNode->sharedChild = sharedChild;
         graphNode->throwMatrix = NULL;
-        graphNode->unk38.animID = 0;
-        graphNode->unk38.curAnim = NULL;
-        graphNode->unk38.animFrame = 0;
-        graphNode->unk38.animFrameAccelAssist = 0;
-        graphNode->unk38.animAccel = 0x10000;
-        graphNode->unk38.animTimer = 0;
+        graphNode->curAnim.animID = 0;
+        graphNode->curAnim.curAnim = NULL;
+        graphNode->curAnim.animFrame = 0;
+        graphNode->curAnim.animFrameAccelAssist = 0;
+        graphNode->curAnim.animAccel = 0x10000;
+        graphNode->curAnim.animTimer = 0;
         graphNode->node.flags |= GRAPH_RENDER_HAS_ANIMATION;
     }
 
@@ -698,7 +714,7 @@ void geo_obj_init(struct GraphNodeObject *graphNode, void *sharedChild, Vec3f po
     graphNode->sharedChild = sharedChild;
     graphNode->unk4C = 0;
     graphNode->throwMatrix = NULL;
-    graphNode->unk38.curAnim = NULL;
+    graphNode->curAnim.curAnim = NULL;
 
     graphNode->node.flags |= GRAPH_RENDER_ACTIVE;
     graphNode->node.flags &= ~GRAPH_RENDER_INVISIBLE;
@@ -722,7 +738,7 @@ void geo_obj_init_spawninfo(struct GraphNodeObject *graphNode, struct SpawnInfo 
     graphNode->sharedChild = spawn->unk18;
     graphNode->unk4C = spawn;
     graphNode->throwMatrix = NULL;
-    graphNode->unk38.curAnim = 0;
+    graphNode->curAnim.curAnim = 0;
 
     graphNode->node.flags |= GRAPH_RENDER_ACTIVE;
     graphNode->node.flags &= ~GRAPH_RENDER_INVISIBLE;
@@ -737,11 +753,11 @@ void geo_obj_init_animation(struct GraphNodeObject *graphNode, struct Animation 
     struct Animation **animSegmented = segmented_to_virtual(animPtrAddr);
     struct Animation *anim = segmented_to_virtual(*animSegmented);
 
-    if (graphNode->unk38.curAnim != anim) {
-        graphNode->unk38.curAnim = anim;
-        graphNode->unk38.animFrame = anim->unk04 + ((anim->flags & ANIM_FLAG_FORWARD) ? 1 : -1);
-        graphNode->unk38.animAccel = 0;
-        graphNode->unk38.animYTrans = 0;
+    if (graphNode->curAnim.curAnim != anim) {
+        graphNode->curAnim.curAnim = anim;
+        graphNode->curAnim.animFrame = anim->unk04 + ((anim->flags & ANIM_FLAG_FORWARD) ? 1 : -1);
+        graphNode->curAnim.animAccel = 0;
+        graphNode->curAnim.animYTrans = 0;
     }
 }
 
@@ -752,15 +768,15 @@ void geo_obj_init_animation_accel(struct GraphNodeObject *graphNode, struct Anim
     struct Animation **animSegmented = segmented_to_virtual(animPtrAddr);
     struct Animation *anim = segmented_to_virtual(*animSegmented);
 
-    if (graphNode->unk38.curAnim != anim) {
-        graphNode->unk38.curAnim = anim;
-        graphNode->unk38.animYTrans = 0;
-        graphNode->unk38.animFrameAccelAssist =
+    if (graphNode->curAnim.curAnim != anim) {
+        graphNode->curAnim.curAnim = anim;
+        graphNode->curAnim.animYTrans = 0;
+        graphNode->curAnim.animFrameAccelAssist =
             (anim->unk04 << 16) + ((anim->flags & ANIM_FLAG_FORWARD) ? animAccel : -animAccel);
-        graphNode->unk38.animFrame = graphNode->unk38.animFrameAccelAssist >> 16;
+        graphNode->curAnim.animFrame = graphNode->curAnim.animFrameAccelAssist >> 16;
     }
 
-    graphNode->unk38.animAccel = animAccel;
+    graphNode->curAnim.animAccel = animAccel;
 }
 
 /**
@@ -849,7 +865,7 @@ s16 geo_update_animation_frame(struct GraphNodeObject_sub *obj, s32 *accelAssist
  * animations without lateral translation.
  */
 void geo_retreive_animation_translation(struct GraphNodeObject *obj, Vec3f position) {
-    struct Animation *animation = obj->unk38.curAnim;
+    struct Animation *animation = obj->curAnim.curAnim;
     u16 *attribute;
     s16 *values;
     s16 frame;
@@ -858,7 +874,7 @@ void geo_retreive_animation_translation(struct GraphNodeObject *obj, Vec3f posit
         attribute = segmented_to_virtual((void *) animation->index);
         values = segmented_to_virtual((void *) animation->values);
 
-        frame = obj->unk38.animFrame;
+        frame = obj->curAnim.animFrame;
 
         if (frame < 0) {
             frame = 0;

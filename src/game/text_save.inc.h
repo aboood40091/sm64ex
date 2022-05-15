@@ -6,7 +6,7 @@
 #include "pc/platform.h"
 #include "pc/fs/fs.h"
 
-#define FILENAME_FORMAT "%s/sm64_save_file_%d.sav"
+#define FILENAME_FORMAT "%s/render96_save_file_%d.sav"
 #define NUM_COURSES 15
 #define NUM_BONUS_COURSES 10
 #define NUM_FLAGS 21
@@ -81,7 +81,7 @@ static s32 write_text_save(s32 fileIndex) {
     struct MainMenuSaveData *menudata;
     char filename[SYS_MAX_PATH] = { 0 };
     char value[64];
-    u32 i, bit, flags, coins, stars, starFlags;
+    u32 i, bit, flags, coins, stars, starFlags, cannonFlag;
 
     if (snprintf(filename, sizeof(filename), FILENAME_FORMAT, fs_writepath, fileIndex) < 0)
         return -1;
@@ -121,7 +121,7 @@ static s32 write_text_save(s32 fileIndex) {
     fprintf(file, "\n[flags]\n");
     for (i = 1; i < NUM_FLAGS; i++) {
         if (strcmp(sav_flags[i], "")) {
-            flags = save_file_get_flags();
+            flags = gSaveBuffer.files[fileIndex][0].flags;
             flags = (flags & (1 << i));     // Get 'star' flag bit
             flags = (flags) ? 1 : 0;
 
@@ -133,9 +133,10 @@ static s32 write_text_save(s32 fileIndex) {
     for (i = 0; i < NUM_COURSES; i++) {
         stars = save_file_get_star_flags(fileIndex, i);
         coins = save_file_get_course_coin_score(fileIndex, i);
+        cannonFlag = save_file_get_cannon_flags(fileIndex, i);
         starFlags = int_to_bin(stars);      // 63 -> 111111
             
-        fprintf(file, "%s = \"%d, %07d\"\n", sav_courses[i], coins, starFlags);
+        fprintf(file, "%s = \"%d, %07d, %d\"\n", sav_courses[i], coins, starFlags,cannonFlag);
     }
 
     fprintf(file, "\n[bonus]\n");
@@ -164,7 +165,7 @@ static s32 write_text_save(s32 fileIndex) {
 
     fprintf(file, "\n[cap]\n");
     for (i = 0; i < NUM_CAP_ON; i++) {
-        flags = save_file_get_flags();
+        flags = gSaveBuffer.files[fileIndex][0].flags;
         bit = (1 << (i+16));        // Determine current flag
         flags = (flags & bit);      // Get 'cap' flag bit
         flags = (flags) ? 1 : 0;
@@ -173,6 +174,16 @@ static s32 write_text_save(s32 fileIndex) {
             break;
         }
     }
+
+    char keys[NUM_KEYS+1] = "";
+
+    fprintf(file, "\n[sgi]\n");
+    for (int id = 0; id < NUM_KEYS; id++) {
+        sprintf(&keys[strlen(keys)], "%d", save_file_taken_key(fileIndex, id));
+        //printf("id : %d, key: %d\n", id, keys[id] == '1');
+    }    
+
+    fprintf(file, "keys = \"%s\"\n", keys);
 
     savedata = &gSaveBuffer.files[fileIndex][0];
     switch(savedata->capLevel) {
@@ -188,6 +199,17 @@ static s32 write_text_save(s32 fileIndex) {
         default:
             break;
     }
+
+    fprintf(file, "character = \"%d\"\n", save_file_get_player_model(fileIndex));
+
+    char wario_coins[NUM_WARIO_COINS+1] = "";
+
+    for (int id = 0; id < NUM_WARIO_COINS; id++) {
+        sprintf(&wario_coins[strlen(wario_coins)], "%d", save_file_taken_wario_coin(fileIndex, id));
+    }    
+
+    fprintf(file, "coins = \"%s\"\n", wario_coins);
+
     if (savedata->capLevel) {
         fprintf(file, "area = %d\n", savedata->capArea);
     }
@@ -208,8 +230,12 @@ static s32 read_text_save(s32 fileIndex) {
     const char *value;
     ini_t *savedata;
     
-    u32 i, flag, coins, stars, starFlags;
+    u32 i, flag, coins, stars, starFlags, cannonFlag;
     u32 capArea;
+    u32 playerModel;
+
+    char keys[NUM_KEYS];
+    char wario_coins[NUM_WARIO_COINS];
     
     if (snprintf(filename, sizeof(filename), FILENAME_FORMAT, fs_writepath, fileIndex) < 0)
         return -1;
@@ -255,9 +281,10 @@ static s32 read_text_save(s32 fileIndex) {
     for (i = 0; i < NUM_COURSES; i++) {
         value = ini_get(savedata, "courses", sav_courses[i]);
         if (value) {
-            sscanf(value, "%d, %d", &coins, &stars); 
+            sscanf(value, "%d, %d, %d", &coins, &stars, &cannonFlag);
             starFlags = bin_to_int(stars);      // 111111 -> 63
-
+            cannonFlag <<= 7;
+            save_file_set_star_flags(fileIndex, i+1, cannonFlag);
             save_file_set_star_flags(fileIndex, i, starFlags);
             gSaveBuffer.files[fileIndex][0].courseCoinScores[i] = coins;
         }
@@ -321,7 +348,29 @@ static s32 read_text_save(s32 fileIndex) {
             gSaveBuffer.files[fileIndex][0].capArea = capArea; 
         }
     }
-    
+
+    value = ini_get(savedata, "sgi", "keys");
+    if (value) {
+        sscanf(value, "%s", keys);
+        for(i = 0; i < NUM_KEYS; i++){
+            gSaveBuffer.files[fileIndex][0].courseKeys[i] = (keys[i] == '1');
+        }
+    }
+
+    value = ini_get(savedata, "sgi", "character");
+    if (value) {
+        sscanf(value, "%d", &playerModel);
+        gSaveBuffer.files[fileIndex][0].currentPlayerModel = playerModel;
+    } 
+
+    value = ini_get(savedata, "sgi", "coins");
+    if (value) {
+        sscanf(value, "%s", wario_coins);
+        for(i = 0; i < NUM_WARIO_COINS; i++){
+            gSaveBuffer.files[fileIndex][0].courseWarioCoins[i] = (wario_coins[i] == '1');
+        }
+    }   
+
     // Good, file exists for gSaveBuffer
     gSaveBuffer.files[fileIndex][0].flags |= SAVE_FLAG_FILE_EXISTS;
 

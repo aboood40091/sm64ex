@@ -1,3 +1,5 @@
+#include "pc/configfile.h"
+
 
 /**
  * Behavior for bhvEnemyLakitu.
@@ -24,16 +26,14 @@ static struct ObjectHitbox sEnemyLakituHitbox = {
  * Wait for mario to approach, then spawn the cloud and become visible.
  */
 static void enemy_lakitu_act_uninitialized(void) {
-#ifndef NODRAWINGDISTANCE
-    if (o->oDistanceToMario < 2000.0f) {
-#endif
-        spawn_object_relative_with_scale(CLOUD_BP_LAKITU_CLOUD, 0, 0, 0, 2.0f, o, MODEL_MIST, bhvCloud);
+    if (o->oDistanceToMario < 20 * configDrawDistance) {
+
+        if (!configBillboard)
+            spawn_object_relative_with_scale(CLOUD_BP_LAKITU_CLOUD, 0, 0, 0, 2.0f, o, MODEL_MIST, bhvCloud);
 
         cur_obj_unhide();
         o->oAction = ENEMY_LAKITU_ACT_MAIN;
-#ifndef NODRAWINGDISTANCE
     }
-#endif
 }
 
 /**

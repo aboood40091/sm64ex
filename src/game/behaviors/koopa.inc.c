@@ -417,7 +417,7 @@ static void koopa_unshelled_act_dive(void) {
 
     if (o->oForwardVel != 0.0f) {
         if (o->oAction == KOOPA_UNSHELLED_ACT_LYING) {
-            o->oAnimState = 1;
+            o->oAnimState = KOOPA_ANIM_STATE_EYE_HURT;
             cur_obj_init_anim_extend(2);
         } else {
             cur_obj_init_anim_extend(5);
@@ -428,6 +428,8 @@ static void koopa_unshelled_act_dive(void) {
         cur_obj_extend_animation_if_at_end();
     } else if (cur_obj_init_anim_and_check_if_end(6)) {
         o->oAction = KOOPA_UNSHELLED_ACT_RUN;
+        if (o->oAnimState != KOOPA_ANIM_STATE_EYE_HURT)
+            o->oAnimState = KOOPA_ANIM_STATE_EYE_CLOSED;
     }
 
 end:;
@@ -473,7 +475,7 @@ s32 obj_begin_race(s32 noTimer) {
         cur_obj_play_sound_2(SOUND_GENERAL_RACE_GUN_SHOT);
 
         if (!noTimer) {
-            play_music(SEQ_PLAYER_LEVEL, SEQUENCE_ARGS(4, SEQ_LEVEL_SLIDE), 0);
+            r96_play_music(R96_EVENT_RACE, 0.1, 1.0, 2500);
 
             level_control_timer(TIMER_CONTROL_SHOW);
             level_control_timer(TIMER_CONTROL_START);
@@ -709,7 +711,8 @@ static void koopa_the_quick_act_after_race(void) {
 
     if (o->parentObj->oKoopaRaceEndpointUnk100 == 0) {
         if (cur_obj_can_mario_activate_textbox_2(400.0f, 400.0f)) {
-            stop_background_music(SEQUENCE_ARGS(4, SEQ_LEVEL_SLIDE));
+            r96_stop_music();
+            r96_cap_music_boss_fix();
 
             // Determine which text to display
 
@@ -811,7 +814,7 @@ void bhv_koopa_update(void) {
                 break;
         }
     } else {
-        o->oAnimState = 1;
+        o->oAnimState = KOOPA_ANIM_STATE_EYE_CLOSED;
     }
 
     obj_face_yaw_approach(o->oMoveAngleYaw, 0x600);
@@ -827,7 +830,8 @@ void bhv_koopa_race_endpoint_update(void) {
             level_control_timer(TIMER_CONTROL_STOP);
 
             if (!o->oKoopaRaceEndpointKoopaFinished) {
-                play_race_fanfare();
+                r96_play_jingle(R96_EVENT_RACE_FANFARE, 0.1, 1.0, 1500);
+                r96_music_fade(0, -1, 0.0, 2500, 1);
                 if (gMarioShotFromCannon) {
                     o->oKoopaRaceEndpointRaceStatus = -1;
                 } else {

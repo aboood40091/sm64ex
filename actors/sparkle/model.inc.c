@@ -9,38 +9,27 @@ static const Vtx sparkles_seg4_vertex_04027450[] = {
 };
 
 // 0x04027490
-ALIGNED8 static const u8 sparkles_seg4_texture_04027490[] = {
-#include "actors/sparkle/sparkle_0.rgba16.inc.c"
-};
+ALIGNED8 static const u8 sparkles_seg4_texture_04027490[] = "actors/sparkle/sparkle_0.rgba16";
 
 // 0x04027C90
-ALIGNED8 static const u8 sparkles_seg4_texture_04027C90[] = {
-#include "actors/sparkle/sparkle_1.rgba16.inc.c"
-};
+ALIGNED8 static const u8 sparkles_seg4_texture_04027C90[] = "actors/sparkle/sparkle_1.rgba16";
 
 // 0x04028490
-ALIGNED8 static const u8 sparkles_seg4_texture_04028490[] = {
-#include "actors/sparkle/sparkle_2.rgba16.inc.c"
-};
+ALIGNED8 static const u8 sparkles_seg4_texture_04028490[] = "actors/sparkle/sparkle_2.rgba16";
 
 // 0x04028C90
-ALIGNED8 static const u8 sparkles_seg4_texture_04028C90[] = {
-#include "actors/sparkle/sparkle_3.rgba16.inc.c"
-};
+ALIGNED8 static const u8 sparkles_seg4_texture_04028C90[] = "actors/sparkle/sparkle_3.rgba16";
 
 // 0x04029490
-ALIGNED8 static const u8 sparkles_seg4_texture_04029490[] = {
-#include "actors/sparkle/sparkle_4.rgba16.inc.c"
-};
+ALIGNED8 static const u8 sparkles_seg4_texture_04029490[] = "actors/sparkle/sparkle_4.rgba16";
 
 // 0x04029C90
-ALIGNED8 static const u8 sparkles_seg4_texture_04029C90[] = {
-#include "actors/sparkle/sparkle_5.rgba16.inc.c"
-};
+ALIGNED8 static const u8 sparkles_seg4_texture_04029C90[] = "actors/sparkle/sparkle_5.rgba16";
 
 // 0x0402A490 - 0x0402A4F8
 const Gfx sparkles_seg4_dl_0402A490[] = {
     gsDPSetCombineMode(G_CC_DECALRGBA, G_CC_DECALRGBA),
+    gsDPSetAlphaCompare(G_AC_THRESHOLD),
     gsSPTexture(0x8000, 0x8000, 0, G_TX_RENDERTILE, G_ON),
     gsDPSetTile(G_IM_FMT_RGBA, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE, 0, G_TX_WRAP | G_TX_NOMIRROR, G_TX_NOMASK, G_TX_NOLOD, G_TX_WRAP | G_TX_NOMIRROR, G_TX_NOMASK, G_TX_NOLOD),
     gsDPLoadSync(),

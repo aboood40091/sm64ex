@@ -171,10 +171,8 @@ void bhv_intro_lakitu_loop(void) {
                 obj_mark_for_deletion(gCurrentObject);
                 obj_mark_for_deletion(gCurrentObject->oIntroLakituCloud);
             }
-#ifndef VERSION_JP
             if (gCurrentObject->oTimer == 14)
                 cur_obj_play_sound_2(SOUND_ACTION_INTRO_UNK45F);
-#endif
             break;
         case 100:
             cur_obj_enable_rendering();

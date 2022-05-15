@@ -1,0 +1,37 @@
+{
+  "manifest": {
+    "langName": "Polski",
+    "langLogo": "none"
+  },
+  "options": {
+    "DYNOS_TEXT_DYNOS_MENU": "MENU DYNOS",
+    "DYNOS_TEXT_A": "([A]) >",
+    "DYNOS_TEXT_OPEN_LEFT": "[Z] DynOS",
+    "DYNOS_TEXT_CLOSE_LEFT": "[Z] Powr{00243}t",
+    "DYNOS_TEXT_OPTIONS_MENU": "OPCJE",
+    "DYNOS_TEXT_DISABLED": "Wylacz",
+    "DYNOS_TEXT_ENABLED": "Wlacz",
+    "DYNOS_TEXT_NONE": "BRAK",
+    "DYNOS_TEXT_DOT_DOT_DOT": "...",
+    "DYNOS_TEXT_OPEN_RIGHT": "[R] Opcje",
+    "DYNOS_TEXT_CLOSE_RIGHT": "[R] Powr{00243}t",
+
+    "dynos_restart_level": "Zrestartuj etap",
+    "dynos_exit_level": "Wyjdz z etapu",
+    "dynos_return_to_main_menu": "Wr{00243}c do menu gl{00243}wnego",
+    "dynos_warp_to_level_submenu": "Przenies do etapu",
+    "dynos_warp_to_level_submenu_title": "PRZENIES DO ETAPU",
+    "dynos_warp_level": "Wyb{00243}r etapu",
+    "dynos_warp_act": "Wyb{00243}r Gwiazdy",
+    "dynos_warp_to_level": "Przenies",
+
+    "dynos_warp_to_castle_submenu": "Przenies do zamku",
+    "dynos_warp_to_castle_submenu_title": "PRZENIES DO ZAMKU",
+    "dynos_warp_castle": "Wyjscie z etapu",
+    "dynos_warp_to_castle": "Przenies",
+
+    "dynos_model_loader_submenu": "Paczki modeli",
+    "dynos_model_loader_submenu_title": "PACZKI MODELI",
+    "dynos_packs_disable_all": "Wylacz wszystkie paczki"
+  }
+}

@@ -35,12 +35,13 @@
 
 #include "src/pc/controller/controller_keyboard.h"
 
-// TODO: figure out if this shit even works
-#ifdef VERSION_EU
-# define FRAMERATE 25
-#else
-# define FRAMERATE 30
+#ifdef TARGET_SWITCH
+// can't include <switch.h> or even <switch/services/applet.h> because
+// the basic libnx types have the same names as some of the types in this
+extern int appletGetOperationMode(void);
 #endif
+
+# define FRAMERATE 30
 
 static SDL_Window *wnd;
 static SDL_GLContext ctx = NULL;
@@ -53,7 +54,8 @@ static void (*kb_all_keys_up)(void) = NULL;
 // whether to use timer for frame control
 static bool use_timer = true;
 // time between consequtive game frames
-static const int frame_time = 1000 / FRAMERATE;
+static const int frame_time = 1000 / (2 * FRAMERATE);
+
 
 const SDL_Scancode windows_scancode_table[] = {
   /*  0                        1                            2                         3                            4                     5                            6                            7  */
@@ -139,10 +141,19 @@ int test_vsync(void) {
 }
 
 static inline void gfx_sdl_set_vsync(const bool enabled) {
+#ifdef TARGET_SWITCH
+    use_timer = false;
+        SDL_GL_SetSwapInterval(1);
+#else
     if (enabled) {
         // try to detect refresh rate
         SDL_GL_SetSwapInterval(1);
-        const int vblanks = test_vsync();
+        int vblanks = test_vsync();
+        if (vblanks & 1)
+            vblanks = 0; // not divisible by 60, fuck that
+        else
+            vblanks /= 2;
+
         if (vblanks) {
             printf("determined swap interval: %d\n", vblanks);
             SDL_GL_SetSwapInterval(vblanks);
@@ -155,6 +166,7 @@ static inline void gfx_sdl_set_vsync(const bool enabled) {
 
     use_timer = true;
     SDL_GL_SetSwapInterval(0);
+#endif
 }
 
 static void gfx_sdl_set_fullscreen(void) {
@@ -207,11 +219,25 @@ static void gfx_sdl_init(const char *window_title) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
     #endif
 
-    //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-    //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+
+    #ifdef TARGET_SWITCH
+    configWindow.fullscreen = false;
+    if (appletGetOperationMode() == 1) {
+        configWindow.w = 1920;
+        configWindow.h = 1080;
+    } else {
+        configWindow.w = 1280;
+        configWindow.h = 720;
+    }
+    int xpos = 0;
+    int ypos = 0;
+    #else
 
     int xpos = (configWindow.x == WAPI_WIN_CENTERPOS) ? SDL_WINDOWPOS_CENTERED : configWindow.x;
     int ypos = (configWindow.y == WAPI_WIN_CENTERPOS) ? SDL_WINDOWPOS_CENTERED : configWindow.y;
+    #endif
 
     wnd = SDL_CreateWindow(
         window_title,

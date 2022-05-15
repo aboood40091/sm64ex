@@ -4,7 +4,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+void gfx_dxgi_update_dimensions(void);
 void game_deinit(void);
 void game_exit(void);
 

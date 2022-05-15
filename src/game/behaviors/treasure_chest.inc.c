@@ -121,7 +121,8 @@ void bhv_treasure_chest_ship_loop(void) {
     switch (o->oAction) {
         case 0:
             if (o->oTreasureChestUnkF4 == 5) {
-                play_puzzle_jingle();
+                r96_play_jingle(R96_EVENT_SOLVE_PUZZLE, 0.1, 1.0, 1);
+                r96_music_fade(0, -1, 0.0, 1, 1);
                 fade_volume_scale(0, 127, 1000);
                 o->oAction = 1;
             }
@@ -154,7 +155,8 @@ void bhv_treasure_chest_jrb_loop(void) {
     switch (o->oAction) {
         case 0:
             if (o->oTreasureChestUnkF4 == 5) {
-                play_puzzle_jingle();
+                r96_play_jingle(R96_EVENT_SOLVE_PUZZLE, 0.1, 1.0, 1);
+                r96_music_fade(0, -1, 0.0, 1, 1);
                 o->oAction = 1;
             }
             break;
@@ -186,7 +188,8 @@ void bhv_treasure_chest_loop(void) {
     switch (o->oAction) {
         case 0:
             if (o->oTreasureChestUnkF4 == 5) {
-                play_puzzle_jingle();
+                r96_play_jingle(R96_EVENT_SOLVE_PUZZLE, 0.1, 1.0, 1);
+                r96_music_fade(0, -1, 0.0, 1, 1);
                 o->oAction = 1;
             }
             break;

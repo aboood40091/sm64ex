@@ -1,3 +1,5 @@
+#include "pc/gfx/gfx_rendering_api_config.h"
+#ifndef GFX_DISABLE_BAKED_SHADOWS
 // 0x07006ED8 - 0x07006EF0
 static const Lights1 castle_grounds_seg7_lights_07006ED8 = gdSPDefLights1(
     0x66, 0x66, 0x66,
@@ -953,3 +955,6 @@ const Gfx castle_grounds_seg7_dl_070095F0[] = {
     gsDPSetCombineMode(G_CC_SHADE, G_CC_SHADE),
     gsSPEndDisplayList(),
 };
+#else
+#include "model.inc.nobake.c"
+#endif 

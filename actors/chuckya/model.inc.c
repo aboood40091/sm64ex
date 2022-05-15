@@ -43,24 +43,16 @@ UNUSED static const Lights1 chuckya_lights_unused7 = gdSPDefLights1(
 );
 
 // 0x08006778
-ALIGNED8 static const u8 chuckya_seg8_texture_08006778[] = {
-#include "actors/chuckya/chuckya_eyes.rgba16.inc.c"
-};
+ALIGNED8 static const u8 chuckya_seg8_texture_08006778[] = "actors/chuckya/chuckya_eyes.rgba16";
 
 // 0x08007778
-ALIGNED8 static const u8 chuckya_seg8_texture_08007778[] = {
-#include "actors/chuckya/chuckya_hand_antenna.rgba16.inc.c"
-};
+ALIGNED8 static const u8 chuckya_seg8_texture_08007778[] = "actors/chuckya/chuckya_hand_antenna.rgba16";
 
 // 0x08007F78
-ALIGNED8 static const u8 chuckya_seg8_texture_08007F78[] = {
-#include "actors/chuckya/chuckya_body_arm_left_side.rgba16.inc.c"
-};
+ALIGNED8 static const u8 chuckya_seg8_texture_08007F78[] = "actors/chuckya/chuckya_body_arm_left_side.rgba16";
 
 // 0x08008F78
-ALIGNED8 static const u8 chuckya_seg8_texture_08008F78[] = {
-#include "actors/chuckya/chuckya_body_arm_right_side.rgba16.inc.c"
-};
+ALIGNED8 static const u8 chuckya_seg8_texture_08008F78[] = "actors/chuckya/chuckya_body_arm_right_side.rgba16";
 
 // 0x08009F78
 static const Vtx chuckya_seg8_vertex_08009F78[] = {
@@ -355,9 +347,9 @@ static const Vtx chuckya_seg8_vertex_0800A680[] = {
 
 // 0x0800A700 - 0x0800A758
 const Gfx chuckya_seg8_dl_0800A700[] = {
-    gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, chuckya_seg8_texture_08006778),
+    gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_32b, 1, chuckya_seg8_texture_08006778),
     gsDPLoadSync(),
-    gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 32 * 64 - 1, CALC_DXT(32, G_IM_SIZ_16b_BYTES)),
+    gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 32 * 64 - 1, CALC_DXT(32, G_IM_SIZ_32b_BYTES)),
     gsSPLight(&chuckya_seg8_lights_0800A668.l, 1),
     gsSPLight(&chuckya_seg8_lights_0800A668.a, 2),
     gsSPVertex(chuckya_seg8_vertex_0800A680, 8, 0),

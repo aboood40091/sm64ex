@@ -31,7 +31,7 @@
 /// Total number of dynamic `GdObj`s that can be created
 #define DYNOBJ_LIST_SIZE 3000
 /// Maximum number of verticies supported when adding vertices node to an `ObjShape`
-#define VTX_BUF_SIZE 3000
+#define VTX_BUF_SIZE 3249
 
 // types
 /// Information about a dynamically created `GdObj`
@@ -2565,7 +2565,7 @@ void d_set_parm_f(enum DParmF param, f32 val) {
         case OBJ_TYPE_GADGETS:
             switch (param) {
                 case PARM_F_RANGE_LEFT:
-                    ((struct ObjGadget *) sDynListCurObj)->unk38 = val;
+                    ((struct ObjGadget *) sDynListCurObj)->curAnim = val;
                     break;
                 case PARM_F_RANGE_RIGHT:
                     ((struct ObjGadget *) sDynListCurObj)->unk3C = val;

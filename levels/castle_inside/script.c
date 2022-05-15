@@ -87,6 +87,9 @@ static const LevelScript script_func_local_1[] = {
     WARP_NODE(/*id*/ 0x65, /*destLevel*/ LEVEL_CASTLE, /*destArea*/ 0x01, /*destNode*/ 0x65, /*flags*/ WARP_NO_CHECKPOINT),
     WARP_NODE(/*id*/ 0x66, /*destLevel*/ LEVEL_CASTLE, /*destArea*/ 0x01, /*destNode*/ 0x66, /*flags*/ WARP_NO_CHECKPOINT),
     WARP_NODE(/*id*/ 0x67, /*destLevel*/ LEVEL_CASTLE, /*destArea*/ 0x01, /*destNode*/ 0x67, /*flags*/ WARP_NO_CHECKPOINT),
+
+    OBJECT(/*model*/ MODEL_PLAYER_LOCK_SWITCH_PIPE, /*pos*/  1635,  614, -2483, /*angle*/ 0, -45, 0, /*behParam*/ 0x00FF0000, /*beh*/ bhvWarpPipe),
+    WARP_NODE(/*id*/ 0xFF, /*destLevel*/ LEVEL_FOURTH_FLOOR, /*destArea*/ 0x01, /*destNode*/ 0x0A, /*flags*/ WARP_NO_CHECKPOINT),
     RETURN(),
 };
 
@@ -225,8 +228,11 @@ const LevelScript level_castle_inside_entry[] = {
     LOAD_MIO0_TEXTURE(/*seg*/ 0x09, _inside_mio0SegmentRomStart, _inside_mio0SegmentRomEnd),
     LOAD_MIO0(        /*seg*/ 0x06, _group15_mio0SegmentRomStart, _group15_mio0SegmentRomEnd),
     LOAD_RAW(         /*seg*/ 0x0D, _group15_geoSegmentRomStart,  _group15_geoSegmentRomEnd),
+    LOAD_MIO0(        /*seg*/ 0x08, _common0_mio0SegmentRomStart, _common0_mio0SegmentRomEnd),
+    LOAD_RAW(         /*seg*/ 0x0F, _common0_geoSegmentRomStart, _common0_geoSegmentRomEnd),
     ALLOC_LEVEL_POOL(),
     MARIO(/*model*/ MODEL_MARIO, /*behParam*/ 0x00000001, /*beh*/ bhvMario),
+    JUMP_LINK(script_func_global_1),
     JUMP_LINK(script_func_global_16),
     LOAD_MODEL_FROM_GEO(MODEL_CASTLE_BOWSER_TRAP,        castle_geo_000F18),
     LOAD_MODEL_FROM_GEO(MODEL_CASTLE_WATER_LEVEL_PILLAR, castle_geo_001940),
@@ -265,7 +271,8 @@ const LevelScript level_castle_inside_entry[] = {
         TERRAIN(/*terrainData*/ inside_castle_seg7_area_1_collision),
         ROOMS(/*surfaceRooms*/ inside_castle_seg7_area_1_rooms),
         MACRO_OBJECTS(/*objList*/ inside_castle_seg7_area_1_macro_objs),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0001, /*seq*/ SEQ_LEVEL_INSIDE_CASTLE),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0001, /*seq*/ SEQ_LEVEL_INSIDE_CASTLE),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_inside_castle),
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_STONE),
     END_AREA(),
 
@@ -283,7 +290,8 @@ const LevelScript level_castle_inside_entry[] = {
         ROOMS(/*surfaceRooms*/ inside_castle_seg7_area_2_rooms),
         MACRO_OBJECTS(/*objList*/ inside_castle_seg7_area_2_macro_objs),
         INSTANT_WARP(/*index*/ 0, /*destArea*/ 2, /*displace*/ 0, -205, 410),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0001, /*seq*/ SEQ_LEVEL_INSIDE_CASTLE),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0001, /*seq*/ SEQ_LEVEL_INSIDE_CASTLE),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_inside_castle),
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_STONE),
     END_AREA(),
 
@@ -300,7 +308,8 @@ const LevelScript level_castle_inside_entry[] = {
         TERRAIN(/*terrainData*/ inside_castle_seg7_area_3_collision),
         ROOMS(/*surfaceRooms*/ inside_castle_seg7_area_3_rooms),
         MACRO_OBJECTS(/*objList*/ inside_castle_seg7_area_3_macro_objs),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0001, /*seq*/ SEQ_LEVEL_INSIDE_CASTLE),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0001, /*seq*/ SEQ_LEVEL_INSIDE_CASTLE),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_inside_castle),
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_STONE),
     END_AREA(),
 

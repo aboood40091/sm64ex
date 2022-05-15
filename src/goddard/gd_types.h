@@ -224,7 +224,7 @@ struct ObjParticle {
     /* 0x2C */ u8 pad2C[0x30-0x2C];
     /* 0x30 */ f32 unk30;
     /* 0x34 */ u8 pad34[0x38-0x34];
-    /* 0x38 */ struct GdVec3f unk38;
+    /* 0x38 */ struct GdVec3f curAnim;
     /* 0x44 */ f32 unk44; //not vec?
     /* 0x48 */ f32 unk48; //not vec?
     /* 0x4C */ u8 pad4C[0x50-0x4C];
@@ -291,7 +291,7 @@ struct ObjNet {
     /* 0x020 */ struct GdVec3f unk20;   // position? d_set_initpos? attached offset? dynamic? scratch?
     /* 0x02C */ u8  pad2c[0x34-0x2C];
     /* 0x034 */ s32 unk34;       // "dflags"?
-    /* 0x038 */ u32 unk38;      // some sort of id? from move_net
+    /* 0x038 */ u32 curAnim;      // some sort of id? from move_net
     /* 0x03C */ s32 unk3C;      // state flags? vertex info flags?
     /* 0x040 */ s32 unk40;      // gd "colour"
     /* 0x044 */ struct GdVec3f unk44;   // "force"
@@ -431,7 +431,7 @@ struct ObjWeight {
     /* 0x1C */ s32 id;   //id
     /* 0x20 */ struct GdVec3f vec20;    //based on func_80181894? maybe a GdPlaneF?
     /* 0x2C */ u8  pad2C[0x38-0x2c];
-    /* 0x38 */ f32 unk38; // weight (unit?)
+    /* 0x38 */ f32 curAnim; // weight (unit?)
     /* 0x3C */ struct ObjVertex* unk3C;
 }; /* sizeof = 0x40 */
 
@@ -451,7 +451,7 @@ struct ObjGadget {
     /* 0x28 */ f32 unk28;
     /* 0x2C */ u8 pad2C[4];
     /* 0x30 */ union ObjVarVal varval; //retype and rename varval30
-    /* 0x38 */ f32 unk38;   //range left?
+    /* 0x38 */ f32 curAnim;   //range left?
     /* 0x3C */ f32 unk3C;   //range right?
     /* 0x40 */ struct GdVec3f unk40;   // scale?
     /* 0x4C */ struct ObjGroup *unk4C; //gfroup->link->obj = valptr for var30 ?
@@ -490,7 +490,7 @@ struct ObjView {
     /* 0x2C */ struct ObjGroup *lights;     // only lights?
     /* 0x30 */ struct GdObj *pickedObj; // selected with cursor (`update_view`)
     /* 0x34 */ enum GdViewFlags flags;
-    /* 0x38 */ s32 unk38; // enum? if 1 use guPerspective (see `drawscene`)
+    /* 0x38 */ s32 curAnim; // enum? if 1 use guPerspective (see `drawscene`)
     /* 0x3C */ struct GdVec3f upperLeft; // position vec?
     /* 0x48 */ f32 unk48; // what are these? are they another vec?
     /* 0x4C */ f32 unk4C;
@@ -599,7 +599,7 @@ struct ObjLight {
     /* 0x2C */ s32 flags;
     /* 0x30 */ f32 unk30;       // color (5C) = Kd (50) * 30
     /* 0x34 */ u8  pad34[4];
-    /* 0x38 */ f32 unk38; // calculated diffuse theta (in degrees?)
+    /* 0x38 */ f32 curAnim; // calculated diffuse theta (in degrees?)
     /* 0x3C */ s32 unk3C;
     /* 0x40 */ s32 unk40;
     /* 0x44 */ u8  pad3[0x8];

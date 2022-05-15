@@ -29,7 +29,8 @@ void water_level_pillar_undrained(void) {
                     o->oAction++;
 
                     save_file_set_flags(SAVE_FLAG_MOAT_DRAINED);
-                    play_puzzle_jingle();
+                    r96_play_jingle(R96_EVENT_SOLVE_PUZZLE, 0.1, 1.0, 1);
+                    r96_music_fade(0, -1, 0.0, 1, 1);
                 }
             }
             break;

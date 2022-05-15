@@ -1,0 +1,37 @@
+{
+  "manifest": {
+    "langName": "Deutsch",
+    "langLogo": "none"
+  },
+  "options": {
+    "DYNOS_TEXT_DYNOS_MENU": "DYNOS MENÜ",
+    "DYNOS_TEXT_A": "([A]) >",
+    "DYNOS_TEXT_OPEN_LEFT": "[Z] DynOS",
+    "DYNOS_TEXT_CLOSE_LEFT": "[Z] Zurück",
+    "DYNOS_TEXT_OPTIONS_MENU": "OPTIONEN",
+    "DYNOS_TEXT_DISABLED": "Deaktiviert",
+    "DYNOS_TEXT_ENABLED": "Aktiviert",
+    "DYNOS_TEXT_NONE": "NICHTS",
+    "DYNOS_TEXT_DOT_DOT_DOT": "...",
+    "DYNOS_TEXT_OPEN_RIGHT": "[R] Optionen",
+    "DYNOS_TEXT_CLOSE_RIGHT": "[R] Zurück",
+
+    "dynos_restart_level": "Level Neustarten",
+    "dynos_exit_level": "Level Verlassen",
+    "dynos_return_to_main_menu": "Zum Hauptmenü Zurückkehren",
+    "dynos_warp_to_level_submenu": "Zu Level Wechseln",
+    "dynos_warp_to_level_submenu_title": "ZU LEVEL WECHSELN",
+    "dynos_warp_level": "Level Auswählen",
+    "dynos_warp_act": "Stern Auswählen",
+    "dynos_warp_to_level": "Wechseln",
+
+    "dynos_warp_to_castle_submenu": "Zum Schloss Wechseln",
+    "dynos_warp_to_castle_submenu_title": "ZUM SCHLOSS WECHSELN",
+    "dynos_warp_castle": "Level Verlassen",
+    "dynos_warp_to_castle": "Wechseln",
+
+    "dynos_model_loader_submenu": "Modellpakete",
+    "dynos_model_loader_submenu_title": "MODELLPAKETE",
+    "dynos_packs_disable_all": "Alle Pakete Deaktivieren"
+  }
+}

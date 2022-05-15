@@ -39,7 +39,9 @@ enum MarioGrabPosGSCId
     /*0x00*/ GRAB_POS_NULL,
     /*0x01*/ GRAB_POS_LIGHT_OBJ,
     /*0x02*/ GRAB_POS_HEAVY_OBJ,
-    /*0x03*/ GRAB_POS_BOWSER
+    /*0x03*/ GRAB_POS_BOWSER,
+    /*Wario Spin*/ GRAB_POS_LIGHT_OBJ_SPIN,
+    /*Motos*/ GRAB_POS_MOTOS_OBJ
 };
 
 #endif // MARIO_GEO_SWITCH_CASE_IDS_H

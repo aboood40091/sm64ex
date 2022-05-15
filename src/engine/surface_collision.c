@@ -5,9 +5,14 @@
 #include "game/level_update.h"
 #include "game/mario.h"
 #include "game/object_list_processor.h"
+#include "pc/cheats.h"
 #include "surface_collision.h"
 #include "surface_load.h"
 #include "math_util.h"
+#include "game/game_init.h"
+#include "game/mario_cheats.h"
+
+#pragma GCC diagnostic ignored "-Wtype-limits"
 
 /**************************************************
  *                      WALLS                     *
@@ -191,6 +196,10 @@ s32 find_wall_collisions(struct WallCollisionData *colData) {
 
     colData->numWalls = 0;
 
+    if (cheats_no_bounds(gMarioState)) {
+        return numCollisions;
+    }
+
     if (x <= -LEVEL_BOUNDARY_MAX || x >= LEVEL_BOUNDARY_MAX) {
         return numCollisions;
     }
@@ -200,8 +209,8 @@ s32 find_wall_collisions(struct WallCollisionData *colData) {
 
     // World (level) consists of a 16x16 grid. Find where the collision is on
     // the grid (round toward -inf)
-    cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & 0x0F;
-    cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & 0x0F;
+    cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & CELL_AMOUNT_MINUS_ONE;
+    cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & CELL_AMOUNT_MINUS_ONE;
 
     // Check for surfaces belonging to objects.
     node = gDynamicSurfacePartition[cellZ][cellX][SPATIAL_PARTITION_WALLS].next;
@@ -320,6 +329,10 @@ f32 find_ceil(f32 posX, f32 posY, f32 posZ, struct Surface **pceil) {
     z = (s16) posZ;
     *pceil = NULL;
 
+    if (cheats_no_bounds(gMarioState)) {
+        return height;
+    }
+
     if (x <= -LEVEL_BOUNDARY_MAX || x >= LEVEL_BOUNDARY_MAX) {
         return height;
     }
@@ -328,8 +341,8 @@ f32 find_ceil(f32 posX, f32 posY, f32 posZ, struct Surface **pceil) {
     }
 
     // Each level is split into cells to limit load, find the appropriate cell.
-    cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & 0xF;
-    cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & 0xF;
+    cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & CELL_AMOUNT_MINUS_ONE;
+    cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & CELL_AMOUNT_MINUS_ONE;
 
     // Check for surfaces belonging to objects.
     surfaceList = gDynamicSurfacePartition[cellZ][cellX][SPATIAL_PARTITION_CEILS].next;
@@ -394,26 +407,46 @@ f32 find_floor_height_and_data(f32 xPos, f32 yPos, f32 zPos, struct FloorGeometr
     return floorHeight;
 }
 
+u8 gInterpolatingSurfaces;
+
 /**
  * Iterate through the list of floors and find the first floor under a given point.
  */
 static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32 x, s32 y, s32 z, f32 *pheight) {
     register struct Surface *surf;
-    register s32 x1, z1, x2, z2, x3, z3;
+    register f32 x1, z1, x2, z2, x3, z3;
+
     f32 nx, ny, nz;
     f32 oo;
     f32 height;
     struct Surface *floor = NULL;
+    s32 interpolate;
 
     // Iterate through the list of floors until there are no more floors.
     while (surfaceNode != NULL) {
         surf = surfaceNode->surface;
         surfaceNode = surfaceNode->next;
 
+        interpolate = gInterpolatingSurfaces && surf->modifiedTimestamp == gGlobalTimer;
+
         x1 = surf->vertex1[0];
         z1 = surf->vertex1[2];
         x2 = surf->vertex2[0];
         z2 = surf->vertex2[2];
+        if (interpolate) {
+            f32 diff = (surf->prevVertex1[0] - x1) * (surf->prevVertex1[0] - x1);
+            diff += (surf->prevVertex1[1] - surf->vertex1[1]) * (surf->prevVertex1[1] - surf->vertex1[1]);
+            diff += (surf->prevVertex1[2] - z1) * (surf->prevVertex1[2] - z1);
+            //printf("%f\n", sqrtf(diff));
+            if (diff > 10000) {
+                interpolate = FALSE;
+            } else {
+                x1 = (surf->prevVertex1[0] + x1) / 2;
+                z1 = (surf->prevVertex1[2] + z1) / 2;
+                x2 = (surf->prevVertex2[0] + x2) / 2;
+                z2 = (surf->prevVertex2[2] + z2) / 2;
+            }
+        }
 
         // Check that the point is within the triangle bounds.
         if ((z1 - z) * (x2 - x1) - (x1 - x) * (z2 - z1) < 0) {
@@ -423,6 +456,10 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
         // To slightly save on computation time, set this later.
         x3 = surf->vertex3[0];
         z3 = surf->vertex3[2];
+        if (interpolate) {
+            x3 = (surf->prevVertex3[0] + x3) / 2;
+            z3 = (surf->prevVertex3[2] + z3) / 2;
+        }
 
         if ((z2 - z) * (x3 - x2) - (x2 - x) * (z3 - z2) < 0) {
             continue;
@@ -442,10 +479,30 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
             continue;
         }
 
-        nx = surf->normal.x;
-        ny = surf->normal.y;
-        nz = surf->normal.z;
-        oo = surf->originOffset;
+        if (interpolate) {
+            f32 y1, y2, y3;
+            f32 mag;
+            y1 = (surf->prevVertex1[1] + surf->vertex1[1]) / 2;
+            y2 = (surf->prevVertex2[1] + surf->vertex2[1]) / 2;
+            y3 = (surf->prevVertex3[1] + surf->vertex3[1]) / 2;
+            nx = (y2 - y1) * (z3 - z2) - (z2 - z1) * (y3 - y2);
+            ny = (z2 - z1) * (x3 - x2) - (x2 - x1) * (z3 - z2);
+            nz = (x2 - x1) * (y3 - y2) - (y2 - y1) * (x3 - x2);
+            mag = sqrtf(nx * nx + ny * ny + nz * nz);
+            if (mag < 0.0001) {
+                continue;
+            }
+            mag = (f32)(1.0 / mag);
+            nx *= mag;
+            ny *= mag;
+            nz *= mag;
+            oo = -(nx * x1 + ny * y1 + nz * z1);
+        } else {
+            nx = surf->normal.x;
+            ny = surf->normal.y;
+            nz = surf->normal.z;
+            oo = surf->originOffset;
+        }
 
         // If a wall, ignore it. Likely a remnant, should never occur.
         if (ny == 0.0f) {
@@ -460,6 +517,15 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
         }
 
         *pheight = height;
+        if (interpolate) {
+            static struct Surface s;
+            s.type = surf->type;
+            s.normal.x = nx;
+            s.normal.y = ny;
+            s.normal.z = nz;
+            s.originOffset = oo;
+            return &s;
+        }
         floor = surf;
         break;
     }
@@ -495,8 +561,8 @@ f32 unused_find_dynamic_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfl
     s16 z = (s16) zPos;
 
     // Each level is split into cells to limit load, find the appropriate cell.
-    s16 cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & 0x0F;
-    s16 cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & 0x0F;
+    s16 cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & CELL_AMOUNT_MINUS_ONE;
+    s16 cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & CELL_AMOUNT_MINUS_ONE;
 
     surfaceList = gDynamicSurfacePartition[cellZ][cellX][SPATIAL_PARTITION_FLOORS].next;
     floor = find_floor_from_list(surfaceList, x, y, z, &floorHeight);
@@ -535,8 +601,8 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
     }
 
     // Each level is split into cells to limit load, find the appropriate cell.
-    cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & 0xF;
-    cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & 0xF;
+    cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & CELL_AMOUNT_MINUS_ONE;
+    cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & CELL_AMOUNT_MINUS_ONE;
 
     // Check for surfaces belonging to objects.
     surfaceList = gDynamicSurfacePartition[cellZ][cellX][SPATIAL_PARTITION_FLOORS].next;
@@ -570,6 +636,27 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
     if (dynamicHeight > height) {
         floor = dynamicFloor;
         height = dynamicHeight;
+    }
+
+    // If out-of-bounds but NoBounds is enabled, place a fake death plane below Mario
+    if (!floor && !dynamicFloor && cheats_no_bounds(gMarioState)) {
+        static struct Surface sDeathPlane;
+        sDeathPlane = (struct Surface) {
+            .type = SURFACE_DEATH_PLANE,
+            .force = 0,
+            .flags = 0,
+            .room = 0,
+            .lowerY = -11000.f,
+            .upperY = -11000.f,
+            .vertex1 = { xPos + 1, -11000.f, zPos + 0 },
+            .vertex2 = { xPos + 0, -11000.f, zPos + 1 },
+            .vertex3 = { xPos - 1, -11000.f, zPos - 1 },
+            .normal = { 0.0f, 1.0f, 0.0f },
+            .originOffset = +11000.f,
+            .object = NULL,
+        };
+        floor = &sDeathPlane;
+        height = -11000.f;
     }
 
     *pfloor = floor;
@@ -690,22 +777,22 @@ void debug_surface_list_info(f32 xPos, f32 zPos) {
     s32 cellX = (xPos + LEVEL_BOUNDARY_MAX) / CELL_SIZE;
     s32 cellZ = (zPos + LEVEL_BOUNDARY_MAX) / CELL_SIZE;
 
-    list = gStaticSurfacePartition[cellZ & 0x0F][cellX & 0x0F][SPATIAL_PARTITION_FLOORS].next;
+    list = gStaticSurfacePartition[cellZ & CELL_AMOUNT_MINUS_ONE][cellX & CELL_AMOUNT_MINUS_ONE][SPATIAL_PARTITION_FLOORS].next;
     numFloors += surface_list_length(list);
 
-    list = gDynamicSurfacePartition[cellZ & 0x0F][cellX & 0x0F][SPATIAL_PARTITION_FLOORS].next;
+    list = gDynamicSurfacePartition[cellZ & CELL_AMOUNT_MINUS_ONE][cellX & CELL_AMOUNT_MINUS_ONE][SPATIAL_PARTITION_FLOORS].next;
     numFloors += surface_list_length(list);
 
-    list = gStaticSurfacePartition[cellZ & 0x0F][cellX & 0x0F][SPATIAL_PARTITION_WALLS].next;
+    list = gStaticSurfacePartition[cellZ & CELL_AMOUNT_MINUS_ONE][cellX & CELL_AMOUNT_MINUS_ONE][SPATIAL_PARTITION_WALLS].next;
     numWalls += surface_list_length(list);
 
-    list = gDynamicSurfacePartition[cellZ & 0x0F][cellX & 0x0F][SPATIAL_PARTITION_WALLS].next;
+    list = gDynamicSurfacePartition[cellZ & CELL_AMOUNT_MINUS_ONE][cellX & CELL_AMOUNT_MINUS_ONE][SPATIAL_PARTITION_WALLS].next;
     numWalls += surface_list_length(list);
 
-    list = gStaticSurfacePartition[cellZ & 0x0F][cellX & 0x0F][SPATIAL_PARTITION_CEILS].next;
+    list = gStaticSurfacePartition[cellZ & CELL_AMOUNT_MINUS_ONE][cellX & CELL_AMOUNT_MINUS_ONE][SPATIAL_PARTITION_CEILS].next;
     numCeils += surface_list_length(list);
 
-    list = gDynamicSurfacePartition[cellZ & 0x0F][cellX & 0x0F][SPATIAL_PARTITION_CEILS].next;
+    list = gDynamicSurfacePartition[cellZ & CELL_AMOUNT_MINUS_ONE][cellX & CELL_AMOUNT_MINUS_ONE][SPATIAL_PARTITION_CEILS].next;
     numCeils += surface_list_length(list);
 
     print_debug_top_down_mapinfo("area   %x", cellZ * 16 + cellX);
@@ -851,7 +938,11 @@ void find_surface_on_ray_list(struct SurfaceNode *list, Vec3f orig, Vec3f dir, f
         // Reject surface if out of vertical bounds
         if (list->surface->lowerY > top || list->surface->upperY < bottom)
             continue;
-        
+
+        // Reject no-cam collision surfaces
+        if (gCheckingSurfaceCollisionsForCamera && (list->surface->flags & SURFACE_FLAG_NO_CAM_COLLISION))
+            continue;
+
         // Check intersection between the ray and this surface
         if ((hit = ray_surface_intersect(orig, dir, dir_length, list->surface, chk_hit_pos, &length)) != 0)
         {            
@@ -919,12 +1010,15 @@ void find_surface_on_ray(Vec3f orig, Vec3f dir, struct Surface **hit_surface, Ve
 		find_surface_on_ray_cell(cellX, cellZ, orig, normalized_dir, dir_length, hit_surface, hit_pos, &max_length);
 		return;
 	}
+
+    // increase collision checking precision (normally 1)
+    f32 precision = gCheckingSurfaceCollisionsForCamera ? 3 : 1;
     
     // Get cells we cross using DDA
     if (absx(dir[0]) >= absx(dir[2]))
-        step = absx(dir[0]) / CELL_SIZE;
+        step = precision * absx(dir[0]) / CELL_SIZE;
     else
-        step = absx(dir[2]) / CELL_SIZE;
+        step = precision * absx(dir[2]) / CELL_SIZE;
     
     dx = dir[0] / step / CELL_SIZE;
     dz = dir[2] / step / CELL_SIZE;

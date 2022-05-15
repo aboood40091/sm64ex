@@ -4,8 +4,6 @@
 #include <PR/ultratypes.h>
 #include <PR/gbi.h>
 
-extern u8 seg2_course_name_table[];
-extern u8 seg2_act_name_table[];
 extern Gfx dl_rgba16_text_begin[];
 extern Gfx dl_rgba16_text_end[];
 extern Gfx dl_ia_text_begin[];
@@ -15,6 +13,7 @@ extern u8 texture_transition_circle_half[];
 extern u8 texture_transition_mario[];
 extern u8 texture_transition_bowser_half[];
 extern u8 texture_waterbox_water[];
+extern u8 texture_ssl_fog[];
 extern u8 texture_waterbox_mist[];
 extern u8 texture_waterbox_jrb_water[];
 extern u8 texture_waterbox_unknown_water[];
@@ -29,7 +28,7 @@ extern Gfx dl_shadow_9_verts[];
 extern Gfx dl_shadow_4_verts[];
 extern Gfx dl_shadow_end[];
 extern Gfx dl_skybox_begin[];
-extern Gfx dl_skybox_tile_tex_settings[];
+extern const Mtx matrix_identity;
 extern Gfx dl_skybox_end[];
 extern Gfx dl_waterbox_ia16_begin[];
 extern Gfx dl_waterbox_rgba16_begin[];

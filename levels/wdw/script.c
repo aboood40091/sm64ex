@@ -44,6 +44,7 @@ static const LevelScript script_func_local_1[] = {
     OBJECT(/*model*/ MODEL_WDW_ROTATING_PLATFORM,             /*pos*/   734, 3840,    84, /*angle*/ 0,   0, 0, /*behParam*/ 0x46010000, /*beh*/ bhvRotatingPlatform),
     OBJECT(/*model*/ MODEL_SKEETER,                           /*pos*/  2956,  288,  -468, /*angle*/ 0,   0, 0, /*behParam*/ 0x00000000, /*beh*/ bhvSkeeter),
     OBJECT(/*model*/ MODEL_SKEETER,                           /*pos*/   184,  384,   621, /*angle*/ 0,   0, 0, /*behParam*/ 0x00000000, /*beh*/ bhvSkeeter),
+    OBJECT(/*model*/ MODEL_MILK_BOTTLE,                       /*pos*/   -767,  2432,  -2908, /*angle*/ 0,   0, 0, /*behParam*/ 0x00000000, /*beh*/ bhvMilk),
     RETURN(),
 };
 
@@ -106,7 +107,8 @@ const LevelScript level_wdw_entry[] = {
         INSTANT_WARP(/*index*/ 1, /*destArea*/ 2, /*displace*/ 0, 0, 0),
         TERRAIN(/*terrainData*/ wdw_seg7_area_1_collision),
         MACRO_OBJECTS(/*objList*/ wdw_seg7_area_1_macro_objs),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0003, /*seq*/ SEQ_LEVEL_UNDERGROUND),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0003, /*seq*/ SEQ_LEVEL_UNDERGROUND),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_underground),     
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_STONE),
     END_AREA(),
 
@@ -118,7 +120,8 @@ const LevelScript level_wdw_entry[] = {
         INSTANT_WARP(/*index*/ 0, /*destArea*/ 1, /*displace*/ 0, 0, 0),
         TERRAIN(/*terrainData*/ wdw_seg7_area_2_collision),
         MACRO_OBJECTS(/*objList*/ wdw_seg7_area_2_macro_objs),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0003, /*seq*/ SEQ_LEVEL_UNDERGROUND),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0003, /*seq*/ SEQ_LEVEL_UNDERGROUND),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_underground),        
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_WATER),
     END_AREA(),
 

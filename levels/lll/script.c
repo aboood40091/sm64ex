@@ -83,7 +83,18 @@ static const LevelScript script_func_local_4[] = {
     OBJECT(/*model*/ MODEL_NONE,            /*pos*/  5423,    2, -1991, /*angle*/ 0, 315, 0, /*behParam*/ 0x00000000, /*beh*/ bhvBouncingFireball),
     OBJECT(/*model*/ MODEL_NONE,            /*pos*/  4921,    2, -1504, /*angle*/ 0,  90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvBouncingFireball),
     OBJECT_WITH_ACTS(/*model*/ MODEL_EXCLAMATION_BOX, /*pos*/  1050,  550,  6200, /*angle*/ 0,   0, 0, /*behParam*/ 0x00030000, /*beh*/ bhvExclamationBox, /*acts*/ ACT_5 | ACT_6),
-    RETURN(),
+    OBJECT_WITH_ACTS(/*model*/ MODEL_FRIENDLY_BLARGG, /*pos*/ -2070, 0, 6177, /*angle*/ 0,   0, 0, /*behParam*/ 0, /*beh*/ bhvFriendlyBlargg, /*acts*/ ACT_5 | ACT_6),
+    OBJECT(/*model*/ MODEL_BLARGG,            /*pos*/  -6766, 0,  3033, /*angle*/ 0,  90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvBlargg),
+    OBJECT(/*model*/ MODEL_BLARGG,            /*pos*/  -6018, 0,  -5512, /*angle*/ 0,  90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvBlargg),
+    OBJECT(/*model*/ MODEL_BLARGG,            /*pos*/  -2151, 0,  -5254, /*angle*/ 0,  90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvBlargg),
+    OBJECT(/*model*/ MODEL_BLARGG,            /*pos*/  2012, 0,  -3440, /*angle*/ 0,  90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvBlargg),
+    OBJECT(/*model*/ MODEL_BLARGG,            /*pos*/  7408, 0,  -4223, /*angle*/ 0,  90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvBlargg),
+    OBJECT(/*model*/ MODEL_BLARGG,            /*pos*/  6318, 0,  752, /*angle*/ 0,  90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvBlargg),
+    OBJECT(/*model*/ MODEL_BLARGG,            /*pos*/  5647, 0,  3426, /*angle*/ 0,  90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvBlargg),
+    OBJECT(/*model*/ MODEL_BLARGG,            /*pos*/  -5315, 0,  7493, /*angle*/ 0,  90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvBlargg),
+    OBJECT_WITH_ACTS(/*model*/ MODEL_MOTOS,         /*pos*/ 1070,  154,  6253, /*angle*/ 0,   0, 0, /*behParam*/ 0x00000000, /*beh*/ bhvMotos, ACT_1 | ACT_2 | ACT_3 | ACT_4),
+    
+	RETURN(),
 };
 
 static const LevelScript script_func_local_5[] = {
@@ -107,6 +118,7 @@ static const LevelScript script_func_local_6[] = {
     OBJECT(/*model*/ MODEL_CHECKERBOARD_PLATFORM,        /*pos*/  -764,    0,  1664, /*angle*/ 0, 180, 0, /*behParam*/ 0x08A50000, /*beh*/ bhvPlatformOnTrack),
     OBJECT(/*model*/ MODEL_CHECKERBOARD_PLATFORM,        /*pos*/   184,  980, -1366, /*angle*/ 0, 180, 0, /*behParam*/ 0x08A60000, /*beh*/ bhvPlatformOnTrack),
     OBJECT(/*model*/ MODEL_NONE,                         /*pos*/   -26,  103, -2649, /*angle*/ 0,   0, 0, /*behParam*/ 0x00000000, /*beh*/ bhvVolcanoSoundLoop),
+    OBJECT(/*model*/ MODEL_BETA_BOO_KEY, /*pos*/ 1133,  1152,  -63, /*angle*/ 0, 0, 0, /*behParam*/ 6, /*beh*/ bhvBetaBooKey),
     RETURN(),
 };
 
@@ -193,7 +205,8 @@ const LevelScript level_lll_entry[] = {
         TERRAIN(/*terrainData*/ lll_seg7_area_1_collision),
         MACRO_OBJECTS(/*objList*/ lll_seg7_area_1_macro_objs),
         SHOW_DIALOG(/*index*/ 0x00, DIALOG_097),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0000, /*seq*/ SEQ_LEVEL_HOT),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0000, /*seq*/ SEQ_LEVEL_HOT),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_hot),
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_STONE),
     END_AREA(),
 
@@ -206,7 +219,8 @@ const LevelScript level_lll_entry[] = {
         JUMP_LINK(script_func_local_7),
         TERRAIN(/*terrainData*/ lll_seg7_area_2_collision),
         MACRO_OBJECTS(/*objList*/ lll_seg7_area_2_macro_objs),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0004, /*seq*/ SEQ_LEVEL_HOT),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0004, /*seq*/ SEQ_LEVEL_HOT),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_hot),
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_STONE),
     END_AREA(),
 

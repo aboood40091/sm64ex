@@ -4,7 +4,6 @@
 #include "behavior_data.h"
 #include "engine/behavior_script.h"
 #include "engine/graph_node.h"
-#include "eu_translation.h"
 #include "game/area.h"
 #include "game/game_init.h"
 #include "game/ingame_menu.h"
@@ -17,8 +16,8 @@
 #include "game/segment7.h"
 #include "sm64.h"
 #include "star_select.h"
-#include "text_strings.h"
 #include "prevent_bss_reordering.h"
+#include "text/text-loader.h"
 
 /**
  * @file star_select.c
@@ -257,12 +256,8 @@ void print_course_number(void) {
  * Print act selector strings, some with special checks.
  */
 void print_act_selector_strings(void) {
-#ifdef VERSION_EU
-    unsigned char myScore[][10] = { {TEXT_MYSCORE}, {TEXT_MY_SCORE_FR}, {TEXT_MY_SCORE_DE} };
-#else
-    unsigned char myScore[] = { TEXT_MYSCORE };
-#endif
-    unsigned char starNumbers[] = { TEXT_ZERO };
+
+    unsigned char * starNumbers = get_key_string("TEXT_ZERO");
 
 #ifdef VERSION_EU
     u8 **levelNameTbl;
@@ -313,11 +308,7 @@ void print_act_selector_strings(void) {
     gDPSetEnvColor(gDisplayListHead++, 0, 0, 0, 255);
     // Print the "MY SCORE" text if the coin score is more than 0
     if (save_file_get_course_coin_score(gCurrSaveFileNum - 1, gCurrCourseNum - 1) != 0) {
-#ifdef VERSION_EU
-        print_generic_string(95, 118, myScore[language]);
-#else
-        print_generic_string(102, 118, myScore);
-#endif
+        print_generic_string(102, 118, get_key_string("TEXT_MY_SCORE"));
     }
 
 #ifdef VERSION_EU
@@ -383,6 +374,10 @@ Gfx *geo_act_selector_strings(s16 callContext, UNUSED struct GraphNode *node) {
     return NULL;
 }
 
+s32 lvl_star_select() {
+    r96_play_menu_jingle(R96_EVENT_STAR_SELECT, 1.0, 1.0, 1500);
+}
+
 /**
  * Initiates act selector values before entering a main course.
  * Also load how much stars a course has, without counting the 100 coin star.
@@ -416,18 +411,10 @@ s32 lvl_init_act_selector_values_and_stars(UNUSED s32 arg, UNUSED s32 unused) {
 s32 lvl_update_obj_and_load_act_button_actions(UNUSED s32 arg, UNUSED s32 unused) {
     if (sActSelectorMenuTimer >= 11) {
         // If any of these buttons are pressed, play sound and go to course act
-#ifndef VERSION_EU
         if ((gPlayer3Controller->buttonPressed & A_BUTTON)
          || (gPlayer3Controller->buttonPressed & START_BUTTON)
          || (gPlayer3Controller->buttonPressed & B_BUTTON)) {
-#else
-        if ((gPlayer3Controller->buttonPressed & (A_BUTTON | START_BUTTON | B_BUTTON | Z_TRIG))) {
-#endif
-#if defined(VERSION_JP) || defined(VERSION_SH)
-            play_sound(SOUND_MENU_STAR_SOUND, gDefaultSoundArgs);
-#else
-            play_sound(SOUND_MENU_STAR_SOUND_LETS_A_GO, gDefaultSoundArgs);
-#endif
+            r96_play_character_sound_no_arg(R96_MARIO_SOUND_LETS_A_GO, R96_LUIGI_SOUND_LETS_A_GO, R96_WARIO_SOUND_LETS_A_GO);
             if (sInitSelectedActNum >= sSelectedActIndex + 1) {
                 sLoadedActNum = sSelectedActIndex + 1;
             } else {

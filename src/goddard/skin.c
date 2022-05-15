@@ -48,8 +48,8 @@ void func_80191F10(struct ObjNet *net) {
 void reset_net(struct ObjNet *net) {
     struct ObjGroup *grp; // 24
 
-    // based on move_net strings, unk38 is the likely parameter
-    printf("reset_net %d\n", net->unk38);
+    // based on move_net strings, curAnim is the likely parameter
+    printf("reset_net %d\n", net->curAnim);
 
     net->unk14.x = net->unk20.x;
     net->unk14.y = net->unk20.y;
@@ -114,7 +114,7 @@ struct ObjNet *make_net(UNUSED s32 a0, struct ObjShape *shapedata, struct ObjGro
     net = (struct ObjNet *) make_object(OBJ_TYPE_NETS);
     gd_set_identity_mat4(&net->mat128);
     net->unk20.x = net->unk20.y = net->unk20.z = 0.0f;
-    net->unk38 = ++sNetCount;
+    net->curAnim = ++sNetCount;
     net->unk1AC.x = net->unk1AC.y = net->unk1AC.z = 1.0f;
     net->unk1A8 = shapedata;
     net->unk1C8 = a2;
@@ -427,7 +427,7 @@ void move_net(struct ObjNet *net) {
         case 6:
             break;
         default:
-            fatal_printf("move_net(%d(%d)): Undefined net type", net->unk38, net->netType);
+            fatal_printf("move_net(%d(%d)): Undefined net type", net->curAnim, net->netType);
     }
 }
 

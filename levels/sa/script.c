@@ -18,6 +18,7 @@
 static const LevelScript script_func_local_1[] = {
     OBJECT(/*model*/ MODEL_NONE, /*pos*/ 0, -1000, 0, /*angle*/ 0, 0, 0, /*behParam*/ 0x00000000, /*beh*/ bhvLargeFishGroup),
     OBJECT(/*model*/ MODEL_NONE, /*pos*/ 0, -1000, 0, /*angle*/ 0, 0, 0, /*behParam*/ 0x00020000, /*beh*/ bhvLargeFishGroup),
+    OBJECT(/*model*/ MODEL_BETA_BOO_KEY, /*pos*/ -318,  -160,  -38, /*angle*/ 0, 0, 0, /*behParam*/ 8, /*beh*/ bhvBetaBooKey),
     RETURN(),
 };
 
@@ -36,8 +37,11 @@ const LevelScript level_sa_entry[] = {
     LOAD_RAW(         /*seg*/ 0x0C, _group4_geoSegmentRomStart,  _group4_geoSegmentRomEnd),
     LOAD_MIO0(        /*seg*/ 0x06, _group13_mio0SegmentRomStart, _group13_mio0SegmentRomEnd),
     LOAD_RAW(         /*seg*/ 0x0D, _group13_geoSegmentRomStart,  _group13_geoSegmentRomEnd),
+    LOAD_MIO0(        /*seg*/ 0x08, _common0_mio0SegmentRomStart, _common0_mio0SegmentRomEnd),
+    LOAD_RAW(         /*seg*/ 0x0F, _common0_geoSegmentRomStart, _common0_geoSegmentRomEnd),
     ALLOC_LEVEL_POOL(),
     MARIO(/*model*/ MODEL_MARIO, /*behParam*/ 0x00000001, /*beh*/ bhvMario),
+    JUMP_LINK(script_func_global_1),
     JUMP_LINK(script_func_global_5),
     JUMP_LINK(script_func_global_14),
 
@@ -50,7 +54,8 @@ const LevelScript level_sa_entry[] = {
         JUMP_LINK(script_func_local_2),
         TERRAIN(/*terrainData*/ sa_seg7_collision),
         MACRO_OBJECTS(/*objList*/ sa_seg7_macro_objs),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0003, /*seq*/ (SEQ_LEVEL_WATER | SEQ_VARIATION)),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0003, /*seq*/ (SEQ_LEVEL_WATER | SEQ_VARIATION)),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_water),
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_WATER),
     END_AREA(),
 

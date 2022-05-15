@@ -31,54 +31,34 @@ UNUSED static const Lights1 king_bobomb_lights_unused5 = gdSPDefLights1(
 );
 
 // 0x05000078
-ALIGNED8 static const u8 king_bobomb_seg5_texture_05000078[] = {
-#include "actors/king_bobomb/bob-omb_buddy_left_side_unused.rgba16.inc.c"
-};
+ALIGNED8 static const u8 king_bobomb_seg5_texture_05000078[] = "actors/king_bobomb/bob-omb_buddy_left_side_unused.rgba16";
 
 // 0x05001078
-ALIGNED8 static const u8 king_bobomb_seg5_texture_05001078[] = {
-#include "actors/king_bobomb/bob-omb_buddy_right_side_unused.rgba16.inc.c"
-};
+ALIGNED8 static const u8 king_bobomb_seg5_texture_05001078[] = "actors/king_bobomb/bob-omb_buddy_right_side_unused.rgba16";
 
 // 0x05002078
-ALIGNED8 static const u8 king_bobomb_seg5_texture_05002078[] = {
-#include "actors/king_bobomb/king_bob-omb_arm.rgba16.inc.c"
-};
+ALIGNED8 static const u8 king_bobomb_seg5_texture_05002078[] = "actors/king_bobomb/king_bob-omb_arm.rgba16";
 
 // 0x05002878
-ALIGNED8 static const u8 king_bobomb_seg5_texture_05002878[] = {
-#include "actors/king_bobomb/king_bob-omb_body_unused.rgba16.inc.c"
-};
+ALIGNED8 static const u8 king_bobomb_seg5_texture_05002878[] = "actors/king_bobomb/king_bob-omb_body_unused.rgba16";
 
 // 0x05004878
-ALIGNED8 static const u8 king_bobomb_seg5_texture_05004878[] = {
-#include "actors/king_bobomb/king_bob-omb_eyes.rgba16.inc.c"
-};
+ALIGNED8 static const u8 king_bobomb_seg5_texture_05004878[] = "actors/king_bobomb/king_bob-omb_eyes.rgba16";
 
 // 0x05005878
-ALIGNED8 static const u8 king_bobomb_seg5_texture_05005878[] = {
-#include "actors/king_bobomb/king_bob-omb_hand.rgba16.inc.c"
-};
+ALIGNED8 static const u8 king_bobomb_seg5_texture_05005878[] = "actors/king_bobomb/king_bob-omb_hand.rgba16";
 
 // 0x05006078
-ALIGNED8 static const u8 king_bobomb_seg5_texture_05006078[] = {
-#include "actors/king_bobomb/king_bob-omb_crown_rim.rgba16.inc.c"
-};
+ALIGNED8 static const u8 king_bobomb_seg5_texture_05006078[] = "actors/king_bobomb/king_bob-omb_crown_rim.rgba16";
 
 // 0x05006478
-ALIGNED8 static const u8 king_bobomb_seg5_texture_05006478[] = {
-#include "actors/king_bobomb/bob-omb_buddy_body_unused.rgba16.inc.c"
-};
+ALIGNED8 static const u8 king_bobomb_seg5_texture_05006478[] = "actors/king_bobomb/bob-omb_buddy_body_unused.rgba16";
 
 // 0x05008478
-ALIGNED8 static const u8 king_bobomb_seg5_texture_05008478[] = {
-#include "actors/king_bobomb/king_bob-omb_left_side.rgba16.inc.c"
-};
+ALIGNED8 static const u8 king_bobomb_seg5_texture_05008478[] = "actors/king_bobomb/king_bob-omb_left_side.rgba16";
 
 // 0x05009478
-ALIGNED8 static const u8 king_bobomb_seg5_texture_05009478[] = {
-#include "actors/king_bobomb/king_bob-omb_right_side.rgba16.inc.c"
-};
+ALIGNED8 static const u8 king_bobomb_seg5_texture_05009478[] = "actors/king_bobomb/king_bob-omb_right_side.rgba16";
 
 // 0x0500A478
 static const Vtx king_bobomb_seg5_vertex_0500A478[] = {
@@ -529,9 +509,9 @@ static const Vtx king_bobomb_seg5_vertex_0500B218[] = {
 
 // 0x0500B278 - 0x0500B2D0
 const Gfx king_bobomb_seg5_dl_0500B278[] = {
-    gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, king_bobomb_seg5_texture_05004878),
+    gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_32b, 1, king_bobomb_seg5_texture_05004878),
     gsDPLoadSync(),
-    gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 32 * 64 - 1, CALC_DXT(32, G_IM_SIZ_16b_BYTES)),
+    gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 32 * 64 - 1, CALC_DXT(32, G_IM_SIZ_32b_BYTES)),
     gsSPLight(&king_bobomb_seg5_lights_0500B200.l, 1),
     gsSPLight(&king_bobomb_seg5_lights_0500B200.a, 2),
     gsSPVertex(king_bobomb_seg5_vertex_0500B218, 6, 0),

@@ -8,8 +8,10 @@
 
 #include "course_table.h"
 
-#define EEPROM_SIZE 0x200
+#define EEPROM_SIZE 0x1600
 #define NUM_SAVE_FILES 4
+#define NUM_KEYS 10
+#define NUM_WARIO_COINS 06
 
 struct SaveBlockSignature
 {
@@ -34,6 +36,10 @@ struct SaveFile
     u8 courseStars[COURSE_COUNT];
 
     u8 courseCoinScores[COURSE_STAGES_COUNT];
+    
+    s8 courseKeys[10];
+    s8 courseWarioCoins[6];
+    u8 currentPlayerModel;    
 
     struct SaveBlockSignature signature;
 };
@@ -51,7 +57,7 @@ struct MainMenuSaveData
     // the older the high score is. This is used for tie-breaking when displaying
     // on the high score screen.
     u32 coinScoreAges[NUM_SAVE_FILES];
-    u16 soundMode;
+    u16 soundMode;    
 
 #ifdef VERSION_EU
     u16 language;
@@ -61,7 +67,7 @@ struct MainMenuSaveData
 #endif
 
     // Pad to match the EEPROM size of 0x200 (10 bytes on JP/US, 8 bytes on EU)
-    u8 filler[EEPROM_SIZE / 2 - SUBTRAHEND - NUM_SAVE_FILES * (4 + sizeof(struct SaveFile))];
+    // u8 filler[EEPROM_SIZE / 2 - SUBTRAHEND - NUM_SAVE_FILES * (4 + sizeof(struct SaveFile))];
 
     struct SaveBlockSignature signature;
 };
@@ -72,6 +78,8 @@ struct SaveBuffer
     struct SaveFile files[NUM_SAVE_FILES][2];
     // The main menu data has two copies. If one is bad, the other is used as a backup.
     struct MainMenuSaveData menuData[2];
+
+    u8 filler[EEPROM_SIZE - ((NUM_SAVE_FILES*(sizeof(struct SaveFile))+sizeof(struct MainMenuSaveData))*2)];
 };
 
 extern u8 gLastCompletedCourseNum;
@@ -135,6 +143,7 @@ void save_file_set_flags(u32 flags);
 void save_file_clear_flags(u32 flags);
 u32 save_file_get_flags(void);
 u32 save_file_get_star_flags(s32 fileIndex, s32 courseIndex);
+u32 save_file_get_cannon_flags(s32 fileIndex, s32 courseIndex);
 void save_file_set_star_flags(s32 fileIndex, s32 courseIndex, u32 starFlags);
 s32 save_file_get_course_coin_score(s32 fileIndex, s32 courseIndex);
 s32 save_file_is_cannon_unlocked(void);
@@ -148,6 +157,17 @@ void save_file_move_cap_to_default_location(void);
 void disable_warp_checkpoint(void);
 void check_if_should_set_warp_checkpoint(struct WarpNode *warpNode);
 s32 check_warp_checkpoint(struct WarpNode *warpNode);
+
+s32 save_file_taken_key(s32 fileIndex, s32 keyId);
+void save_file_register_key(s32 fileIndex, s32 keyId);
+s32 save_file_get_keys(s32 fileIndex);
+
+s32 save_file_taken_wario_coin(s32 fileIndex, s32 coinId);
+void save_file_register_wario_coin(s32 fileIndex, s32 coinId);
+s32 save_file_get_wario_coins(s32 fileIndex);
+
+void save_file_update_player_model(s32 fileIndex, s32 character);
+s32 save_file_get_player_model(s32 fileIndex);
 
 #ifdef VERSION_EU
 enum EuLanguages {

@@ -9,9 +9,7 @@ static const Vtx smoke_seg5_vertex_05007280[] = {
 };
 
 // 0x050072C0
-ALIGNED8 static const u8 smoke_seg5_texture_050072C0[] = {
-#include "actors/smoke/smoke.ia16.inc.c"
-};
+ALIGNED8 static const u8 smoke_seg5_texture_050072C0[] = "actors/smoke/smoke.ia16";
 
 // 0x05007AC0 - 0x05007AF8
 const Gfx smoke_seg5_dl_05007AC0[] = {
@@ -27,6 +25,7 @@ const Gfx smoke_seg5_dl_05007AC0[] = {
 const Gfx smoke_seg5_dl_05007AF8[] = {
     gsDPPipeSync(),
     gsDPSetCombineMode(G_CC_MODULATEIA, G_CC_MODULATEIA),
+    gsDPSetAlphaCompare(G_AC_THRESHOLD),
     gsSPClearGeometryMode(G_LIGHTING),
     gsDPSetTile(G_IM_FMT_IA, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE, 0, G_TX_WRAP | G_TX_NOMIRROR, G_TX_NOMASK, G_TX_NOLOD, G_TX_WRAP | G_TX_NOMIRROR, G_TX_NOMASK, G_TX_NOLOD),
     gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_ON),

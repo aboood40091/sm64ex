@@ -251,6 +251,7 @@ static const Vtx sl_seg7_vertex_07008478[] = {
 // 0x07008528 - 0x070088B0
 static const Gfx sl_seg7_dl_07008528[] = {
     gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, snow_09000800),
+    gsDPSetAlphaCompare(G_AC_NONE),
     gsDPLoadSync(),
     gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 32 * 32 - 1, CALC_DXT(32, G_IM_SIZ_16b_BYTES)),
     gsSPLight(&sl_seg7_lights_07007910.l, 1),

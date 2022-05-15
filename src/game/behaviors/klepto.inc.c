@@ -31,7 +31,7 @@ static s32 klepto_set_and_check_if_anim_at_end(void) {
     } else if (o->oSoundStateID == 5) {
         if (cur_obj_set_anim_if_at_end(0)) {
             cur_obj_play_sound_2(SOUND_GENERAL_SWISH_WATER);
-            o->header.gfx.unk38.animFrame = 9;
+            o->header.gfx.curAnim.animFrame = 9;
         }
     } else {
         if (cur_obj_check_anim_frame(9)) {
@@ -82,7 +82,13 @@ void bhv_klepto_init(void) {
         o->oKleptoStartPosZ = o->oPosZ;
 
         if (save_file_get_flags() & SAVE_FLAG_CAP_ON_KLEPTO) {
-            o->oAnimState = KLEPTO_ANIM_STATE_HOLDING_CAP;
+			if(isLuigi())
+				o->oAnimState = KLEPTO_ANIM_STATE_HOLDING_CAP_LUIGI;
+	        if(isWario())
+		        o->oAnimState = KLEPTO_ANIM_STATE_HOLDING_CAP_WARIO;
+            if(!isLuigi() && !isWario())
+				o->oAnimState = KLEPTO_ANIM_STATE_HOLDING_CAP;
+
         } else {
             o->oAction = KLEPTO_ACT_WAIT_FOR_MARIO;
         }
@@ -242,7 +248,12 @@ static void klepto_act_dive_at_mario(void) {
                 && !(gMarioStates[0].action & (ACT_FLAG_SHORT_HITBOX | ACT_FLAG_BUTT_OR_STOMACH_SLIDE))
                 && o->oDistanceToMario < 200.0f && dy > 50.0f && dy < 90.0f) {
                 if (mario_lose_cap_to_enemy(1)) {
-                    o->oAnimState = KLEPTO_ANIM_STATE_HOLDING_CAP;
+					if(isLuigi())
+						o->oAnimState = KLEPTO_ANIM_STATE_HOLDING_CAP_LUIGI;
+                    else if(isWario())
+						o->oAnimState = KLEPTO_ANIM_STATE_HOLDING_CAP_WARIO;
+					else if(!isLuigi() && !isWario())
+						o->oAnimState = KLEPTO_ANIM_STATE_HOLDING_CAP;
                 }
             }
         }
@@ -359,9 +370,16 @@ void bhv_klepto_update(void) {
         if (obj_handle_attacks(&sKleptoHitbox, o->oAction, sKleptoAttackHandlers)) {
             cur_obj_play_sound_2(SOUND_OBJ_KLEPTO2);
 
-            if (o->oAnimState == KLEPTO_ANIM_STATE_HOLDING_CAP) {
+            if (o->oAnimState == KLEPTO_ANIM_STATE_HOLDING_CAP || o->oAnimState == KLEPTO_ANIM_STATE_HOLDING_CAP_LUIGI || o->oAnimState == KLEPTO_ANIM_STATE_HOLDING_CAP_WARIO) {
                 save_file_clear_flags(SAVE_FLAG_CAP_ON_KLEPTO);
-                spawn_object(o, MODEL_MARIOS_CAP, bhvNormalCap);
+				
+				if(isLuigi())
+					spawn_object(o, MODEL_LUIGIS_CAP, bhvNormalCap);
+				else if(isWario())
+					spawn_object(o, MODEL_WARIOS_CAP, bhvNormalCap);
+				else if(!isLuigi() && !isWario())
+					spawn_object(o, MODEL_MARIOS_CAP, bhvNormalCap);
+					
             } else if (o->oAnimState == KLEPTO_ANIM_STATE_HOLDING_STAR) {
                 spawn_default_star(-5550.0f, 300.0f, -930.0f);
             }

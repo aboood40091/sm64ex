@@ -175,28 +175,6 @@ void play_painting_eject_sound(void) {
     }
 }
 
-void play_infinite_stairs_music(void) {
-    u8 shouldPlay = FALSE;
-
-    /* Infinite stairs? */
-    if (gCurrLevelNum == LEVEL_CASTLE && gCurrAreaIndex == 2 && gMarioState->numStars < 70) {
-        if (gMarioState->floor != NULL && gMarioState->floor->room == 6) {
-            if (gMarioState->pos[2] < 2540.0f) {
-                shouldPlay = TRUE;
-            }
-        }
-    }
-
-    if (sPlayingInfiniteStairs ^ shouldPlay) {
-        sPlayingInfiniteStairs = shouldPlay;
-        if (shouldPlay) {
-            play_secondary_music(SEQ_EVENT_ENDLESS_STAIRS, 0, 255, 1000);
-        } else {
-            func_80321080(500);
-        }
-    }
-}
-
 void set_background_music(u16 a, u16 seqArgs, s16 fadeTimer) {
     if (gResetTimer == 0 && seqArgs != sCurrentMusic) {
         if (gCurrCreditsEntry != 0) {
@@ -206,7 +184,7 @@ void set_background_music(u16 a, u16 seqArgs, s16 fadeTimer) {
         }
 
         if (!(gShouldNotPlayCastleMusic && seqArgs == SEQ_LEVEL_INSIDE_CASTLE)) {
-            play_music(SEQ_PLAYER_LEVEL, seqArgs, fadeTimer);
+            //play_music(SEQ_PLAYER_LEVEL, seqArgs, fadeTimer);
             sCurrentMusic = seqArgs;
         }
     }

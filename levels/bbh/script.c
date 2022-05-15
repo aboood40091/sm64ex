@@ -24,6 +24,7 @@ static const LevelScript script_func_local_1[] = {
     OBJECT(/*model*/ MODEL_RED_FLAME,                  /*pos*/  -511,   358, -1330, /*angle*/ 0, 90, 0,  /*behParam*/ 0x00000000, /*beh*/ bhvFlame),
     OBJECT(/*model*/ MODEL_RED_FLAME,                  /*pos*/  1126,   358,  2212, /*angle*/ 0, 0, 0,   /*behParam*/ 0x00000000, /*beh*/ bhvFlame),
     OBJECT(/*model*/ MODEL_RED_FLAME,                  /*pos*/   205,   358,  2212, /*angle*/ 0, 0, 0,   /*behParam*/ 0x00000000, /*beh*/ bhvFlame),
+    OBJECT(/*model*/ MODEL_BETA_BOO_KEY, /*pos*/ -1595,  2560,  1657, /*angle*/ 0, 0, 0, /*behParam*/ 4, /*beh*/ bhvBetaBooKey),
     RETURN(),
 };
 
@@ -115,7 +116,8 @@ const LevelScript level_bbh_entry[] = {
         MACRO_OBJECTS(/*objList*/ bbh_seg7_macro_objs),
         ROOMS(/*surfaceRooms*/ bbh_seg7_rooms),
         SHOW_DIALOG(/*index*/ 0x00, DIALOG_098),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0006, /*seq*/ SEQ_LEVEL_SPOOKY),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0006, /*seq*/ SEQ_LEVEL_SPOOKY),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_spooky),
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_SPOOKY),
     END_AREA(),
 

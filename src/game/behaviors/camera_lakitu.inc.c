@@ -17,7 +17,9 @@ void bhv_camera_lakitu_init(void) {
             obj_mark_for_deletion(o);
         }
     } else {
-        spawn_object_relative_with_scale(CLOUD_BP_LAKITU_CLOUD, 0, 0, 0, 2.0f, o, MODEL_MIST, bhvCloud);
+
+        if (!configBillboard)
+            spawn_object_relative_with_scale(CLOUD_BP_LAKITU_CLOUD, 0, 0, 0, 2.0f, o, MODEL_MIST, bhvCloud);
     }
 }
 
@@ -53,7 +55,8 @@ static void camera_lakitu_intro_act_spawn_cloud(void) {
         o->oCameraLakituSpeed = 60.0f;
         o->oCameraLakituCircleRadius = 1000.0f;
 
-        spawn_object_relative_with_scale(CLOUD_BP_LAKITU_CLOUD, 0, 0, 0, 2.0f, o, MODEL_MIST, bhvCloud);
+        if (!configBillboard)
+            spawn_object_relative_with_scale(CLOUD_BP_LAKITU_CLOUD, 0, 0, 0, 2.0f, o, MODEL_MIST, bhvCloud);
     }
 }
 
@@ -98,12 +101,10 @@ static void camera_lakitu_intro_act_show_dialog(void) {
 
                 approach_f32_ptr(&o->oCameraLakituCircleRadius, 200.0f, 50.0f);
                 if (o->oDistanceToMario < 1000.0f) {
-#ifndef VERSION_JP
                     if (!o->oCameraLakituUnk104) {
-                        play_music(SEQ_PLAYER_LEVEL, SEQUENCE_ARGS(15, SEQ_EVENT_CUTSCENE_LAKITU), 0);
+                        r96_play_jingle(R96_EVENT_LAKITU_MESSAGE, 0.1, 1.0, 1500);
                         o->oCameraLakituUnk104 = TRUE;
                     }
-#endif
 
                     // Once within 1000 units, slow down
                     approach_f32_ptr(&o->oCameraLakituSpeed, 20.0f, 1.0f);

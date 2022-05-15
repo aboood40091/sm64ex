@@ -1,3 +1,5 @@
+#include "pc/gfx/gfx_rendering_api_config.h"
+#ifndef GFX_DISABLE_BAKED_SHADOWS
 // 0x0700A9E0 - 0x0700A9F8
 static const Lights1 bob_seg7_lights_0700A9E0 = gdSPDefLights1(
     0x33, 0x33, 0x33,
@@ -1105,3 +1107,6 @@ const Gfx bob_seg7_dl_0700DD18[] = {
     gsDPSetCombineMode(G_CC_SHADE, G_CC_SHADE),
     gsSPEndDisplayList(),
 };
+#else
+#include "model.inc.nobake.c"
+#endif

@@ -11,6 +11,6 @@ extern struct DynList dynlist_mario_eye_left[28];
 extern struct DynList dynlist_mario_eyebrow_right[16];
 extern struct DynList dynlist_mario_eyebrow_left[16];
 extern struct DynList dynlist_mario_mustache[16];
-extern struct DynList dynlist_mario_master[1026];
+extern struct DynList dynlist_mario_master[3278];
 
 #endif // GD_DYNLISTS_H

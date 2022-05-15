@@ -57,7 +57,8 @@ const LevelScript level_wmotr_entry[] = {
         JUMP_LINK(script_func_local_2),
         TERRAIN(/*terrainData*/ wmotr_seg7_collision),
         MACRO_OBJECTS(/*objList*/ wmotr_seg7_macro_objs),
-        SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0000, /*seq*/ SEQ_LEVEL_SLIDE),
+        //SET_BACKGROUND_MUSIC(/*settingsPreset*/ 0x0000, /*seq*/ SEQ_LEVEL_SLIDE),
+        //CALL(/*arg*/ 0, /*func*/ lvl_play_level_slide),        
         TERRAIN_TYPE(/*terrainType*/ TERRAIN_SNOW),
     END_AREA(),
 

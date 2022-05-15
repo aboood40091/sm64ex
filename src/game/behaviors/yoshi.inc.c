@@ -18,7 +18,7 @@ void bhv_yoshi_init(void) {
 
 void yoshi_walk_loop(void) {
     UNUSED s16 sp26;
-    s16 sp24 = o->header.gfx.unk38.animFrame;
+    s16 sp24 = o->header.gfx.curAnim.animFrame;
 
     o->oForwardVel = 10.0f;
     sp26 = object_step();
@@ -41,7 +41,7 @@ void yoshi_walk_loop(void) {
 
 void yoshi_idle_loop(void) {
     s16 chosenHome;
-    UNUSED s16 sp1C = o->header.gfx.unk38.animFrame;
+    UNUSED s16 sp1C = o->header.gfx.curAnim.animFrame;
 
     if (o->oTimer > 90) {
         chosenHome = random_float() * 3.99;
@@ -88,13 +88,14 @@ void yoshi_talk_loop(void) {
         }
     } else {
         cur_obj_init_animation(1);
-        play_puzzle_jingle();
+        r96_play_jingle(R96_EVENT_SOLVE_PUZZLE, 0.1, 1.0, 1);
+        r96_music_fade(0, -1, 0.0, 1, 1);
         o->oMoveAngleYaw = approach_s16_symmetric(o->oMoveAngleYaw, o->oAngleToMario, 0x500);
     }
 }
 
 void yoshi_walk_and_jump_off_roof_loop(void) {
-    s16 sp26 = o->header.gfx.unk38.animFrame;
+    s16 sp26 = o->header.gfx.curAnim.animFrame;
 
     o->oForwardVel = 10.0f;
     object_step();

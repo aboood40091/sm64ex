@@ -1,3 +1,5 @@
+#include "pc/configfile.h"
+
 
 /**
  * Behavior for bhvChainChomp, bhvChainChompChainPart, bhvWoodenPost, and bhvChainChompGate.
@@ -53,9 +55,7 @@ static void chain_chomp_act_uninitialized(void) {
     struct ChainSegment *segments;
     s32 i;
 
-#ifndef NODRAWINGDISTANCE
-    if (o->oDistanceToMario < 3000.0f) {
-#endif
+    if (o->oDistanceToMario < 30 * configDrawDistance) {
         segments = mem_pool_alloc(gObjectMemoryPool, 5 * sizeof(struct ChainSegment));
         if (segments != NULL) {
             // Each segment represents the offset of a chain part to the pivot.
@@ -83,9 +83,7 @@ static void chain_chomp_act_uninitialized(void) {
                 cur_obj_unhide();
             }
         }
-#ifndef NODRAWINGDISTANCE
     }
-#endif
 }
 
 /**
@@ -363,12 +361,10 @@ static void chain_chomp_act_move(void) {
     f32 maxDistToPivot;
 
     // Unload chain if mario is far enough
-#ifndef NODRAWINGDISTANCE
-    if (o->oChainChompReleaseStatus == CHAIN_CHOMP_NOT_RELEASED && o->oDistanceToMario > 4000.0f) {
+    if (o->oChainChompReleaseStatus == CHAIN_CHOMP_NOT_RELEASED && o->oDistanceToMario > 40 * configDrawDistance) {
         o->oAction = CHAIN_CHOMP_ACT_UNLOAD_CHAIN;
         o->oForwardVel = o->oVelY = 0.0f;
     } else {
-#endif
         cur_obj_update_floor_and_walls();
 
         switch (o->oChainChompReleaseStatus) {
@@ -452,9 +448,7 @@ static void chain_chomp_act_move(void) {
             o->oGravity = -4.0f;
             o->oChainChompTargetPitch = -0x3000;
         }
-#ifndef NODRAWINGDISTANCE
     }
-#endif
 }
 
 /**
@@ -497,7 +491,10 @@ void bhv_wooden_post_update(void) {
     if (!o->oWoodenPostMarioPounding) {
         if ((o->oWoodenPostMarioPounding = cur_obj_is_mario_ground_pounding_platform())) {
             cur_obj_play_sound_2(SOUND_GENERAL_POUND_WOOD_POST);
-            o->oWoodenPostSpeedY = -70.0f;
+            if (isWario())
+                o->oWoodenPostSpeedY = -210.0f;
+            else
+                o->oWoodenPostSpeedY = -70.0f;
         }
     } else if (approach_f32_ptr(&o->oWoodenPostSpeedY, 0.0f, 25.0f)) {
         // Stay still until mario is done ground pounding
@@ -507,7 +504,8 @@ void bhv_wooden_post_update(void) {
         // chomp
         o->oWoodenPostOffsetY = -190.0f;
         if (o->parentObj != o) {
-            play_puzzle_jingle();
+            r96_play_jingle(R96_EVENT_SOLVE_PUZZLE, 0.1, 1.0, 1);
+            r96_music_fade(0, -1, 0.0, 1, 1);
             o->parentObj->oChainChompReleaseStatus = CHAIN_CHOMP_RELEASED_TRIGGER_CUTSCENE;
             o->parentObj = o;
         }

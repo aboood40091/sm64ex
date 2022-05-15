@@ -682,6 +682,16 @@
 #define	G_AC_THRESHOLD		(1 << G_MDSFT_ALPHACOMPARE)
 #define	G_AC_DITHER		(3 << G_MDSFT_ALPHACOMPARE)
 
+#if defined (RAPI_GL) && !defined(TRANSPARENCY_GL)
+    #define	G_AC_COVERAGE		(0 << G_MDSFT_ALPHACOMPARE)
+#endif
+#if !defined (RAPI_GL)
+    #define	G_AC_COVERAGE		(0 << G_MDSFT_ALPHACOMPARE)
+#endif
+#if defined (RAPI_GL) && defined(TRANSPARENCY_GL)
+    #define	G_AC_COVERAGE		(5 << G_MDSFT_ALPHACOMPARE)
+#endif
+
 /* G_SETOTHERMODE_L gSetDepthSource */
 #define	G_ZS_PIXEL		(0 << G_MDSFT_ZSRCSEL)
 #define	G_ZS_PRIM		(1 << G_MDSFT_ZSRCSEL)

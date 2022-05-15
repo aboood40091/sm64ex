@@ -1,4 +1,7 @@
+#include "data/r96/system/r96_system.h"
+
 // bowser.c.inc
+
 
 void bowser_tail_anchor_act_0(void) {
     struct Object *bowser = o->parentObj;
@@ -54,8 +57,8 @@ void bhv_bowser_flame_spawn_loop(void) {
     f32 sp20 = sins(bowser->oMoveAngleYaw);
     s16 *sp1C = segmented_to_virtual(bowser_seg6_unkmoveshorts_060576FC);
     if (bowser->oSoundStateID == 6) {
-        sp30 = bowser->header.gfx.unk38.animFrame + 1.0f;
-        if (bowser->header.gfx.unk38.curAnim->unk08 == sp30)
+        sp30 = bowser->header.gfx.curAnim.animFrame + 1.0f;
+        if (bowser->header.gfx.curAnim.curAnim->unk08 == sp30)
             sp30 = 0;
         if (sp30 > 45 && sp30 < 85) {
             cur_obj_play_sound_1(SOUND_AIR_BOWSER_SPIT_FIRE);
@@ -75,14 +78,10 @@ void bhv_bowser_flame_spawn_loop(void) {
 void bhv_bowser_body_anchor_loop(void) {
     obj_copy_pos_and_angle(o, o->parentObj);
     if (o->parentObj->oAction == 4) {
-#ifndef VERSION_JP
         if (o->parentObj->oSubAction == 11)
             o->oInteractType = 0;
         else
             o->oInteractType = 0x800000;
-#else
-        o->oInteractType = 0x800000;
-#endif
     } else {
         o->oInteractType = 8;
         if (o->parentObj->oOpacity < 100)
@@ -202,7 +201,6 @@ void bowser_bitdw_act_controller(void) {
         o->oBowserUnk110++;
     } else {
         o->oBowserUnk110 = 0;
-#ifndef VERSION_JP
         if (!gCurrDemoInput) {
             if (rand < 0.1)
                 o->oAction = 3; // rare 1/10 chance
@@ -211,12 +209,6 @@ void bowser_bitdw_act_controller(void) {
         } else {
             o->oAction = 14; // ensure demo starts with action 14.
         }
-#else
-        if (rand < 0.1)
-            o->oAction = 3; // rare 1/10 chance
-        else
-            o->oAction = 14; // common
-#endif
     }
 }
 
@@ -284,7 +276,6 @@ void bowser_bits_act_controller(void) {
     }
 }
 
-#ifndef VERSION_JP
 void bowser_reset_fallen_off_stage(void) {
     if (o->oVelY < 0 && o->oPosY < (o->oHomeY - 300.0f)) {
         o->oPosX = o->oPosZ = 0;
@@ -293,7 +284,6 @@ void bowser_reset_fallen_off_stage(void) {
         o->oForwardVel = 0;
     }
 }
-#endif
 
 void bowser_act_unused_slow_walk(void) // unused?
 {
@@ -398,7 +388,7 @@ void bowser_act_spit_fire_into_sky(void) // only in sky
 {
     s32 frame;
     cur_obj_init_animation_with_sound(11);
-    frame = o->header.gfx.unk38.animFrame;
+    frame = o->header.gfx.curAnim.animFrame;
     if (frame > 24 && frame < 36) {
         cur_obj_play_sound_1(SOUND_AIR_BOWSER_SPIT_FIRE);
         if (frame == 35)
@@ -458,7 +448,7 @@ s32 bowser_land(void) {
         o->oVelY = 0;
         spawn_mist_particles_variable(0, 0, 60.0f);
         cur_obj_init_animation_with_sound(8);
-        o->header.gfx.unk38.animFrame = 0;
+        o->header.gfx.curAnim.animFrame = 0;
         cur_obj_start_cam_event(o, CAM_EVENT_BOWSER_JUMP);
         if (BITDW) {
             if (o->oDistanceToMario < 850.0f)
@@ -490,10 +480,8 @@ void bowser_act_jump(void) {
             o->oSubAction++;
         }
     } else if (o->oSubAction == 1) {
-#ifndef VERSION_JP
         if (o->oBehParams2ndByte == 2 && o->oBowserUnkF4 & 0x10000)
             bowser_reset_fallen_off_stage();
-#endif
         if (bowser_land()) {
             o->oBowserUnkF4 &= ~0x10000;
             o->oForwardVel = 0.0f;
@@ -727,15 +715,7 @@ void bowser_act_jump_onto_stage(void) {
                 if (BITFS)
                     o->oAction = 19;
             }
-#ifndef VERSION_JP
             bowser_reset_fallen_off_stage();
-#else
-            if (o->oVelY < 0.0f && o->oPosY < o->oHomeY - 300.0f) {
-                o->oPosZ = 0.0f, o->oPosX = o->oPosZ;
-                o->oPosY = o->oHomeY + 2000.0f;
-                o->oVelY = 0.0f;
-            }
-#endif
             break;
         case 3:
             if (cur_obj_check_if_near_animation_end()) {
@@ -836,8 +816,7 @@ s32 bowser_dead_not_bits_end(void) {
         if (cur_obj_update_dialog(2, 18, sBowserDefeatedDialogText[o->oBehParams2ndByte], 0)) {
             o->oBowserUnkF8++;
             cur_obj_play_sound_2(SOUND_GENERAL2_BOWSER_EXPLODE);
-            sequence_player_unlower(SEQ_PLAYER_LEVEL, 60);
-            sequence_player_fade_out(0, 1);
+            r96_music_fade(0, -1, 0.0, 1500, 0);
         }
     } else if (bowser_dead_twirl_into_trophy()) {
         bowser_dead_hide();
@@ -864,8 +843,7 @@ s32 bowser_dead_bits_end(void) {
         }
         if (cur_obj_update_dialog(2, 18, dialogID, 0)) {
             cur_obj_set_model(MODEL_BOWSER2);
-            sequence_player_unlower(SEQ_PLAYER_LEVEL, 60);
-            sequence_player_fade_out(0, 1);
+            r96_music_fade(0, -1, 0.0, 1500, 0);
             bowser_spawn_grand_star_key();
             o->oBowserUnkF8++;
         }

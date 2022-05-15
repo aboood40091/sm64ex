@@ -53,11 +53,7 @@ typedef struct {
     OSMesgQueue *unk0c;
     OSMesgQueue *unk10;
     s32 (*dma_func)(s32, u32, void *, size_t);
-#ifdef VERSION_EU
-    s32 (*edma_func)(OSPiHandle*, s32, u32, void *, size_t);
-#else
     u64 force_align;
-#endif
 } OSMgrArgs;
 
 s32 __osDisableInt(void);

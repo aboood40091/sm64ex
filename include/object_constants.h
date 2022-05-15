@@ -86,9 +86,7 @@
 #define OBJ_MOVE_ABOVE_LAVA            (1 << 11) // 0x0800
 #define OBJ_MOVE_LEAVING_WATER         (1 << 12) // 0x1000
 #define OBJ_MOVE_BOUNCE                (1 << 13) // 0x2000
-#ifndef VERSION_JP
 #define OBJ_MOVE_ABOVE_DEATH_BARRIER   (1 << 14) // 0x4000
-#endif
 
 #define OBJ_MOVE_MASK_ON_GROUND (OBJ_MOVE_LANDED | OBJ_MOVE_ON_GROUND)
 #define OBJ_MOVE_MASK_IN_WATER (\
@@ -468,6 +466,11 @@
     #define KOOPA_BP_KOOPA_THE_QUICK_THI (KOOPA_BP_KOOPA_THE_QUICK_BASE + KOOPA_THE_QUICK_THI_INDEX)
     #define KOOPA_BP_TINY 4
 
+    /* oAnimState */
+    #define KOOPA_ANIM_STATE_EYE_OPEN 0
+    #define KOOPA_ANIM_STATE_EYE_CLOSED 1
+    #define KOOPA_ANIM_STATE_EYE_HURT 2
+
 /* Pokey */
     /* oAction */
     #define POKEY_ACT_UNINITIALIZED 0
@@ -663,6 +666,8 @@
     #define UKIKI_ANIM_STATE_DEFAULT    0
     #define UKIKI_ANIM_STATE_EYE_CLOSED 1
     #define UKIKI_ANIM_STATE_HAT_ON     2
+    #define UKIKI_ANIM_STATE_HAT_ON_LUIGI 4
+    #define UKIKI_ANIM_STATE_HAT_ON_WARIO 5
 
     /* oUkikiHasHat */
     #define UKIKI_HAT_ON 1
@@ -879,6 +884,8 @@
     #define KLEPTO_ANIM_STATE_HOLDING_NOTHING 0
     #define KLEPTO_ANIM_STATE_HOLDING_CAP 1
     #define KLEPTO_ANIM_STATE_HOLDING_STAR 2
+    #define KLEPTO_ANIM_STATE_HOLDING_CAP_LUIGI 4
+    #define KLEPTO_ANIM_STATE_HOLDING_CAP_WARIO 5
 
 /* Bird */
     /* oAction */

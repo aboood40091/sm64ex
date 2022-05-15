@@ -1,5 +1,7 @@
 #include <ultra64.h>
 
+#include "pc/cheats.h"
+#include "mario_cheats.h"
 #include "sm64.h"
 #include "engine/math_util.h"
 #include "engine/surface_collision.h"
@@ -105,7 +107,9 @@ void mario_bonk_reflection(struct MarioState *m, u32 negateSpeed) {
 }
 
 u32 mario_update_quicksand(struct MarioState *m, f32 sinkingSpeed) {
-    if (m->action & ACT_FLAG_RIDING_SHELL) {
+    if (cheats_walk_on_hazards(m)) {
+        m->quicksandDepth = 0.0f;
+    } else if (m->action & ACT_FLAG_RIDING_SHELL) {
         m->quicksandDepth = 0.0f;
     } else {
         if (m->quicksandDepth < 1.1f) {
@@ -210,10 +214,6 @@ u32 mario_update_windy_ground(struct MarioState *m) {
 
         m->vel[0] += pushSpeed * sins(pushAngle);
         m->vel[2] += pushSpeed * coss(pushAngle);
-
-#if VERSION_JP
-        play_sound(SOUND_ENV_WIND2, m->marioObj->header.gfx.cameraToObject);
-#endif
         return 1;
     }
 
@@ -320,11 +320,12 @@ static s32 perform_ground_quarter_step(struct MarioState *m, Vec3f nextPos) {
 }
 
 s32 perform_ground_step(struct MarioState *m) {
-    s32 i;
+    s32 i, numSteps;
     u32 stepResult;
     Vec3f intendedPos;
 
-    for (i = 0; i < 4; i++) {
+    numSteps = 4 * cheats_speed_modifier(m);
+    for (i = 0; i < numSteps; i++) {
         intendedPos[0] = m->pos[0] + m->floor->normal.y * (m->vel[0] / 4.0f);
         intendedPos[2] = m->pos[2] + m->floor->normal.y * (m->vel[2] / 4.0f);
         intendedPos[1] = m->pos[1];
@@ -525,6 +526,11 @@ u32 should_strengthen_gravity_for_jump_ascent(struct MarioState *m) {
         return FALSE;
     }
 
+    // Always make a full wall jump when AutoWallKick is enabled
+    if (m->action == ACT_WALL_KICK_AIR && Cheats.EnableCheats && ((Cheats.AutoWallKick && !Cheats.ChaosMode) || Cheats.ChaosWallKicks)) {
+        return FALSE;
+    }
+
     if (!(m->input & INPUT_A_DOWN) && m->vel[1] > 20.0f) {
         return (m->action & ACT_FLAG_CONTROL_JUMP_HEIGHT) != 0;
     }
@@ -609,16 +615,19 @@ void apply_vertical_wind(struct MarioState *m) {
 
 s32 perform_air_step(struct MarioState *m, u32 stepArg) {
     Vec3f intendedPos;
-    s32 i;
+    s32 i, numSteps, hSteps, ySteps;
     s32 quarterStepResult;
     s32 stepResult = AIR_STEP_NONE;
 
     m->wall = NULL;
 
-    for (i = 0; i < 4; i++) {
-        intendedPos[0] = m->pos[0] + m->vel[0] / 4.0f;
-        intendedPos[1] = m->pos[1] + m->vel[1] / 4.0f;
-        intendedPos[2] = m->pos[2] + m->vel[2] / 4.0f;
+    hSteps = cheats_speed_modifier(m);
+    ySteps = cheats_jump_modifier(m);
+    numSteps = 4 * hSteps * ySteps;
+    for (i = 0; i < numSteps; i++) {
+        intendedPos[0] = m->pos[0] + m->vel[0] / (4 * ySteps);
+        intendedPos[1] = m->pos[1] + m->vel[1] / (4 * hSteps);
+        intendedPos[2] = m->pos[2] + m->vel[2] / (4 * ySteps);
 
         quarterStepResult = perform_air_quarter_step(m, intendedPos, stepArg);
 

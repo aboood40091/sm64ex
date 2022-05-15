@@ -24,7 +24,9 @@
 /* Global models that are loaded for every level */
 
 #define MODEL_MARIO                       0x01        // mario_geo
-#define MODEL_LUIGI                       0x02        // unused
+#define MODEL_LUIGI                       0x99       // unused
+#define MODEL_WARIO                       0xF5       // unused
+#define MODEL_PLAYER                      0x02
 
 /* Various static level geometry, the geo layout differs but terrain object presets treat them the same.*/
 
@@ -342,9 +344,11 @@
 #define MODEL_HEAVE_HO                    0x59        // heave_ho_geo
 
 // group 2
-#define MODEL_BLARGG                      0x54        // blargg_geo
+#define MODEL_BLARGG                      0x54		  // blargg_geo
+#define MODEL_FRIENDLY_BLARGG             0x58		  // friendly_blargg_geo
 #define MODEL_BULLY                       0x56        // bully_geo
 #define MODEL_BULLY_BOSS                  0x57        // bully_boss_geo
+#define MODEL_MOTOS                       0xE9        // motos_geo
 
 // group 3
 #define MODEL_WATER_BOMB                  0x54        // water_bomb_geo
@@ -385,12 +389,19 @@
 
 // group 9
 #define MODEL_BOO                         0x54        // boo_geo
-#define MODEL_BETA_BOO_KEY                   0x55        // small_key_geo
+#define MODEL_BETA_BOO_KEY                0x98        // small_key_geo
 #define MODEL_HAUNTED_CHAIR               0x56        // haunted_chair_geo
 #define MODEL_MAD_PIANO                   0x57        // mad_piano_geo
 #define MODEL_BOOKEND_PART                0x58        // bookend_part_geo
 #define MODEL_BOOKEND                     0x59        // bookend_geo
 #define MODEL_HAUNTED_CAGE                0x5A        // haunted_cage_geo
+#define MODEL_PLAYER_SWITCH_PIPE          0xE1
+#define MODEL_PLAYER_LOCK_SWITCH_PIPE     0xE2
+#define MODEL_PLAYER_LOCK_SWITCH_RED_PIPE 0xE3
+#define MODEL_PLAYER_LOCK_SWITCH_GREEN_LOCKED_PIPE      0xE4
+#define MODEL_PLAYER_LOCK_SWITCH_GREEN_UNLOCKED_PIPE    0xE5
+#define MODEL_PLAYER_LOCK_SWITCH_YELLOW_LOCKED_PIPE     0xE6
+#define MODEL_PLAYER_LOCK_SWITCH_YELLOW_UNLOCKED_PIPE   0xE7
 
 // group 10
 #define MODEL_BIRDS                       0x54        // birds_geo
@@ -469,10 +480,31 @@
 #define MODEL_BREAKABLE_BOX_SMALL         0x82        // breakable_box_small_geo
 #define MODEL_EXCLAMATION_BOX_OUTLINE     0x83        // exclamation_box_outline_geo
 #define MODEL_EXCLAMATION_POINT           0x84        // exclamation_point_seg8_dl_08025F08
+
 #define MODEL_MARIOS_WINGED_METAL_CAP     0x85        // marios_winged_metal_cap_geo
 #define MODEL_MARIOS_METAL_CAP            0x86        // marios_metal_cap_geo
 #define MODEL_MARIOS_WING_CAP             0x87        // marios_wing_cap_geo
 #define MODEL_MARIOS_CAP                  0x88        // marios_cap_geo
+
+#define MODEL_LUIGIS_CAP                  0x9A        // luigis_cap_geo
+#define MODEL_LUIGIS_METAL_CAP            0x9B        // luigis_metal_cap_geo
+#define MODEL_LUIGIS_WING_CAP             0x9C        // luigis_wing_cap_geo
+#define MODEL_LUIGIS_WINGED_METAL_CAP     0x9D        // luigis_winged_metal_cap_geo
+
+#define MODEL_WARIOS_CAP                  0xEA        // warios_cap_geo
+#define MODEL_WARIOS_METAL_CAP            0xEB        // warios_metal_cap_geo
+#define MODEL_WARIOS_WING_CAP             0xEC        // warios_wing_cap_geo
+#define MODEL_WARIOS_WINGED_METAL_CAP     0xEE        // warios_winged_metal_cap_geo
+
+#define MODEL_WARIO_COIN_PUMPKIN          0xEF
+#define MODEL_WARIO_COIN_HOUSE            0xF0
+#define MODEL_WARIO_COIN_TREE             0xF1
+#define MODEL_WARIO_COIN_KOOPA            0xF2
+#define MODEL_WARIO_COIN_LUNAR            0xF3
+#define MODEL_WARIO_COIN_MARIO            0xF4
+
+#define MODEL_MILK_BOTTLE                 0xF6
+
 #define MODEL_EXCLAMATION_BOX             0x89        // exclamation_box_geo
 #define MODEL_DIRT_ANIMATION              0x8A        // dirt_animation_geo
 #define MODEL_CARTOON_STAR                0x8B        // cartoon_star_geo
@@ -562,15 +594,24 @@
 #define MODEL_PEACH                       0xDE        // peach_geo
 #define MODEL_CHUCKYA                     0xDF        // chuckya_geo
 #define MODEL_WHITE_PUFF                  0xE0        // white_puff_geo
-#define MODEL_TRAJECTORY_MARKER_BALL          0xE1        // bowling_ball_track_geo - duplicate used in SSL Pyramid small sized and as a track ball
+#define MODEL_TRAJECTORY_MARKER_BALL      0xE1        // bowling_ball_track_geo - duplicate used in SSL Pyramid small sized and as a track ball
 
 // Menu Models (overwrites Level Geometry IDs)
 #define MODEL_MAIN_MENU_MARIO_SAVE_BUTTON         MODEL_LEVEL_GEOMETRY_03   // main_menu_geo_0001D0
+
+#define MODEL_MAIN_MENU_LUIGI_SAVE_BUTTON         MODEL_LEVEL_GEOMETRY_0E   // main_menu_geo_0001D0
+#define MODEL_MAIN_MENU_WARIO_SAVE_BUTTON         MODEL_LEVEL_GEOMETRY_0F   // main_menu_geo_0001D0
+
+
 #define MODEL_MAIN_MENU_RED_ERASE_BUTTON          MODEL_LEVEL_GEOMETRY_04   // main_menu_geo_000290
 #define MODEL_MAIN_MENU_BLUE_COPY_BUTTON          MODEL_LEVEL_GEOMETRY_05   // main_menu_geo_0002B8
 #define MODEL_MAIN_MENU_YELLOW_FILE_BUTTON        MODEL_LEVEL_GEOMETRY_06   // main_menu_geo_0002E0
 #define MODEL_MAIN_MENU_GREEN_SCORE_BUTTON        MODEL_LEVEL_GEOMETRY_07   // main_menu_geo_000308
 #define MODEL_MAIN_MENU_MARIO_SAVE_BUTTON_FADE    MODEL_LEVEL_GEOMETRY_08   // main_menu_geo_000200
+
+#define MODEL_MAIN_MENU_LUIGI_SAVE_BUTTON_FADE    MODEL_LEVEL_GEOMETRY_10   // main_menu_geo_0001D0
+#define MODEL_MAIN_MENU_WARIO_SAVE_BUTTON_FADE    MODEL_LEVEL_GEOMETRY_11   // main_menu_geo_0001D0
+
 #define MODEL_MAIN_MENU_MARIO_NEW_BUTTON          MODEL_LEVEL_GEOMETRY_09   // main_menu_geo_000230
 #define MODEL_MAIN_MENU_MARIO_NEW_BUTTON_FADE     MODEL_LEVEL_GEOMETRY_0A   // main_menu_geo_000260
 #define MODEL_MAIN_MENU_PURPLE_SOUND_BUTTON       MODEL_LEVEL_GEOMETRY_0B   // main_menu_geo_000330

@@ -137,7 +137,7 @@ void wiggler_init_segments(void) {
             (segments + i)->yaw = o->oFaceAngleYaw;
         }
 
-        o->header.gfx.unk38.animFrame = -1;
+        o->header.gfx.curAnim.animFrame = -1;
 
         // Spawn each body part
         for (i = 1; i <= 3; i++) {
@@ -145,7 +145,7 @@ void wiggler_init_segments(void) {
                 spawn_object_relative(i, 0, 0, 0, o, MODEL_WIGGLER_BODY, bhvWigglerBody);
             if (bodyPart != NULL) {
                 obj_init_animation_with_sound(bodyPart, wiggler_seg5_anims_0500C874, 0);
-                bodyPart->header.gfx.unk38.animFrame = (23 * i) % 26 - 1;
+                bodyPart->header.gfx.curAnim.animFrame = (23 * i) % 26 - 1;
             }
         }
 
@@ -222,6 +222,10 @@ static void wiggler_act_walk(void) {
     // Update text if necessary
     if (o->oWigglerTextStatus < WIGGLER_TEXT_STATUS_COMPLETED_DIALOG) {
         if (o->oWigglerTextStatus == WIGGLER_TEXT_STATUS_AWAIT_DIALOG) {
+            if (gMarioObject->oPosY >= o->oPosY) {
+                if (!dynos_jingle_is_playing(R96_EVENT_CREDITS))
+                    r96_play_music(R96_EVENT_BOSS_INTRO, 0.1, 1.0, 2500);
+            }
             func_8031FFB4(SEQ_PLAYER_LEVEL, 60, 40);
             o->oWigglerTextStatus = WIGGLER_TEXT_STATUS_SHOWING_DIALOG;
         }
@@ -371,7 +375,8 @@ static void wiggler_act_shrink(void) {
  */
 static void wiggler_act_fall_through_floor(void) {
     if (o->oTimer == 60) {
-        stop_background_music(SEQUENCE_ARGS(4, SEQ_EVENT_BOSS));
+        r96_stop_music();
+        r96_cap_music_boss_fix();
         o->oWigglerFallThroughFloorsHeight = 1700.0f;
     } else if (o->oTimer > 60) {
         if (o->oPosY < o->oWigglerFallThroughFloorsHeight) {

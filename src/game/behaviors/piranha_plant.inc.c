@@ -1,3 +1,5 @@
+#include "pc/configfile.h"
+
 /**
  * Behavior for bhvPiranhaPlant.
  * This controls Piranha Plants, which alternate between sleeping, attacking,
@@ -39,7 +41,11 @@ s32 piranha_plant_check_interactions(void) {
     s32 i;
     s32 interacted = 1;
     if (o->oInteractStatus & INT_STATUS_INTERACTED) {
-        func_80321080(50);
+        if (dynos_jingle_is_playing(R96_EVENT_PIRANHA_PLANT)) {
+            r96_stop_jingle();
+            r96_music_fade(0, -1, 1.0, 1500, 0);
+        }
+
         if (o->oInteractStatus & INT_STATUS_WAS_ATTACKED) {
             cur_obj_play_sound_2(SOUND_OBJ2_PIRANHA_PLANT_DYING);
 
@@ -91,12 +97,17 @@ void piranha_plant_act_sleeping(void) {
         if (mario_moving_fast_enough_to_make_piranha_plant_bite()) {
             o->oAction = PIRANHA_PLANT_ACT_WOKEN_UP;
         }
+        softenJingleVolume = 1.0f;
+    } else if (o->oDistanceToMario < 650.0f) {
+        softenJingleVolume = 1.0f;
     } else if (o->oDistanceToMario < 1000.0f) {
-        play_secondary_music(SEQ_EVENT_PIRANHA_PLANT, 0, 255, 1000);
+        r96_play_jingle(R96_EVENT_PIRANHA_PLANT, 0.1, 1.0, 1500);
+        softenJingleVolume = 0.4f;
+        r96_music_fade(0, -1, 0.0, 2500, 1);
         o->oPiranhaPlantSleepMusicState = PIRANHA_PLANT_SLEEP_MUSIC_PLAYING;
     } else if (o->oPiranhaPlantSleepMusicState == PIRANHA_PLANT_SLEEP_MUSIC_PLAYING) {
         o->oPiranhaPlantSleepMusicState++;
-        func_80321080(50);
+        r96_stop_jingle();
     }
     piranha_plant_check_interactions();
 }
@@ -115,7 +126,10 @@ void piranha_plant_act_woken_up(void) {
     o->oDamageOrCoinValue = 3;
 #endif
     if (o->oTimer == 0)
-        func_80321080(50);
+        if (dynos_jingle_is_playing(R96_EVENT_PIRANHA_PLANT)) {
+            r96_stop_jingle();
+            r96_music_fade(0, -1, 1.0, 1500, 0);
+        }
 
     if (piranha_plant_check_interactions() == 0)
         if (o->oTimer > 10)
@@ -240,7 +254,7 @@ static s8 sPiranhaPlantBiteSoundFrames[] = { 12, 28, 50, 64, -1 };
  * Piranha Plant will move to the attacked state.
  */
 void piranha_plant_act_biting(void) {
-    s32 frame = o->header.gfx.unk38.animFrame;
+    s32 frame = o->header.gfx.curAnim.animFrame;
 
     cur_obj_become_tangible();
 
@@ -328,14 +342,12 @@ void (*TablePiranhaPlantActions[])(void) = {
  */
 void bhv_piranha_plant_loop(void) {
     cur_obj_call_action_function(TablePiranhaPlantActions);
-    #ifndef NODRAWINGDISTANCE
     // In WF, hide all Piranha Plants once high enough up.
     if (gCurrLevelNum == LEVEL_WF) {
-        if (gMarioObject->oPosY > 3400.0f)
+        if (gMarioObject->oPosY > 34 * configDrawDistance)
             cur_obj_hide();
         else
             cur_obj_unhide();
     }
-    #endif
     o->oInteractStatus = 0;
 }

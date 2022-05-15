@@ -182,7 +182,8 @@ void bookshelf_manager_act_2(void) {
                     o->oPosX = o->parentObj->oPosX;
                     o->oAction = 3;
                 } else if (o->oTimer == 30) {
-                    play_puzzle_jingle();
+                    r96_play_jingle(R96_EVENT_SOLVE_PUZZLE, 0.1, 1.0, 1);
+                    r96_music_fade(0, -1, 0.0, 1, 1);
                 }
             } else {
                 o->oTimer = 0;
