@@ -63,6 +63,10 @@
 #define MAX_BUFFERED 256
 #endif
 
+#ifdef TARGET_WII_U
+static_assert(MAX_BUFFERED <= 256, "Maximum buffered triangles allowed must be <= 256.");
+#endif
+
 #define MAX_LIGHTS 2
 #define MAX_VERTICES 64
 
@@ -187,6 +191,7 @@ static bool dropped_frame;
 
 #ifdef TARGET_WII_U
 static float buf_vbo[MAX_BUFFERED * (28 * 3)]; // 3 vertices in a triangle and 28 floats per vtx
+static_assert(sizeof(buf_vbo) <= 86016);
 #else
 static float buf_vbo[MAX_BUFFERED * (26 * 3)]; // 3 vertices in a triangle and 26 floats per vtx
 #endif

@@ -53,7 +53,11 @@ static struct ShaderProgram shader_program_pool[64];
 static uint8_t shader_program_pool_size = 0;
 
 static struct ShaderProgram* current_shader_program = nullptr;
-static std::vector<float*> vbo_array;
+
+static constexpr uint32_t g_vbo_pool_max_size = 1024 * 86016; // 1024 draw calls x 86016 bytes = 84 MB
+
+static uint8_t g_vbo_pool[g_vbo_pool_max_size] __attribute__ ((aligned(0x40)));
+static uint32_t g_current_vbo_size = 0;
 
 static std::vector<Texture> gx2_textures;
 static uint8_t current_tile = 0;
@@ -376,13 +380,20 @@ static void gfx_gx2_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t b
     if (!current_shader_program)
         return;
 
-    size_t idx = vbo_array.size();
-    vbo_array.resize(idx + 1);
+    // Align size to 64 bytes
+    g_current_vbo_size = ((g_current_vbo_size - 1) | 0x3F) + 1;
 
     size_t vbo_len = sizeof(float) * buf_vbo_len;
-    vbo_array[idx] = static_cast<float*>(memalign(0x40, vbo_len));
+    if (g_current_vbo_size + vbo_len > g_vbo_pool_max_size)
+    {
+        if (vbo_len > g_vbo_pool_max_size)
+            return;
 
-    float* new_vbo = vbo_array[idx];
+        GX2DrawDone();
+        g_current_vbo_size = 0;
+    }
+
+    float* new_vbo = (float*)(&g_vbo_pool[g_current_vbo_size]); g_current_vbo_size += vbo_len;
     memcpy(new_vbo, buf_vbo, vbo_len);
 
     GX2Invalidate(GX2_INVALIDATE_MODE_CPU_ATTRIBUTE_BUFFER, new_vbo, vbo_len);
@@ -422,10 +433,7 @@ static void gfx_gx2_shutdown(void)
 
 extern "C" void gfx_gx2_free_vbo(void)
 {
-    for (uint32_t i = 0; i < vbo_array.size(); i++)
-        free(vbo_array[i]);
-
-    vbo_array.clear();
+    g_current_vbo_size = 0;
 }
 
 extern "C" void gfx_gx2_free(void)
