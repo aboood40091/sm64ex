@@ -250,7 +250,7 @@ void write_tiles() {
     for (int i = 0; i < props.numRows * props.numCols; i++) {
         if (!tiles[i].useless) {
             *filename = 0;
-            snprintf(filename, PATH_MAX, ".%d.rgba16.png", tiles[i].pos);
+            snprintf(filename, PATH_MAX - dirLength, ".%d.rgba16.png", tiles[i].pos);
             rgba2png(buffer, tiles[i].px, props.tileWidth, props.tileHeight);
         }
     }
@@ -284,7 +284,7 @@ static void write_skybox_c() { /* write c data to disc */
         exit(EXIT_FAILURE);
     }
 
-    sprintf(fBuffer, "%s/%s_skybox.c", output, skyboxName);
+    snprintf(fBuffer, PATH_MAX, "%s/%s_skybox.c", output, skyboxName);
     cFile = fopen(fBuffer, "w"); /* reset file */
 
     /* setup C file */
