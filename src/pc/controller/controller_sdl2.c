@@ -112,8 +112,9 @@ static void controller_sdl_init(void) {
 #ifdef BETTERCAMERA
     if (newcam_mouse == 1)
         SDL_SetRelativeMouseMode(SDL_TRUE);
-    SDL_GetRelativeMouseState(&mouse_x, &mouse_y);
 #endif
+
+    SDL_GetRelativeMouseState(&mouse_x, &mouse_y);
 
     controller_sdl_bind();
 
@@ -156,7 +157,8 @@ static void controller_sdl_read(OSContPad *pad) {
         SDL_SetRelativeMouseMode(SDL_TRUE);
     else
         SDL_SetRelativeMouseMode(SDL_FALSE);
-    
+#endif
+
     u32 mouse = SDL_GetRelativeMouseState(&mouse_x, &mouse_y);
 
     for (u32 i = 0; i < num_mouse_binds; ++i)
@@ -166,7 +168,6 @@ static void controller_sdl_read(OSContPad *pad) {
     // remember buttons that changed from 0 to 1
     last_mouse = (mouse_buttons ^ mouse) & mouse;
     mouse_buttons = mouse;
-#endif
 
     SDL_GameControllerUpdate();
 
@@ -263,13 +264,30 @@ static void controller_sdl_read(OSContPad *pad) {
 }
 
 static void controller_sdl_rumble_play(f32 strength, f32 length) {
-    if (sdl_haptic)
+    if (sdl_haptic) {
         SDL_HapticRumblePlay(sdl_haptic, strength, (u32)(length * 1000.0f));
+    }
+    else {
+#if SDL_VERSION_ATLEAST(2,0,18)
+        uint16_t scaled_strength = strength * pow(2, 16) - 1;
+        if (SDL_GameControllerHasRumble(sdl_cntrl) == SDL_TRUE) {
+            SDL_GameControllerRumble(sdl_cntrl, scaled_strength, scaled_strength, (u32)(length * 1000.0f));
+        }
+#endif
+    }
 }
 
 static void controller_sdl_rumble_stop(void) {
-    if (sdl_haptic)
+    if (sdl_haptic) {
         SDL_HapticRumbleStop(sdl_haptic);
+    }
+    else {
+#if SDL_VERSION_ATLEAST(2,0,18)
+        if (SDL_GameControllerHasRumble(sdl_cntrl) == SDL_TRUE) {
+            SDL_GameControllerRumble(sdl_cntrl, 0, 0, 0);
+        }
+#endif
+    }
 }
 
 static u32 controller_sdl_rawkey(void) {

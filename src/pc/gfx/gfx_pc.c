@@ -519,7 +519,7 @@ static inline void load_texture(const char *fullpath) {
     int w, h;
     u64 imgsize = 0;
 
-    u8 *imgdata = fs_load_file(fullpath, &imgsize);
+    u8 *imgdata = fs_load_file(fullpath, (uint64_t *)&imgsize);
     if (imgdata) {
         // TODO: implement stbi_callbacks or some shit instead of loading the whole texture
         u8 *data = stbi_load_from_memory(imgdata, imgsize, &w, &h, NULL, 4);
