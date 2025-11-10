@@ -1,5 +1,6 @@
 CC ?= gcc
 CXX ?= g++
+AR ?= ar
 CFLAGS := -I../include -I. -Wall -Wextra -Wno-unused-parameter -pedantic -std=c99 -O2 -s
 LDFLAGS := -lm
 PROGRAMS := n64graphics n64graphics_ci mio0 n64cksum textconv patch_libultra_math aifc_decode aiff_extract_codebook vadpcm_enc tabledesign extract_data_for_mio skyconv
@@ -38,7 +39,7 @@ skyconv_SOURCES := skyconv.c n64graphics.c utils.c
 LIBAUDIOFILE := audiofile/libaudiofile.a
 
 $(LIBAUDIOFILE):
-	@CC=$(CC) CXX=$(CXX) $(MAKE) -C audiofile
+	@CC=$(CC) CXX=$(CXX) AR=$(AR) $(MAKE) -C audiofile
 
 all: $(LIBAUDIOFILE) $(PROGRAMS) $(CXX_PROGRAMS)
 
