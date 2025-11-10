@@ -13,6 +13,7 @@ endif
 
 CC := gcc
 CXX := g++
+AR := ar
 CFLAGS := -Llib -Iinclude -I../include -I . -Wall -Wextra -Wno-unused-parameter $(OSX_BUILD) -pedantic -std=c99 $(OPT_FLAG) -s
 PROGRAMS := n64graphics n64graphics_ci mio0 n64cksum textconv patch_libultra_math iplfontutil aifc_decode aiff_extract_codebook vadpcm_enc tabledesign extract_data_for_mio skyconv
 

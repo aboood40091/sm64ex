@@ -10,7 +10,7 @@ extern void spawn_mist_from_global(void);
 extern void clear_particle_flags(u32);
 extern void spawn_wind_particles(s16,s16);
 extern s32 check_if_moving_over_floor(f32,f32);
-extern s32 arc_to_goal_pos(f32*,f32*,f32,f32);
+extern s32 arc_to_goal_pos(Vec3f a0, Vec3f a1, f32 yVel, f32 gravity);
 void vec3f_copy_2(Vec3f dest,Vec3f src);
 extern void tox_box_move(f32,f32,s16,s16);
 extern void play_penguin_walking_sound(s32);

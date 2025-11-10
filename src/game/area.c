@@ -215,14 +215,14 @@ void clear_area_graph_nodes(void) {
     s32 i;
 
     if (gCurrentArea != NULL) {
-        geo_call_global_function_nodes(gCurrentArea->unk04, GEO_CONTEXT_AREA_UNLOAD);
+        geo_call_global_function_nodes(&gCurrentArea->unk04->node, GEO_CONTEXT_AREA_UNLOAD);
         gCurrentArea = NULL;
         gWarpTransition.isActive = FALSE;
     }
 
     for (i = 0; i < 8; i++) {
         if (gAreaData[i].unk04 != NULL) {
-            geo_call_global_function_nodes(gAreaData[i].unk04, GEO_CONTEXT_AREA_INIT);
+            geo_call_global_function_nodes(&gAreaData[i].unk04->node, GEO_CONTEXT_AREA_INIT);
             gAreaData[i].unk04 = NULL;
         }
     }
@@ -243,14 +243,14 @@ void load_area(s32 index) {
         }
 
         load_obj_warp_nodes();
-        geo_call_global_function_nodes(gCurrentArea->unk04, GEO_CONTEXT_AREA_LOAD);
+        geo_call_global_function_nodes(&gCurrentArea->unk04->node, GEO_CONTEXT_AREA_LOAD);
     }
 }
 
 void unload_area(void) {
     if (gCurrentArea != NULL) {
         unload_objects_from_area(0, gCurrentArea->index);
-        geo_call_global_function_nodes(gCurrentArea->unk04, GEO_CONTEXT_AREA_UNLOAD);
+        geo_call_global_function_nodes(&gCurrentArea->unk04->node, GEO_CONTEXT_AREA_UNLOAD);
 
         gCurrentArea->flags = 0;
         gCurrentArea = NULL;

@@ -729,9 +729,9 @@ extern void set_camera_pitch_shake(s16 mag, s16 pitchMagInc, s16 pitchInc);
 extern void set_camera_yaw_shake(s16   mag, s16 yawMagInc, s16 yawInc);
 extern void set_camera_roll_shake(s16  mag, s16 rollMagInc, s16 rollInc);
 extern void set_pitch_shake_from_point(s16 mag, s16 pitchMagInc, s16 pitchInc, f32 maxDist, f32 posX, f32 posY, f32 posZ);
-extern void shake_camera_pitch(); // postdefined
-extern void shake_camera_yaw(); // postdefined
-extern void shake_camera_roll(s16 *); // postdefined
+extern void shake_camera_pitch(Vec3f pos, Vec3f focus); // postdefined
+extern void shake_camera_yaw(Vec3f pos, Vec3f focus); // postdefined
+extern void shake_camera_roll(s16 *roll); // postdefined
 extern s32 offset_yaw_outward_radial(struct Camera *a, s16 b);
 extern void play_camera_buzz_if_cdown(void);
 extern void play_camera_buzz_if_cbutton(void);
@@ -746,7 +746,7 @@ extern s32 radial_camera_input(struct Camera *a, f32 b);
 extern s32 trigger_cutscene_dialog(s32);
 extern void handle_c_button_movement(struct Camera *);
 extern void start_cutscene(struct Camera *a, u8 cutscene); // postdefined
-extern u8 get_cutscene_from_mario_status(); // postdefined
+extern u8 get_cutscene_from_mario_status(struct Camera *c); // postdefined
 extern void warp_camera(f32 displacementX, f32 displacementY, f32 displacementZ);
 extern void approach_camera_height(struct Camera *c, f32 goal, f32 inc);
 extern void offset_rotated(Vec3f dst, Vec3f from, Vec3f to, Vec3s rotation);

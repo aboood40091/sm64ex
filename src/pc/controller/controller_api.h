@@ -13,7 +13,7 @@
 #define STICK_XMASK 0x30000
 #define STICK_YMASK 0xc0000
 
-#include <ultra64.h>
+#include <PR/os_cont.h>
 
 struct ControllerAPI {
    const u32 vkbase;                            // base number in the virtual keyspace (e.g. keyboard is 0x0000-0x1000)
